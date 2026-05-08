@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - MODULE SYNOPTIQUE (PTR VERSION v16)
+   SYSTEL POMPIERS - MODULE SYNOPTIQUE (v17 - BER intégré)
    ============================================================ */
 
 function updateSynoptique() {
@@ -20,20 +20,26 @@ function updateSynoptique() {
           ${centre.sections.map(section => {
             const enginsSection = ENGINS.filter(e => e.section === section.id);
             const hasEngins = enginsSection.length > 0;
-            const statusColor = hasEngins ? 'green' : 'red';
-            
             return `
               <div class="section-row">
-                <div class="section-label ${statusColor}">
+                <div class="section-label ${hasEngins ? 'green' : 'red'}">
                   <div class="section-name">${section.nom}</div>
                   <div class="section-stats">(${enginsSection.length}/0/0)</div>
                 </div>
                 <div class="section-engins">
-                  ${enginsSection.map(e => `
-                    <div class="engin-box ${e.statut}" onclick="toggleEnginStatut('${e.id}')">
-                      ${e.nom}
-                    </div>
-                  `).join('')}
+                  ${enginsSection.map(e => {
+                    const ber = e.berStatut ? BER_STATUTS.find(b => b.code === e.berStatut) : null;
+                    let style = '';
+                    if (ber && ber.couleur) style = `background:${ber.couleur}; color:white; border-color:${ber.couleur};`;
+                    const tooltip = ber ? ber.label : (e.statut === 'intervention' ? 'En intervention' : e.statut);
+                    return `
+                      <div class="engin-box ${ber ? 'ber-active-box' : e.statut}" style="${style}" 
+                           title="${tooltip}" onclick="onEnginClick('${e.id}')">
+                        ${e.nom}
+                        ${e.berStatut ? `<div class="ber-code-badge">${e.berStatut}</div>` : ''}
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
               </div>
             `;
@@ -46,12 +52,26 @@ function updateSynoptique() {
   renderPersonnelsSynoptique();
 }
 
+function onEnginClick(id) {
+  const engin = ENGINS.find(e => e.id === id);
+  if (!engin) return;
+  
+  // Si en intervention et chef d'agrès: ouvrir BER
+  if (engin.statut === 'intervention' && engin.chefAgres === currentUser?.id) {
+    ouvrirBER(id);
+    return;
+  }
+  // Sinon cycle classique
+  toggleEnginStatut(id);
+}
+
 function toggleEnginStatut(id) {
   const engin = ENGINS.find(e => e.id === id);
   if (!engin) return;
   const cycle = ['disponible', 'intervention', 'indisponible'];
   const idx = cycle.indexOf(engin.statut);
   engin.statut = cycle[(idx + 1) % cycle.length];
+  if (engin.statut !== 'intervention') engin.berStatut = null;
   sauvegarderDonnees();
   updateSynoptique();
 }
@@ -59,7 +79,6 @@ function toggleEnginStatut(id) {
 function renderPersonnelsSynoptique() {
   const grid = document.getElementById('personnels-grid');
   if (!grid) return;
-  
   grid.className = "dashboard-grid";
   grid.innerHTML = PERSONNELS.map(p => `
     <div class="card" style="display:flex; align-items:center; gap:15px; padding:10px;">

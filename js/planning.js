@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - MODULE PLANNING (PTR VERSION v9 - FIX)
+   SYSTEL POMPIERS - MODULE PLANNING (v17)
    ============================================================ */
 
 let planningDateDebut = new Date('2026-05-04');
@@ -27,17 +27,17 @@ function renderPlanning() {
     ${jours.map((d, i) => `<th>${jourNoms[i]}<br>${d.getDate()}/${d.getMonth()+1}</th>`).join('')}
   </tr>`;
 
+  // S'assurer que tous les personnels ont une ligne
+  PERSONNELS.forEach(p => { if (!PLANNING[p.id]) PLANNING[p.id] = {}; });
+
   tbody.innerHTML = PERSONNELS.map(p => {
     const cells = jours.map(d => {
       const key = d.toISOString().slice(0, 10);
       const garde = PLANNING[p.id]?.[key] || '';
       const cls = getGardeClass(garde);
       const short = getGardeShort(garde);
-      
-      // LOGIQUE DE RÔLE : Admin peut tout changer, BMPM seulement lui-même
-      let canEdit = (currentUser.role === 'ADMIN');
-      if (currentUser.role === 'BMPM' && currentUser.id === p.id) canEdit = true;
-
+      let canEdit = userIsAdmin(currentUser);
+      if (!canEdit && currentUser.id === p.id) canEdit = true;
       const onclick = canEdit ? `onclick="editCellPlanning('${p.id}', '${key}')" style="cursor:pointer;"` : '';
       return `<td class="${cls}" ${onclick} title="${garde || 'Libre'}">${short}</td>`;
     }).join('');
@@ -63,10 +63,8 @@ function editCellPlanning(personnelId, date) {
   const actuel = PLANNING[personnelId]?.[date] || 'REPOS';
   const idx = types.indexOf(actuel);
   const next = types[(idx + 1) % types.length];
-
   if (!PLANNING[personnelId]) PLANNING[personnelId] = {};
   PLANNING[personnelId][date] = next;
-
   sauvegarderDonnees();
   renderPlanning();
 }
