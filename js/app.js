@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - APP JS (PTR VERSION v11 - FIX EFFECTIFS)
+   SYSTEL POMPIERS - APP JS (PTR VERSION v16 - STABLE)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,23 +14,28 @@ function synchroniserTout() {
   USERS.forEach(u => {
     if (!u.tel) u.tel = "06 XX XX XX XX";
     if (!u.email) u.email = `${u.id}@ptr.fr`;
-    if (!u.grade) u.grade = u.grade || (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
+    if (!u.grade) u.grade = (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
+    // Séparation Nom/Prénom si besoin
+    if (u.name && !u.lastname) {
+      const parts = u.name.split(' ');
+      u.lastname = parts[0].toUpperCase();
+      u.firstname = parts.slice(1).join(' ');
+    }
   });
 
-  PERSONNELS = USERS.map(u => {
-    const names = u.name.split(' ');
-    return {
-      id: u.id,
-      nom: (names[0] || u.id).toUpperCase(),
-      prenom: names.slice(1).join(' ') || "",
-      grade: u.grade,
-      photo: u.photo
-    };
-  });
+  PERSONNELS = USERS.map(u => ({
+    id: u.id,
+    nom: u.lastname || u.id.toUpperCase(),
+    prenom: u.firstname || "",
+    grade: u.grade,
+    // STATUT AUTOMATIQUE : DISPO si connecté (sessionStorage), sinon INDISPO
+    statut: (sessionStorage.getItem('systel_user') && JSON.parse(sessionStorage.getItem('systel_user')).id === u.id) ? "DISPO" : "INDISPO",
+    photo: u.photo
+  }));
 
   ANNUAIRE = USERS.map(u => ({
     id: u.id,
-    nom: u.name,
+    nom: `${u.lastname || ""} ${u.firstname || ""}`.trim() || u.name,
     grade: u.grade,
     tel: u.tel,
     email: u.email,
@@ -63,20 +68,21 @@ function handleLogin(e) {
   if (user) {
     currentUser = user;
     sessionStorage.setItem('systel_user', JSON.stringify(user));
+    synchroniserTout(); // Mettre à jour les statuts de connexion
     initApp();
   } else {
     document.getElementById('login-error').textContent = "Identifiant ou mot de passe incorrect.";
   }
 }
 
-function handleLogout() { sessionStorage.removeItem('systel_user'); location.reload(); }
+function handleLogout() { sessionStorage.removeItem('systel_user'); synchroniserTout(); location.reload(); }
 
 function initApp() {
   document.getElementById('auth-container').style.display = 'none';
   document.getElementById('app-container').style.display = 'flex';
   document.body.classList.remove('login-page');
 
-  document.getElementById('user-display-name').textContent = currentUser.name;
+  document.getElementById('user-display-name').textContent = `${currentUser.lastname || ""} ${currentUser.firstname || ""}`.trim() || currentUser.name;
   document.getElementById('top-avatar-img').src = currentUser.photo || 'https://www.w3schools.com/howto/img_avatar.png';
   const badge = document.getElementById('user-role-badge');
   badge.textContent = currentUser.role;
@@ -85,15 +91,7 @@ function initApp() {
   document.getElementById('nav-admin').style.display = (currentUser.role === 'ADMIN') ? 'flex' : 'none';
 
   initDate();
-  synchroniserTout(); // Forcer la synchro au démarrage
   showSection('synoptique');
-}
-
-function resetSystem() {
-  if (confirm("⚠️ ATTENTION : Cela va supprimer TOUTES vos modifications (engins, personnels, plannings) et restaurer le système par défaut. Continuer ?")) {
-    localStorage.clear();
-    location.reload();
-  }
 }
 
 // ===== NAVIGATION =====
@@ -109,13 +107,12 @@ function showSection(name) {
 
   if (name === 'synoptique') updateSynoptique();
   if (name === 'planning') renderPlanning();
-  if (name === 'personnels') renderPersonnels();
   if (name === 'annuaire') renderAnnuaire();
   if (name === 'admin') showAdminTab('centre');
 }
 
 function openProfilMenu() {
-  document.getElementById('prof-name').textContent = currentUser.name;
+  document.getElementById('prof-name').textContent = `${currentUser.lastname || ""} ${currentUser.firstname || ""}`.trim() || currentUser.name;
   document.getElementById('prof-grade').textContent = currentUser.grade;
   document.getElementById('prof-role').textContent = currentUser.role;
   document.getElementById('prof-img').src = currentUser.photo || 'https://www.w3schools.com/howto/img_avatar.png';
@@ -159,7 +156,7 @@ function renderAdminUsers() {
     <tr>
       <td><div class="avatar-sm"><img src="${u.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div></td>
       <td>${u.id}</td>
-      <td>${u.name}</td>
+      <td>${u.lastname || u.name}</td>
       <td>${u.role}</td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editUserAdmin(${idx})">Modifier</button>
@@ -173,7 +170,8 @@ let currentEditIdx = null;
 function ajouterUserAdmin() {
   currentEditIdx = null;
   document.getElementById('mu-id').value = "";
-  document.getElementById('mu-name').value = "";
+  document.getElementById('mu-lastname').value = "";
+  document.getElementById('mu-firstname').value = "";
   document.getElementById('mu-pwd').value = "";
   document.getElementById('mu-grade').value = "Sapeur";
   document.getElementById('mu-tel').value = "06 XX XX XX XX";
@@ -186,7 +184,8 @@ function editUserAdmin(idx) {
   currentEditIdx = idx;
   const u = USERS[idx];
   document.getElementById('mu-id').value = u.id;
-  document.getElementById('mu-name').value = u.name;
+  document.getElementById('mu-lastname').value = u.lastname || u.name;
+  document.getElementById('mu-firstname').value = u.firstname || "";
   document.getElementById('mu-pwd').value = u.pwd;
   document.getElementById('mu-role').value = u.role;
   document.getElementById('mu-grade').value = u.grade;
@@ -204,7 +203,9 @@ function deleteUserAdmin(idx) {
 function sauvegarderUserAdmin() {
   const u = {
     id: document.getElementById('mu-id').value,
-    name: document.getElementById('mu-name').value,
+    lastname: document.getElementById('mu-lastname').value,
+    firstname: document.getElementById('mu-firstname').value,
+    name: `${document.getElementById('mu-lastname').value} ${document.getElementById('mu-firstname').value}`.trim(),
     pwd: document.getElementById('mu-pwd').value,
     role: document.getElementById('mu-role').value,
     grade: document.getElementById('mu-grade').value,
@@ -226,21 +227,6 @@ function handlePhotoUpload(e) {
 }
 
 // ===== RENDU MODULES =====
-function renderPersonnels() {
-  const grid = document.getElementById('effectifs-grid-v13');
-  if (!grid) return;
-  grid.innerHTML = PERSONNELS.map(p => `
-    <div class="effectif-card-pro">
-      <div class="avatar-md"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
-      <div class="info">
-        <div class="name">${p.nom} ${p.prenom}</div>
-        <div class="grade">${p.grade}</div>
-      </div>
-      ${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="showSection('admin'); showAdminTab('users');">⚙️</button>` : ''}
-    </div>
-  `).join('');
-}
-
 function renderAnnuaire() {
   const grid = document.getElementById('annuaire-grid');
   if (!grid) return;
@@ -275,6 +261,10 @@ function initDate() { const el = document.getElementById('center-title'); if (el
 function showToast(msg, type = '') { const t = document.getElementById('toast'); if (t) { t.textContent = msg; t.className = 'toast show ' + type; setTimeout(() => t.className = 'toast', 3000); } }
 function ouvrirModal(id) { document.getElementById('modal-overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
 function fermerModal() { document.getElementById('modal-overlay').classList.remove('open'); document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
+
+function resetSystem() {
+  if (confirm("⚠️ RÉINITIALISER TOUT ?")) { localStorage.clear(); location.reload(); }
+}
 
 function renderAdminCasernes() {
   const tbody = document.getElementById('adm-casernes-list');

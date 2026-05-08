@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - MODULE SYNOPTIQUE (PTR VERSION v6 - DYNAMIQUE)
+   SYSTEL POMPIERS - MODULE SYNOPTIQUE (PTR VERSION v16)
    ============================================================ */
 
 function updateSynoptique() {
@@ -7,7 +7,6 @@ function updateSynoptique() {
   if (!container) return;
 
   container.innerHTML = CASERNES.map(centre => {
-    // Un centre est VERT s'il a au moins un engin dans une de ses sections
     const allSectionsIds = centre.sections.map(s => s.id);
     const enginsDuCentre = ENGINS.filter(e => allSectionsIds.includes(e.section));
     const isCentreActive = enginsDuCentre.length > 0;
@@ -61,14 +60,15 @@ function renderPersonnelsSynoptique() {
   const grid = document.getElementById('personnels-grid');
   if (!grid) return;
   
-  grid.className = "personnels-container";
+  grid.className = "dashboard-grid";
   grid.innerHTML = PERSONNELS.map(p => `
-    <div class="personnel-card ${p.disponible ? '' : 'dispo-false'}">
-      <div class="personnel-info">
-        <span class="personnel-name">${p.nom} ${p.prenom}</span>
-        <span class="personnel-statut">${p.statut}</span>
+    <div class="card" style="display:flex; align-items:center; gap:15px; padding:10px;">
+      <div class="avatar-sm"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
+      <div style="flex:1;">
+        <div style="font-weight:800; font-size:13px; color:var(--primary);">${p.nom} ${p.prenom}</div>
+        <div style="font-size:11px; font-weight:700; color:var(--text-muted);">${p.grade}</div>
       </div>
-      <span class="badge ${p.disponible ? 'badge-success' : 'badge-danger'}">${p.disponible ? 'OK' : 'HS'}</span>
+      <span class="badge ${p.statut === 'DISPO' ? 'badge-success' : 'badge-danger'}">${p.statut}</span>
     </div>
   `).join('');
 }

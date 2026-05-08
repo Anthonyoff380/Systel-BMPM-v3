@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>INTRANET - Centre PTR</title>
+  <title>INTRANET - BMPM</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
     body { background: #f4f7f9; display: flex; flex-direction: column; height: 100vh; margin: 0; }
@@ -23,15 +23,15 @@
 </head>
 <body>
   <div id="topbar">
-    <div style="font-size: 24px; font-weight: 900; letter-spacing: -1px;">SYS<span>TEL</span></div>
+    <div style="font-size: 24px; font-weight: 900; letter-spacing: -1px;">PIO</div>
     <div style="font-weight: 700; color: #a0aec0;">PORTAIL INTRANET OPÉRATIONNEL</div>
-    <div style="font-size: 13px; font-weight: 800;">CENTRE PTR</div>
+    <div style="font-size: 13px; font-weight: 800;">BMPM</div>
   </div>
 
   <div class="intranet-main">
     <div class="intranet-header">
-      <h1 id="intra-title">PORTAIL <span>INTRANET</span></h1>
-      <p id="intra-subtitle" style="color: #718096; font-weight: 600;">Centre de Secours PTR - Marseille</p>
+      <h1 id="intra-title">INTRANET <span>BMPM</span></h1>
+      <p id="intra-subtitle" style="color: #718096; font-weight: 600;">Intranet BMPM - Simulations</p>
     </div>
 
     <div class="portal-grid" id="portal-grid">
@@ -41,13 +41,9 @@
 
   <script src="js/data.js"></script>
   <script>
-    // Charger les données dynamiques
     const savedIntra = localStorage.getItem('systel_intranet');
     const config = savedIntra ? JSON.parse(savedIntra) : INTRANET_CONFIG;
     
-    document.getElementById('intra-title').innerHTML = config.title.replace('INTRANET', '<span>INTRANET</span>');
-    document.getElementById('intra-subtitle').textContent = config.subtitle;
-
     const grid = document.getElementById('portal-grid');
     grid.innerHTML = config.items.map(item => `
       <a href="${item.url}" class="portal-card">
