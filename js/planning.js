@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - MODULE PLANNING (PTR VERSION)
+   SYSTEL POMPIERS - MODULE PLANNING (PTR VERSION v9 - FIX)
    ============================================================ */
 
 let planningDateDebut = new Date('2026-05-04');
@@ -36,18 +36,20 @@ function renderPlanning() {
       
       // LOGIQUE DE RÔLE : Admin peut tout changer, BMPM seulement lui-même
       let canEdit = (currentUser.role === 'ADMIN');
-      if (currentUser.role === 'BMPM') {
-        // On compare le nom de l'utilisateur connecté avec le nom du personnel
-        if (currentUser.name.toLowerCase().includes(p.nom.toLowerCase())) canEdit = true;
-      }
+      if (currentUser.role === 'BMPM' && currentUser.id === p.id) canEdit = true;
 
-      const onclick = canEdit ? `onclick="editCellPlanning(${p.id}, '${key}')" style="cursor:pointer;"` : '';
+      const onclick = canEdit ? `onclick="editCellPlanning('${p.id}', '${key}')" style="cursor:pointer;"` : '';
       return `<td class="${cls}" ${onclick} title="${garde || 'Libre'}">${short}</td>`;
     }).join('');
 
-    const isMe = currentUser.name.toLowerCase().includes(p.nom.toLowerCase());
+    const isMe = (currentUser.id === p.id);
     return `<tr>
-      <td style="font-weight:700; color:var(--primary); ${isMe ? 'background:#ebf8ff;' : ''}">${p.nom} ${p.prenom} ${isMe ? '<span style="color:#3182ce; font-size:9px;">(VOUS)</span>' : ''}</td>
+      <td style="font-weight:700; color:var(--primary); ${isMe ? 'background:#ebf8ff;' : ''}">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="avatar-sm"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
+          ${p.nom} ${p.prenom}
+        </div>
+      </td>
       ${cells}
     </tr>`;
   }).join('');
@@ -57,8 +59,8 @@ function semainePrecedente() { planningDateDebut.setDate(planningDateDebut.getDa
 function semaineSuivante() { planningDateDebut.setDate(planningDateDebut.getDate() + 7); renderPlanning(); }
 
 function editCellPlanning(personnelId, date) {
-  const types = ['GARDE 1 (Jour)', 'GARDE 2 (Nuit)', 'ASTREINTE', 'Repos'];
-  const actuel = PLANNING[personnelId]?.[date] || 'Repos';
+  const types = ['G1', 'G2', 'AST', 'REPOS'];
+  const actuel = PLANNING[personnelId]?.[date] || 'REPOS';
   const idx = types.indexOf(actuel);
   const next = types[(idx + 1) % types.length];
 
