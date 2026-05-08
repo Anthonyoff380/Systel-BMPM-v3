@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - APP JS (PTR VERSION v10 - PREMIUM)
+   SYSTEL POMPIERS - APP JS (PTR VERSION v11 - FIX EFFECTIFS)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,12 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== SYNCHRONISATION STRICTE =====
 function synchroniserTout() {
-  // On s'assure que chaque utilisateur a tous les champs nécessaires
   USERS.forEach(u => {
     if (!u.tel) u.tel = "06 XX XX XX XX";
     if (!u.email) u.email = `${u.id}@ptr.fr`;
     if (!u.grade) u.grade = (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
-    if (!u.photo) u.photo = null;
   });
 
   PERSONNELS = USERS.map(u => {
@@ -129,10 +127,24 @@ function showAdminTab(tabName) {
   if (tabName === 'users') renderAdminUsers();
   if (tabName === 'engins') renderAdminEngins();
   if (tabName === 'casernes') renderAdminCasernes();
+  if (tabName === 'intranet') renderAdminIntranet();
   if (tabName === 'centre') {
     document.getElementById('adm-centre-nom').value = CONFIG.nom;
     document.getElementById('adm-centre-code').value = CONFIG.centre;
   }
+}
+
+function renderAdminIntranet() {
+  const container = document.getElementById('adm-intranet-list');
+  container.innerHTML = INTRANET_CONFIG.items.map((item, idx) => `
+    <div class="card mb-10">
+      <div class="card-body">
+        <div class="form-group"><label>Titre (${item.id})</label><input type="text" value="${item.title}" onchange="INTRANET_CONFIG.items[${idx}].title=this.value; sauvegarderDonnees();"></div>
+        <div class="form-group"><label>Description</label><input type="text" value="${item.desc}" onchange="INTRANET_CONFIG.items[${idx}].desc=this.value; sauvegarderDonnees();"></div>
+        <div class="form-group"><label>URL Image (Carré)</label><input type="text" value="${item.img}" onchange="INTRANET_CONFIG.items[${idx}].img=this.value; sauvegarderDonnees();"></div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function renderAdminUsers() {
@@ -172,15 +184,15 @@ function editUserAdmin(idx) {
   document.getElementById('mu-pwd').value = u.pwd;
   document.getElementById('mu-role').value = u.role;
   document.getElementById('mu-grade').value = u.grade;
-  document.getElementById('mu-tel').value = u.tel || "";
-  document.getElementById('mu-email').value = u.email || "";
+  document.getElementById('mu-tel').value = u.tel;
+  document.getElementById('mu-email').value = u.email;
   document.getElementById('mu-photo-preview').src = u.photo || 'https://www.w3schools.com/howto/img_avatar.png';
   ouvrirModal('modal-user-admin');
 }
 
 function deleteUserAdmin(idx) {
-  if (USERS[idx].id === 'admin') return showToast("Action impossible", "error");
-  if (confirm("Supprimer ce compte ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
+  if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
+  if (confirm("Supprimer ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
 }
 
 function sauvegarderUserAdmin() {
@@ -194,7 +206,6 @@ function sauvegarderUserAdmin() {
     email: document.getElementById('mu-email').value,
     photo: document.getElementById('mu-photo-preview').src.startsWith('data:') ? document.getElementById('mu-photo-preview').src : USERS[currentEditIdx]?.photo
   };
-
   if (currentEditIdx !== null) USERS[currentEditIdx] = u; else USERS.push(u);
   synchroniserTout(); fermerModal(); renderAdminUsers(); showToast("Enregistré !");
 }
@@ -212,6 +223,7 @@ function handlePhotoUpload(e) {
 function renderPersonnels() {
   const tbody = document.getElementById('personnels-tbody');
   if (!tbody) return;
+  // ALIGNEMENT STRICT : PHOTO | NOM | PRENOM | GRADE | STATUT | ACTIONS
   tbody.innerHTML = PERSONNELS.map(p => `
     <tr>
       <td><div class="avatar-sm"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div></td>
@@ -233,8 +245,8 @@ function renderAnnuaire() {
         <div class="avatar-md"><img src="${c.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
         <div><div style="font-weight:700; color:var(--primary); font-size:14px;">${c.nom}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">${c.grade}</div></div>
       </div>
-      <div style="font-size:12px; line-height:1.6;">📞 <strong>${c.tel}</strong><br>✉️ ${c.email}</div>
-      ${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" style="width:100%; margin-top:10px;" onclick="showSection('admin'); showAdminTab('users');">MODIFIER CONTACT</button>` : ''}
+      <div style="font-size:12px;">📞 <strong>${c.tel}</strong><br>✉️ ${c.email}</div>
+      ${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" style="width:100%; margin-top:10px;" onclick="showSection('admin'); showAdminTab('users');">MODIFIER</button>` : ''}
     </div></div>
   `).join('');
 }
@@ -243,6 +255,7 @@ function renderAnnuaire() {
 function chargerDonnees() {
   const d = (key) => localStorage.getItem('systel_' + key);
   if (d('config')) CONFIG = JSON.parse(d('config'));
+  if (d('intranet')) INTRANET_CONFIG = JSON.parse(d('intranet'));
   if (d('casernes')) CASERNES = JSON.parse(d('casernes'));
   if (d('engins')) ENGINS = JSON.parse(d('engins'));
   if (d('users')) USERS = JSON.parse(d('users'));
@@ -250,7 +263,7 @@ function chargerDonnees() {
 }
 function sauvegarderDonnees() {
   const s = (key, val) => localStorage.setItem('systel_' + key, JSON.stringify(val));
-  s('config', CONFIG); s('casernes', CASERNES); s('engins', ENGINS); s('users', USERS); s('planning', PLANNING);
+  s('config', CONFIG); s('intranet', INTRANET_CONFIG); s('casernes', CASERNES); s('engins', ENGINS); s('users', USERS); s('planning', PLANNING);
 }
 function startClock() { setInterval(() => { const c = document.getElementById('current-clock'); if (c) c.textContent = new Date().toLocaleTimeString('fr-FR'); }, 1000); }
 function initDate() { const el = document.getElementById('center-title'); if (el) el.textContent = `CENTRE ${CONFIG.centre} - ${new Date().toLocaleDateString('fr-FR')} (WEB1)`; }
@@ -258,7 +271,6 @@ function showToast(msg, type = '') { const t = document.getElementById('toast');
 function ouvrirModal(id) { document.getElementById('modal-overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
 function fermerModal() { document.getElementById('modal-overlay').classList.remove('open'); document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
 
-// Fonctions Admin manquantes
 function renderAdminCasernes() {
   const tbody = document.getElementById('adm-casernes-list');
   tbody.innerHTML = CASERNES.map((c, cIdx) => `
@@ -289,4 +301,8 @@ function sauvegarderToutAdmin() {
   CONFIG.nom = document.getElementById('adm-centre-nom').value;
   CONFIG.centre = document.getElementById('adm-centre-code').value;
   sauvegarderDonnees(); initDate(); showToast("Enregistré !");
+}
+function ajouterSection(cIdx) {
+  const nom = prompt("Nom Section :");
+  if (nom) { CASERNES[cIdx].sections.push({ id: nom.toUpperCase().replace(/\s+/g,'-'), nom }); sauvegarderDonnees(); renderAdminCasernes(); }
 }

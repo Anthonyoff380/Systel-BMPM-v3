@@ -3,164 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PORTAIL INTRANET - PTR</title>
+  <title>INTRANET - Centre PTR</title>
+  <link rel="stylesheet" href="css/style.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-    
-    :root {
-      --primary: #e53e3e;
-      --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: var(--bg);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(229, 62, 62, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(49, 130, 206, 0.15) 0px, transparent 50%);
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      overflow: hidden;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1000px;
-      padding: 40px;
-      animation: fadeIn 0.8s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .header {
-      text-align: center;
-      margin-bottom: 60px;
-    }
-
-    .logo {
-      font-size: 56px;
-      font-weight: 800;
-      letter-spacing: -3px;
-      margin-bottom: 10px;
-    }
-
-    .logo span { color: var(--primary); }
-
-    .subtitle {
-      color: #94a3b8;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-size: 14px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      padding: 50px 40px;
-      text-decoration: none;
-      color: white;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 4px;
-      background: var(--primary);
-      transform: scaleX(0);
-      transition: transform 0.4s ease;
-      transform-origin: left;
-    }
-
-    .card:hover {
-      transform: translateY(-12px);
-      background: rgba(30, 41, 59, 0.9);
-      border-color: rgba(229, 62, 62, 0.5);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    }
-
-    .card:hover::before { transform: scaleX(1); }
-
-    .icon {
-      font-size: 64px;
-      margin-bottom: 24px;
-      display: block;
-    }
-
-    .title {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 12px;
-      display: block;
-    }
-
-    .desc {
-      color: #94a3b8;
-      font-size: 15px;
-      line-height: 1.6;
-    }
-
-    .footer {
-      margin-top: 60px;
-      text-align: center;
-      color: #475569;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .status-dot {
-      display: inline-block;
-      width: 8px; height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      margin-right: 6px;
-      box-shadow: 0 0 10px #10b981;
-    }
+    body { background: #f4f7f9; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+    #topbar { background: #1a202c; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #e53e3e; }
+    .intranet-main { flex: 1; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; width: 100%; max-width: 900px; }
+    .portal-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: all 0.3s ease; text-decoration: none; color: inherit; border: 1px solid #e2e8f0; }
+    .portal-card:hover { transform: translateY(-10px); box-shadow: 0 20px 35px rgba(0,0,0,0.1); border-color: #e53e3e; }
+    .portal-img { width: 100%; height: 200px; object-fit: cover; background: #edf2f7; }
+    .portal-content { padding: 25px; text-align: center; }
+    .portal-title { font-size: 24px; font-weight: 800; color: #2d3748; margin-bottom: 10px; text-transform: uppercase; }
+    .portal-desc { color: #718096; font-size: 14px; line-height: 1.5; }
+    .intranet-header { text-align: center; margin-bottom: 50px; }
+    .intranet-header h1 { font-size: 36px; font-weight: 900; color: #1a202c; margin: 0; }
+    .intranet-header h1 span { color: #e53e3e; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div class="logo">PORTAIL<span>INTRANET</span></div>
-      <div class="subtitle">Centre de Secours PTR • Marseille</div>
+  <div id="topbar">
+    <div style="font-size: 24px; font-weight: 900; letter-spacing: -1px;">SYS<span>TEL</span></div>
+    <div style="font-weight: 700; color: #a0aec0;">PORTAIL INTRANET OPÉRATIONNEL</div>
+    <div style="font-size: 13px; font-weight: 800;">CENTRE PTR</div>
+  </div>
+
+  <div class="intranet-main">
+    <div class="intranet-header">
+      <h1 id="intra-title">PORTAIL <span>INTRANET</span></h1>
+      <p id="intra-subtitle" style="color: #718096; font-weight: 600;">Centre de Secours PTR - Marseille</p>
     </div>
-    
-    <div class="grid">
-      <a href="index.html" class="card">
-        <span class="icon">📊</span>
-        <span class="title">SYSTEL</span>
-        <span class="desc">Accédez à la gestion opérationnelle, aux effectifs et aux plannings en temps réel.</span>
-      </a>
-      
-      <a href="cossim.html" class="card">
-        <span class="icon">🚒</span>
-        <span class="title">COSSIM</span>
-        <span class="desc">Interface de commandement et de surveillance du centre opérationnel PTR.</span>
-      </a>
-    </div>
-    
-    <div class="footer">
-      <span class="status-dot"></span> SYSTÈMES OPÉRATIONNELS EN LIGNE • © 2026 PTR DSI
+
+    <div class="portal-grid" id="portal-grid">
+      <!-- Les tuiles seront injectées ici par JS -->
     </div>
   </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    // Charger les données dynamiques
+    const savedIntra = localStorage.getItem('systel_intranet');
+    const config = savedIntra ? JSON.parse(savedIntra) : INTRANET_CONFIG;
+    
+    document.getElementById('intra-title').innerHTML = config.title.replace('INTRANET', '<span>INTRANET</span>');
+    document.getElementById('intra-subtitle').textContent = config.subtitle;
+
+    const grid = document.getElementById('portal-grid');
+    grid.innerHTML = config.items.map(item => `
+      <a href="${item.url}" class="portal-card">
+        <img src="${item.img}" class="portal-img" alt="${item.title}">
+        <div class="portal-content">
+          <div class="portal-title">${item.title}</div>
+          <div class="portal-desc">${item.desc}</div>
+        </div>
+      </a>
+    `).join('');
+  </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - DONNÉES (PTR VERSION v7 - PHOTOS & PROFILS)
+   SYSTEL POMPIERS - DONNÉES (PTR VERSION v11 - CONFIG INTRANET)
    ============================================================ */
 
 let CONFIG = {
@@ -11,14 +11,21 @@ let CONFIG = {
   lastUpdate: new Date().toISOString()
 };
 
+// Configuration de l'Intranet
+let INTRANET_CONFIG = {
+  title: "PORTAIL INTRANET",
+  subtitle: "Centre de Secours PTR - Marseille",
+  items: [
+    { id: "systel", title: "SYSTEL", desc: "Gestion opérationnelle et effectifs.", img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400&h=400&fit=crop", url: "index.html" },
+    { id: "cossim", title: "COSSIM", desc: "Centre de commandement PTR.", img: "https://images.unsplash.com/photo-1516533076085-50370d2d5c21?w=400&h=400&fit=crop", url: "cossim.html" }
+  ]
+};
+
 let CASERNES = [
   { id: "BMPM", nom: "BMPM", sections: [
     { id: "0-EM", nom: "0 - EM" },
     { id: "1-SANTE", nom: "1 - SANTÉ" },
     { id: "6-PTR", nom: "6 - PTR" }
-  ]},
-  { id: "SDIS13", nom: "SDIS 13", sections: [
-    { id: "4-ROG", nom: "4 - ROG" }
   ]}
 ];
 
@@ -26,7 +33,6 @@ let ENGINS = [
   { id: "VSAV01-PTR", nom: "VSAV 01", section: "6-PTR", statut: "disponible" }
 ];
 
-// USERS avec support photo (Base64)
 let USERS = [
   { 
     id: "admin", 
@@ -34,7 +40,9 @@ let USERS = [
     pwd: "123", 
     role: "ADMIN", 
     grade: "Officier",
-    photo: null // Sera une string base64
+    tel: "06 00 00 00 00",
+    email: "admin@ptr.fr",
+    photo: null 
   },
   { 
     id: "k.ianis", 
@@ -42,6 +50,8 @@ let USERS = [
     pwd: "ptr", 
     role: "BMPM", 
     grade: "Sapeur",
+    tel: "06 11 22 33 44",
+    email: "k.ianis@ptr.fr",
     photo: null
   }
 ];

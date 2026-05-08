@@ -122,7 +122,7 @@
         <div class="section-header"><div class="section-title">EFFECTIFS</div></div>
         <div class="card"><div class="card-body">
           <table class="data-table">
-            <thead><tr><th>Photo</th><th>Nom</th><th>Prénom</th><th>Grade</th><th>Statut</th></tr></thead>
+            <thead><tr><th>Photo</th><th>Nom</th><th>Prénom</th><th>Grade</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="personnels-tbody"></tbody>
           </table>
         </div></div>
@@ -147,7 +147,9 @@
           <button class="admin-tab-btn" onclick="showAdminTab('casernes')">Casernes</button>
           <button class="admin-tab-btn" onclick="showAdminTab('engins')">Engins</button>
           <button class="admin-tab-btn" onclick="showAdminTab('users')">Comptes</button>
+          <button class="admin-tab-btn" onclick="showAdminTab('intranet')">Config Intranet</button>
         </div>
+        
         <div id="admin-tab-centre" class="admin-tab-content">
           <div class="card"><div class="card-body admin-form-grid">
             <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
@@ -155,20 +157,36 @@
             <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
           </div></div>
         </div>
+
         <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
           <div class="card"><div class="card-body"><table class="data-table"><thead><tr><th>Nom</th><th>Actions</th></tr></thead><tbody id="adm-casernes-list"></tbody></table></div></div>
         </div>
+
         <div id="admin-tab-engins" class="admin-tab-content" style="display:none;">
           <div class="card"><div class="card-body">
-            <button class="btn btn-success btn-sm" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
+            <button class="btn btn-success btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
             <table class="data-table"><thead><tr><th>Nom</th><th>Section</th><th>Actions</th></tr></thead><tbody id="adm-engins-list"></tbody></table>
           </div></div>
         </div>
+
         <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
-          <div class="card"><div class="card-body">
-            <button class="btn btn-success btn-sm" onclick="ajouterUserAdmin()">+ Créer Compte</button>
-            <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
-          </div></div>
+          <div class="card">
+            <div class="card-body">
+              <button class="btn btn-success btn-sm mb-10" onclick="ajouterUserAdmin()">+ Créer Compte</button>
+              <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-tab-intranet" class="admin-tab-content" style="display:none;">
+          <div class="card">
+            <div class="card-body">
+              <div class="form-group"><label>Titre Portail</label><input type="text" id="adm-intra-title" onchange="INTRANET_CONFIG.title=this.value; sauvegarderDonnees();"></div>
+              <div class="form-group"><label>Sous-titre</label><input type="text" id="adm-intra-subtitle" onchange="INTRANET_CONFIG.subtitle=this.value; sauvegarderDonnees();"></div>
+              <hr>
+              <div id="adm-intranet-list"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -188,7 +206,7 @@
 </div>
 
 <div id="modal-user-admin" class="modal" style="width:600px;">
-  <div class="modal-header">MODIFIER COMPTE</div>
+  <div class="modal-header">GESTION DU COMPTE</div>
   <div class="modal-body">
     <div style="display:flex; gap:20px;">
       <div style="text-align:center;">
