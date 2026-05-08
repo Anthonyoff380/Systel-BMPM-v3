@@ -106,39 +106,16 @@
       <!-- SYNOPTIQUE -->
       <div id="section-synoptique" class="section active-section">
         <div class="section-header">
-          <div class="section-title">TABLEAU DE BORD OPÉRATIONNEL</div>
+          <div class="section-title">SYNOPTIQUE DES MOYENS</div>
         </div>
-        <div class="synop-info-bar">
-          <div class="synop-info-item">
-            <span class="synop-info-label">Garde :</span>
-            <span class="synop-info-value" id="garde-courante">---</span>
-          </div>
-          <div class="synop-info-item">
-            <span class="synop-info-label">Effectif :</span>
-            <span class="synop-info-value" id="total-personnels">0</span>
-          </div>
-          <div class="synop-info-item">
-            <span class="synop-info-label">Disponibles :</span>
-            <span class="synop-info-value" id="dispo-personnels">0</span>
-          </div>
+        
+        <div id="synoptique-main-container">
+          <!-- Injecté par synoptique.js -->
         </div>
-        <div class="dashboard-grid">
-          <div class="dashboard-left">
-            <div class="card">
-              <div class="card-header">ÉCHELON DE DÉPART (ENGINS)</div>
-              <div class="card-body" id="engins-grid"></div>
-            </div>
-            <div class="card">
-              <div class="card-header">PERSONNELS DE GARDE</div>
-              <div class="card-body" id="personnels-grid"></div>
-            </div>
-          </div>
-          <div class="dashboard-right">
-            <div class="card">
-              <div class="card-header">INTERVENTIONS EN COURS</div>
-              <div class="card-body" id="moyens-intervention"></div>
-            </div>
-          </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header">PERSONNELS DU CENTRE</div>
+          <div class="card-body" id="personnels-grid"></div>
         </div>
       </div>
 
