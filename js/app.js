@@ -1,12 +1,45 @@
 /* ============================================================
-   SYSTEL POMPIERS - APP JS (PTR VERSION CORRIGÉE & AUTOMATISÉE)
+   SYSTEL POMPIERS - APP JS (PTR VERSION v6 - LIAISON STRICTE)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
   chargerDonnees();
+  synchroniserTout(); // Assurer que les listes sont raccordées aux utilisateurs
   checkAuth();
   startClock();
 });
+
+// ===== SYNCHRONISATION STRICTE =====
+function synchroniserTout() {
+  // On reconstruit PERSONNELS et ANNUAIRE à partir de USERS pour éviter les résidus
+  PERSONNELS = USERS.map(u => {
+    const names = u.name.split(' ');
+    return {
+      id: u.id,
+      nom: (names[0] || u.id).toUpperCase(),
+      prenom: names[1] || "",
+      grade: u.role === 'ADMIN' ? 'Officier' : 'Sapeur',
+      specialite: "INC",
+      statut: "Garde",
+      disponible: true
+    };
+  });
+
+  ANNUAIRE = USERS.map(u => ({
+    id: u.id,
+    nom: u.name,
+    type: "Personnel",
+    tel: "06 XX XX XX XX",
+    email: `${u.id}@ptr.fr`
+  }));
+
+  // On s'assure que le planning a des entrées pour chaque utilisateur
+  USERS.forEach(u => {
+    if (!PLANNING[u.id]) PLANNING[u.id] = {};
+  });
+
+  sauvegarderDonnees();
+}
 
 // ===== AUTHENTIFICATION =====
 function checkAuth() {
@@ -25,17 +58,13 @@ function handleLogin(e) {
   e.preventDefault();
   const id = document.getElementById('login-id').value;
   const pwd = document.getElementById('login-pwd').value;
-  const errorEl = document.getElementById('login-error');
-
   const user = USERS.find(u => u.id === id && u.pwd === pwd);
-
   if (user) {
     currentUser = user;
     sessionStorage.setItem('systel_user', JSON.stringify(user));
-    errorEl.textContent = "";
     initApp();
   } else {
-    errorEl.textContent = "Identifiant ou mot de passe incorrect.";
+    document.getElementById('login-error').textContent = "Identifiant ou mot de passe incorrect.";
   }
 }
 
@@ -49,13 +78,11 @@ function initApp() {
   document.getElementById('app-container').style.display = 'flex';
   document.body.classList.remove('login-page');
 
-  // Affichage infos utilisateur
   document.getElementById('user-display-name').textContent = currentUser.name;
   const badge = document.getElementById('user-role-badge');
   badge.textContent = currentUser.role;
   badge.className = 'badge ' + (currentUser.role === 'ADMIN' ? 'badge-danger' : 'badge-info');
 
-  // Restrictions de rôle
   if (currentUser.role === 'ADMIN') {
     document.getElementById('nav-admin').style.display = 'flex';
     document.getElementById('admin-shortcut').style.display = 'inline-block';
@@ -64,7 +91,6 @@ function initApp() {
     document.getElementById('admin-shortcut').style.display = 'none';
   }
 
-  // Initialisation UI
   initDate();
   showSection('synoptique');
   updateSynoptique();
@@ -76,40 +102,27 @@ function initApp() {
 
 // ===== PERSISTANCE =====
 function chargerDonnees() {
-  const savedConfig = localStorage.getItem('systel_config');
-  const savedEngins = localStorage.getItem('systel_engins');
-  const savedPersonnels = localStorage.getItem('systel_personnels');
-  const savedInterventions = localStorage.getItem('systel_interventions');
-  const savedUsers = localStorage.getItem('systel_users');
-  const savedAnnuaire = localStorage.getItem('systel_annuaire');
-  const savedPlanning = localStorage.getItem('systel_planning');
-
-  if (savedConfig) Object.assign(CONFIG, JSON.parse(savedConfig));
-  if (savedEngins) ENGINS = JSON.parse(savedEngins);
-  if (savedPersonnels) PERSONNELS = JSON.parse(savedPersonnels);
-  if (savedInterventions) INTERVENTIONS = JSON.parse(savedInterventions);
-  if (savedUsers) USERS = JSON.parse(savedUsers);
-  if (savedAnnuaire) ANNUAIRE = JSON.parse(savedAnnuaire);
-  if (savedPlanning) PLANNING = JSON.parse(savedPlanning);
+  const d = (key) => localStorage.getItem('systel_' + key);
+  if (d('config')) CONFIG = JSON.parse(d('config'));
+  if (d('casernes')) CASERNES = JSON.parse(d('casernes'));
+  if (d('engins')) ENGINS = JSON.parse(d('engins'));
+  if (d('users')) USERS = JSON.parse(d('users'));
+  if (d('interventions')) INTERVENTIONS = JSON.parse(d('interventions'));
+  if (d('planning')) PLANNING = JSON.parse(d('planning'));
 }
 
 function sauvegarderDonnees() {
-  localStorage.setItem('systel_config', JSON.stringify(CONFIG));
-  localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
-  localStorage.setItem('systel_personnels', JSON.stringify(PERSONNELS));
-  localStorage.setItem('systel_interventions', JSON.stringify(INTERVENTIONS));
-  localStorage.setItem('systel_users', JSON.stringify(USERS));
-  localStorage.setItem('systel_annuaire', JSON.stringify(ANNUAIRE));
-  localStorage.setItem('systel_planning', JSON.stringify(PLANNING));
+  const s = (key, val) => localStorage.setItem('systel_' + key, JSON.stringify(val));
+  s('config', CONFIG);
+  s('casernes', CASERNES);
+  s('engins', ENGINS);
+  s('users', USERS);
+  s('interventions', INTERVENTIONS);
+  s('planning', PLANNING);
 }
 
 // ===== NAVIGATION =====
 function showSection(name) {
-  if (name === 'admin' && currentUser.role !== 'ADMIN') {
-    showToast("Accès refusé : Droits insuffisants", "error");
-    return;
-  }
-
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
   const target = document.getElementById('section-' + name);
   if (target) target.classList.add('active-section');
@@ -119,45 +132,22 @@ function showSection(name) {
     if (item.dataset.section === name) item.classList.add('selected');
   });
 
-  const rightPanel = document.getElementById('right-panel');
-  if (rightPanel) {
-    rightPanel.style.display = (name === 'synoptique') ? 'flex' : 'none';
-  }
-}
-
-// ===== HORLOGE & DATES =====
-function startClock() {
-  setInterval(() => {
-    const now = new Date();
-    document.getElementById('current-clock').textContent = now.toLocaleTimeString('fr-FR');
-  }, 1000);
-}
-
-function initDate() {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  document.getElementById('header-date').textContent = dateStr;
-  document.getElementById('center-title').textContent = `CENTRE ${CONFIG.centre} - ${dateStr} (WEB1)`;
-  
-  const garde = document.getElementById('garde-courante');
-  if (garde) garde.textContent = `${CONFIG.dateGarde} · ${CONFIG.typeGarde}`;
+  if (name === 'synoptique') updateSynoptique();
+  if (name === 'planning') renderPlanning();
+  if (name === 'personnels') renderPersonnels();
+  if (name === 'annuaire') renderAnnuaire();
 }
 
 // ===== ADMIN PANEL =====
 function showAdminTab(tabName) {
   document.querySelectorAll('.admin-tab-content').forEach(tab => tab.style.display = 'none');
   document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-  
   document.getElementById(`admin-tab-${tabName}`).style.display = 'block';
   event.target.classList.add('active');
 
   if (tabName === 'users') renderAdminUsers();
   if (tabName === 'engins') renderAdminEngins();
-  if (tabName === 'centre') {
-    document.getElementById('adm-centre-nom').value = CONFIG.nom;
-    document.getElementById('adm-centre-code').value = CONFIG.centre;
-    document.getElementById('adm-centre-ville').value = CONFIG.ville;
-  }
+  if (tabName === 'casernes') renderAdminCasernes();
 }
 
 function renderAdminUsers() {
@@ -166,140 +156,103 @@ function renderAdminUsers() {
     <tr>
       <td>${u.id}</td>
       <td>${u.name}</td>
-      <td><span class="badge ${u.role === 'ADMIN' ? 'badge-danger' : 'badge-info'}">${u.role}</span></td>
+      <td>${u.role}</td>
       <td>
-        <button class="btn btn-secondary btn-sm" onclick="editerUserAdmin(${idx})">Modifier</button>
-        <button class="btn btn-danger btn-sm" onclick="supprimerUserAdmin(${idx})">Supprimer</button>
+        <button class="btn btn-danger btn-sm" onclick="USERS.splice(${idx},1); synchroniserTout(); renderAdminUsers();">Supprimer</button>
       </td>
     </tr>
   `).join('');
 }
 
+function ajouterUserAdmin() {
+  const id = prompt("Identifiant :");
+  const name = prompt("Nom complet :");
+  const pwd = prompt("Mot de passe :");
+  const role = prompt("Rôle (ADMIN ou BMPM) :", "BMPM").toUpperCase();
+  if (id && name && pwd) {
+    USERS.push({ id, name, pwd, role });
+    synchroniserTout();
+    renderAdminUsers();
+    showToast("Compte créé et synchronisé !");
+  }
+}
+
+function renderAdminCasernes() {
+  const tbody = document.getElementById('adm-casernes-list');
+  tbody.innerHTML = CASERNES.map((c, cIdx) => `
+    <tr style="background:#edf2f7; font-weight:800;"><td colspan="2">${c.nom}</td></tr>
+    ${c.sections.map((s, sIdx) => `
+      <tr>
+        <td style="padding-left:30px;">${s.nom}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="CASERNES[${cIdx}].sections.splice(${sIdx},1); sauvegarderDonnees(); renderAdminCasernes();">✕</button>
+        </td>
+      </tr>
+    `).join('')}
+    <tr>
+      <td colspan="2"><button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cIdx})">+ Ajouter Section</button></td>
+    </tr>
+  `).join('');
+}
+
+function ajouterSection(cIdx) {
+  const nom = prompt("Nom de la section (ex: 6 - PTR) :");
+  if (nom) {
+    const id = nom.replace(/\s+/g, '-').toUpperCase();
+    CASERNES[cIdx].sections.push({ id, nom });
+    sauvegarderDonnees();
+    renderAdminCasernes();
+  }
+}
+
 function renderAdminEngins() {
   const tbody = document.getElementById('adm-engins-list');
+  // Créer la liste des sections pour le select
+  const allSections = [];
+  CASERNES.forEach(c => c.sections.forEach(s => allSections.push({ id: s.id, nom: `${c.nom} > ${s.nom}` })));
+
   tbody.innerHTML = ENGINS.map((e, idx) => `
     <tr>
       <td><input type="text" value="${e.nom}" onchange="ENGINS[${idx}].nom=this.value; sauvegarderDonnees();"></td>
-      <td><input type="text" value="${e.type}" onchange="ENGINS[${idx}].type=this.value; sauvegarderDonnees();"></td>
-      <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1); renderAdminEngins(); sauvegarderDonnees();">Supprimer</button></td>
+      <td>
+        <select onchange="ENGINS[${idx}].section=this.value; sauvegarderDonnees();">
+          ${allSections.map(s => `<option value="${s.id}" ${e.section === s.id ? 'selected' : ''}>${s.nom}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1); sauvegarderDonnees(); renderAdminEngins();">✕</button></td>
     </tr>
   `).join('');
 }
 
 function ajouterEnginAdmin() {
-  ENGINS.push({ id: "NEW"+Date.now(), nom: "NOUVEL ENGIN", type: "FPT", statut: "disponible", etat: "P" });
+  if (CASERNES[0].sections.length === 0) return showToast("Créez d'abord une section !", "error");
+  ENGINS.push({ id: "E"+Date.now(), nom: "NOUVEL ENGIN", section: CASERNES[0].sections[0].id, statut: "disponible" });
   renderAdminEngins();
   sauvegarderDonnees();
 }
 
-let userEditIdx = null;
-function ajouterUserAdmin() {
-  userEditIdx = null;
-  document.getElementById('mu-id').value = "";
-  document.getElementById('mu-name').value = "";
-  document.getElementById('mu-pwd').value = "";
-  document.getElementById('mu-role').value = "BMPM";
-  ouvrirModal('modal-user-admin');
-}
-
-function editerUserAdmin(idx) {
-  userEditIdx = idx;
-  const u = USERS[idx];
-  document.getElementById('mu-id').value = u.id;
-  document.getElementById('mu-name').value = u.name;
-  document.getElementById('mu-pwd').value = u.pwd;
-  document.getElementById('mu-role').value = u.role;
-  ouvrirModal('modal-user-admin');
-}
-
-function sauvegarderUserAdmin() {
-  const id = document.getElementById('mu-id').value;
-  const name = document.getElementById('mu-name').value;
-  const pwd = document.getElementById('mu-pwd').value;
-  const role = document.getElementById('mu-role').value;
-
-  if (!id || !name) return showToast("Veuillez remplir les champs.", "error");
-
-  const u = { id, name, pwd, role };
-
-  if (userEditIdx !== null) {
-    // Mise à jour de l'existant
-    const oldId = USERS[userEditIdx].id;
-    USERS[userEditIdx] = u;
-    // Mettre à jour l'effectif correspondant
-    const p = PERSONNELS.find(pers => pers.nom.toUpperCase() === name.split(' ')[0].toUpperCase());
-    if (p) { p.nom = name.split(' ')[0].toUpperCase(); p.prenom = name.split(' ')[1] || ""; }
-  } else {
-    // Nouveau compte
-    USERS.push(u);
-    // CRÉATION AUTOMATIQUE EFFECTIF & ANNUAIRE
-    const names = name.split(' ');
-    const nom = (names[0] || "NOM").toUpperCase();
-    const prenom = names[1] || "Prénom";
-    
-    const newId = Date.now();
-    PERSONNELS.push({
-      id: newId,
-      nom: nom,
-      prenom: prenom,
-      grade: role === 'ADMIN' ? 'Officier' : 'Sapeur',
-      specialite: "INC",
-      statut: "Repos",
-      disponible: true
-    });
-
-    ANNUAIRE.push({
-      id: newId,
-      nom: `${nom} ${prenom}`,
-      type: "Personnel",
-      tel: "06 XX XX XX XX",
-      email: `${prenom.toLowerCase()}.${nom.toLowerCase()}@ptr.fr`
-    });
-  }
-
-  sauvegarderDonnees();
-  renderAdminUsers();
-  renderPersonnels();
-  renderAnnuaire();
-  updateSynoptique();
-  fermerModal();
-  showToast("Compte et effectif synchronisés !");
-}
-
-function supprimerUserAdmin(idx) {
-  if (USERS[idx].id === 'admin') return showToast("Action impossible.", "error");
-  if (confirm("Supprimer ce compte ? (L'effectif lié restera)")) {
-    USERS.splice(idx, 1);
-    sauvegarderDonnees();
-    renderAdminUsers();
-  }
-}
-
-function sauvegarderToutAdmin() {
-  CONFIG.nom = document.getElementById('adm-centre-nom').value;
-  CONFIG.centre = document.getElementById('adm-centre-code').value;
-  CONFIG.ville = document.getElementById('adm-centre-ville').value;
-  sauvegarderDonnees();
-  initDate();
-  showToast("Configurations enregistrées !");
-}
-
 // ===== UTILS =====
+function startClock() {
+  setInterval(() => {
+    const now = new Date();
+    const clock = document.getElementById('current-clock');
+    if (clock) clock.textContent = now.toLocaleTimeString('fr-FR');
+  }, 1000);
+}
+
+function initDate() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const el = document.getElementById('center-title');
+  if (el) el.textContent = `CENTRE ${CONFIG.centre} - ${dateStr} (WEB1)`;
+}
+
 function showToast(msg, type = '') {
   const toast = document.getElementById('toast');
+  if (!toast) return;
   toast.textContent = msg;
   toast.className = 'toast show ' + type;
   setTimeout(() => { toast.className = 'toast'; }, 3000);
-}
-
-function ouvrirModal(id) {
-  document.getElementById('modal-overlay').classList.add('open');
-  document.getElementById(id).classList.add('open');
-}
-
-function fermerModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-  document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
 }
 
 function formatDate(dateStr) {
@@ -309,28 +262,14 @@ function formatDate(dateStr) {
 }
 
 function getStatutBadge(statut) {
-  const map = {
-    'En cours':   '<span class="badge badge-danger">En cours</span>',
-    'Terminée':   '<span class="badge badge-success">Terminée</span>',
-    'disponible': '<span class="badge badge-success">Disponible</span>',
-    'intervention':'<span class="badge badge-danger">Intervention</span>',
-    'indisponible':'<span class="badge badge-info">Indisponible</span>',
-  };
-  return map[statut] || `<span class="badge badge-info">${statut}</span>`;
+  const map = { 'En cours': 'badge-danger', 'Terminée': 'badge-success' };
+  return `<span class="badge ${map[statut] || 'badge-info'}">${statut}</span>`;
 }
 
 function getGardeClass(type) {
-  if (!type) return '';
-  if (type.includes('GARDE 1')) return 'cell-g1';
-  if (type.includes('GARDE 2')) return 'cell-g2';
-  if (type.includes('ASTREINTE')) return 'cell-ast';
+  if (type?.includes('G1')) return 'cell-g1';
+  if (type?.includes('G2')) return 'cell-g2';
   return 'cell-repos';
 }
 
-function getGardeShort(type) {
-  if (!type) return 'REPOS';
-  if (type.includes('GARDE 1')) return 'G1';
-  if (type.includes('GARDE 2')) return 'G2';
-  if (type.includes('ASTREINTE')) return 'AST';
-  return 'REPOS';
-}
+function getGardeShort(type) { return type || 'REPOS'; }

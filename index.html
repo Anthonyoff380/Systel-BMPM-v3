@@ -228,6 +228,7 @@
         </div>
         <div class="admin-tabs">
           <button class="admin-tab-btn active" onclick="showAdminTab('centre')">Centre</button>
+          <button class="admin-tab-btn" onclick="showAdminTab('casernes')">Casernes & Sections</button>
           <button class="admin-tab-btn" onclick="showAdminTab('engins')">Engins</button>
           <button class="admin-tab-btn" onclick="showAdminTab('users')">Comptes Utilisateurs</button>
         </div>
@@ -242,12 +243,23 @@
           </div>
         </div>
 
+        <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
+          <div class="card">
+            <div class="card-body">
+              <table class="data-table">
+                <thead><tr><th>Nom</th><th>Actions</th></tr></thead>
+                <tbody id="adm-casernes-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div id="admin-tab-engins" class="admin-tab-content" style="display:none;">
           <div class="card">
             <div class="card-body">
               <button class="btn btn-success btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
               <table class="data-table">
-                <thead><tr><th>Nom</th><th>Type</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Nom</th><th>Centre / Section</th><th>Actions</th></tr></thead>
                 <tbody id="adm-engins-list"></tbody>
               </table>
             </div>
