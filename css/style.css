@@ -259,3 +259,25 @@ input, select, textarea {
   font-size: 14px;
 }
 input:focus { outline: 2px solid #cbd5e0; }
+
+/* EFFECTIFS PRO v13 */
+.effectifs-grid-pro {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.effectif-card-pro {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+.effectif-card-pro:hover { transform: translateY(-3px); border-color: var(--accent); }
+.effectif-card-pro .info { flex: 1; }
+.effectif-card-pro .name { font-weight: 800; font-size: 16px; color: var(--primary); margin-bottom: 4px; }
+.effectif-card-pro .grade { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }

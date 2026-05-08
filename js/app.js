@@ -219,16 +219,17 @@ function handlePhotoUpload(e) {
 
 // ===== RENDU MODULES =====
 function renderPersonnels() {
-  const tbody = document.getElementById('personnels-tbody');
-  if (!tbody) return;
-  // ALIGNEMENT STRICT PTR v12 : PHOTO | NOM | PRENOM | GRADE
-  tbody.innerHTML = PERSONNELS.map(p => `
-    <tr>
-      <td><div class="avatar-sm"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div></td>
-      <td style="font-weight:700;">${p.nom}</td>
-      <td>${p.prenom}</td>
-      <td><span class="badge badge-info">${p.grade}</span></td>
-    </tr>
+  const grid = document.getElementById('effectifs-grid-v13');
+  if (!grid) return;
+  grid.innerHTML = PERSONNELS.map(p => `
+    <div class="effectif-card-pro">
+      <div class="avatar-md"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
+      <div class="info">
+        <div class="name">${p.nom} ${p.prenom}</div>
+        <div class="grade">${p.grade}</div>
+      </div>
+      ${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="showSection('admin'); showAdminTab('users');">⚙️</button>` : ''}
+    </div>
   `).join('');
 }
 
