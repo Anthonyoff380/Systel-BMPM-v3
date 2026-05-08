@@ -3,81 +3,163 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>INTRANET - Centre PTR</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>PORTAIL INTRANET - PTR</title>
   <style>
-    body.intranet-bg {
-      background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+    
+    :root {
+      --primary: #e53e3e;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(229, 62, 62, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(49, 130, 206, 0.15) 0px, transparent 50%);
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .intranet-container {
-      text-align: center;
       color: white;
-      width: 100%;
-      max-width: 900px;
+      overflow: hidden;
     }
-    .intranet-header { margin-bottom: 50px; }
-    .intranet-logo { font-size: 48px; font-weight: 900; letter-spacing: -2px; }
-    .intranet-logo span { color: #e53e3e; }
-    
-    .portal-grid {
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      padding: 40px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -3px;
+      margin-bottom: 10px;
+    }
+
+    .logo span { color: var(--primary); }
+
+    .subtitle {
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 14px;
+    }
+
+    .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 30px;
-      padding: 20px;
     }
-    .portal-card {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px;
-      padding: 40px;
-      cursor: pointer;
-      transition: all 0.3s ease;
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 50px 40px;
       text-decoration: none;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
     }
-    .portal-card:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-10px);
-      border-color: #e53e3e;
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 4px;
+      background: var(--primary);
+      transform: scaleX(0);
+      transition: transform 0.4s ease;
+      transform-origin: left;
     }
-    .portal-icon { font-size: 60px; }
-    .portal-title { font-size: 24px; font-weight: 800; text-transform: uppercase; }
-    .portal-desc { font-size: 14px; color: #a0aec0; }
+
+    .card:hover {
+      transform: translateY(-12px);
+      background: rgba(30, 41, 59, 0.9);
+      border-color: rgba(229, 62, 62, 0.5);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .card:hover::before { transform: scaleX(1); }
+
+    .icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+      display: block;
+    }
+
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .desc {
+      color: #94a3b8;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      margin-right: 6px;
+      box-shadow: 0 0 10px #10b981;
+    }
   </style>
 </head>
-<body class="intranet-bg">
-  <div class="intranet-container">
-    <div class="intranet-header">
-      <div class="intranet-logo">PORTAIL<span>INTRANET</span></div>
-      <p style="color: #a0aec0; font-weight: 600; margin-top: 10px;">Centre de Secours PTR - Marseille</p>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">PORTAIL<span>INTRANET</span></div>
+      <div class="subtitle">Centre de Secours PTR • Marseille</div>
     </div>
     
-    <div class="portal-grid">
-      <a href="index.html" class="portal-card">
-        <div class="portal-icon">📊</div>
-        <div class="portal-title">SYSTEL</div>
-        <div class="portal-desc">Gestion opérationnelle, plannings et effectifs en temps réel.</div>
+    <div class="grid">
+      <a href="index.html" class="card">
+        <span class="icon">📊</span>
+        <span class="title">SYSTEL</span>
+        <span class="desc">Accédez à la gestion opérationnelle, aux effectifs et aux plannings en temps réel.</span>
       </a>
       
-      <a href="cossim.html" class="portal-card">
-        <div class="portal-icon">🚒</div>
-        <div class="portal-title">COSSIM</div>
-        <div class="portal-desc">Centre Opérationnel de Surveillance et de Secours de l'Intérieur de Marseille.</div>
+      <a href="cossim.html" class="card">
+        <span class="icon">🚒</span>
+        <span class="title">COSSIM</span>
+        <span class="desc">Interface de commandement et de surveillance du centre opérationnel PTR.</span>
       </a>
     </div>
     
-    <div style="margin-top: 50px; font-size: 12px; color: #718096;">
-      © 2026 - Direction des Systèmes d'Information - PTR
+    <div class="footer">
+      <span class="status-dot"></span> SYSTÈMES OPÉRATIONNELS EN LIGNE • © 2026 PTR DSI
     </div>
   </div>
 </body>

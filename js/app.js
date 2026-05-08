@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - APP JS (PTR VERSION v9 - FIREBASE READY)
+   SYSTEL POMPIERS - APP JS (PTR VERSION v10 - PREMIUM)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,13 +11,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== SYNCHRONISATION STRICTE =====
 function synchroniserTout() {
+  // On s'assure que chaque utilisateur a tous les champs nécessaires
+  USERS.forEach(u => {
+    if (!u.tel) u.tel = "06 XX XX XX XX";
+    if (!u.email) u.email = `${u.id}@ptr.fr`;
+    if (!u.grade) u.grade = (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
+    if (!u.photo) u.photo = null;
+  });
+
   PERSONNELS = USERS.map(u => {
     const names = u.name.split(' ');
     return {
       id: u.id,
       nom: (names[0] || u.id).toUpperCase(),
-      prenom: names[1] || "",
-      grade: u.grade || "Sapeur",
+      prenom: names.slice(1).join(' ') || "",
+      grade: u.grade,
       statut: "Garde",
       disponible: true,
       photo: u.photo
@@ -27,11 +35,10 @@ function synchroniserTout() {
   ANNUAIRE = USERS.map(u => ({
     id: u.id,
     nom: u.name,
-    type: "Personnel",
-    tel: u.tel || "06 XX XX XX XX",
-    email: u.email || `${u.id}@ptr.fr`,
-    photo: u.photo,
-    grade: u.grade || "Pompier"
+    grade: u.grade,
+    tel: u.tel,
+    email: u.email,
+    photo: u.photo
   }));
 
   USERS.forEach(u => { if (!PLANNING[u.id]) PLANNING[u.id] = {}; });
@@ -42,7 +49,8 @@ function synchroniserTout() {
 function checkAuth() {
   const savedUser = sessionStorage.getItem('systel_user');
   if (savedUser) {
-    currentUser = USERS.find(u => u.id === JSON.parse(savedUser).id) || USERS[0];
+    const parsed = JSON.parse(savedUser);
+    currentUser = USERS.find(u => u.id === parsed.id) || USERS[0];
     initApp();
   } else {
     document.getElementById('auth-container').style.display = 'flex';
@@ -99,11 +107,12 @@ function showSection(name) {
   if (name === 'planning') renderPlanning();
   if (name === 'personnels') renderPersonnels();
   if (name === 'annuaire') renderAnnuaire();
+  if (name === 'admin') showAdminTab('centre');
 }
 
 function openProfilMenu() {
   document.getElementById('prof-name').textContent = currentUser.name;
-  document.getElementById('prof-grade').textContent = currentUser.grade || "Non défini";
+  document.getElementById('prof-grade').textContent = currentUser.grade;
   document.getElementById('prof-role').textContent = currentUser.role;
   document.getElementById('prof-img').src = currentUser.photo || 'https://www.w3schools.com/howto/img_avatar.png';
   ouvrirModal('modal-profil');
@@ -113,7 +122,8 @@ function openProfilMenu() {
 function showAdminTab(tabName) {
   document.querySelectorAll('.admin-tab-content').forEach(tab => tab.style.display = 'none');
   document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(`admin-tab-${tabName}`).style.display = 'block';
+  const target = document.getElementById(`admin-tab-${tabName}`);
+  if (target) target.style.display = 'block';
   event.target.classList.add('active');
 
   if (tabName === 'users') renderAdminUsers();
@@ -148,6 +158,8 @@ function ajouterUserAdmin() {
   document.getElementById('mu-name').value = "";
   document.getElementById('mu-pwd').value = "";
   document.getElementById('mu-grade').value = "Sapeur";
+  document.getElementById('mu-tel').value = "06 XX XX XX XX";
+  document.getElementById('mu-email').value = "@ptr.fr";
   document.getElementById('mu-photo-preview').src = 'https://www.w3schools.com/howto/img_avatar.png';
   ouvrirModal('modal-user-admin');
 }
@@ -159,31 +171,32 @@ function editUserAdmin(idx) {
   document.getElementById('mu-name').value = u.name;
   document.getElementById('mu-pwd').value = u.pwd;
   document.getElementById('mu-role').value = u.role;
-  document.getElementById('mu-grade').value = u.grade || "Sapeur";
+  document.getElementById('mu-grade').value = u.grade;
+  document.getElementById('mu-tel').value = u.tel || "";
+  document.getElementById('mu-email').value = u.email || "";
   document.getElementById('mu-photo-preview').src = u.photo || 'https://www.w3schools.com/howto/img_avatar.png';
   ouvrirModal('modal-user-admin');
 }
 
 function deleteUserAdmin(idx) {
-  if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
+  if (USERS[idx].id === 'admin') return showToast("Action impossible", "error");
   if (confirm("Supprimer ce compte ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
 }
 
 function sauvegarderUserAdmin() {
-  const id = document.getElementById('mu-id').value;
-  const name = document.getElementById('mu-name').value;
-  const pwd = document.getElementById('mu-pwd').value;
-  const role = document.getElementById('mu-role').value;
-  const grade = document.getElementById('mu-grade').value;
-  const photo = document.getElementById('mu-photo-preview').src;
+  const u = {
+    id: document.getElementById('mu-id').value,
+    name: document.getElementById('mu-name').value,
+    pwd: document.getElementById('mu-pwd').value,
+    role: document.getElementById('mu-role').value,
+    grade: document.getElementById('mu-grade').value,
+    tel: document.getElementById('mu-tel').value,
+    email: document.getElementById('mu-email').value,
+    photo: document.getElementById('mu-photo-preview').src.startsWith('data:') ? document.getElementById('mu-photo-preview').src : USERS[currentEditIdx]?.photo
+  };
 
-  const u = { id, name, pwd, role, grade, photo: photo.startsWith('data:') ? photo : null };
   if (currentEditIdx !== null) USERS[currentEditIdx] = u; else USERS.push(u);
-
-  synchroniserTout();
-  fermerModal();
-  renderAdminUsers();
-  showToast("Compte enregistré !");
+  synchroniserTout(); fermerModal(); renderAdminUsers(); showToast("Enregistré !");
 }
 
 function handlePhotoUpload(e) {
@@ -195,46 +208,6 @@ function handlePhotoUpload(e) {
   }
 }
 
-function renderAdminCasernes() {
-  const tbody = document.getElementById('adm-casernes-list');
-  tbody.innerHTML = CASERNES.map((c, cIdx) => `
-    <tr style="background:#edf2f7; font-weight:800;"><td colspan="2">${c.nom}</td></tr>
-    ${c.sections.map((s, sIdx) => `
-      <tr><td style="padding-left:30px;">${s.nom}</td><td><button class="btn btn-danger btn-sm" onclick="CASERNES[${cIdx}].sections.splice(${sIdx},1); sauvegarderDonnees(); renderAdminCasernes();">✕</button></td></tr>
-    `).join('')}
-    <tr><td colspan="2"><button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cIdx})">+ Ajouter Section</button></td></tr>
-  `).join('');
-}
-
-function ajouterSection(cIdx) {
-  const nom = prompt("Nom Section :");
-  if (nom) { CASERNES[cIdx].sections.push({ id: nom.toUpperCase().replace(/\s+/g,'-'), nom }); sauvegarderDonnees(); renderAdminCasernes(); }
-}
-
-function renderAdminEngins() {
-  const tbody = document.getElementById('adm-engins-list');
-  const allS = []; CASERNES.forEach(c => c.sections.forEach(s => allS.push({id: s.id, nom: `${c.nom} > ${s.nom}`})));
-  tbody.innerHTML = ENGINS.map((e, idx) => `
-    <tr>
-      <td><input type="text" value="${e.nom}" onchange="ENGINS[${idx}].nom=this.value; sauvegarderDonnees();"></td>
-      <td><select onchange="ENGINS[${idx}].section=this.value; sauvegarderDonnees();">${allS.map(s => `<option value="${s.id}" ${e.section === s.id ? 'selected' : ''}>${s.nom}</option>`).join('')}</select></td>
-      <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1); sauvegarderDonnees(); renderAdminEngins();">✕</button></td>
-    </tr>
-  `).join('');
-}
-
-function ajouterEnginAdmin() {
-  if (CASERNES[0].sections.length === 0) return showToast("Créez une section !", "error");
-  ENGINS.push({ id: "E"+Date.now(), nom: "NOUVEAU", section: CASERNES[0].sections[0].id, statut: "disponible" });
-  renderAdminEngins(); sauvegarderDonnees();
-}
-
-function sauvegarderToutAdmin() {
-  CONFIG.nom = document.getElementById('adm-centre-nom').value;
-  CONFIG.centre = document.getElementById('adm-centre-code').value;
-  sauvegarderDonnees(); initDate(); showToast("Enregistré !");
-}
-
 // ===== RENDU MODULES =====
 function renderPersonnels() {
   const tbody = document.getElementById('personnels-tbody');
@@ -242,9 +215,11 @@ function renderPersonnels() {
   tbody.innerHTML = PERSONNELS.map(p => `
     <tr>
       <td><div class="avatar-sm"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div></td>
-      <td style="font-weight:700;">${p.nom}</td><td>${p.prenom}</td><td><span class="badge badge-info">${p.grade}</span></td>
+      <td style="font-weight:700;">${p.nom}</td>
+      <td>${p.prenom}</td>
+      <td><span class="badge badge-info">${p.grade}</span></td>
       <td><span class="badge ${p.disponible ? 'badge-success' : 'badge-danger'}">${p.statut}</span></td>
-      <td>${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="showSection('admin'); showAdminTab('users');">MODIFIER</button>` : ''}</td>
+      <td>${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="showSection('admin'); showAdminTab('users');">⚙️</button>` : ''}</td>
     </tr>
   `).join('');
 }
@@ -258,8 +233,8 @@ function renderAnnuaire() {
         <div class="avatar-md"><img src="${c.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
         <div><div style="font-weight:700; color:var(--primary); font-size:14px;">${c.nom}</div><div style="font-size:11px; color:var(--text-muted); font-weight:600;">${c.grade}</div></div>
       </div>
-      <div style="font-size:12px;">📞 <strong>${c.tel}</strong><br>✉️ ${c.email}</div>
-      ${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" style="width:100%; margin-top:10px;" onclick="showSection('admin'); showAdminTab('users');">MODIFIER</button>` : ''}
+      <div style="font-size:12px; line-height:1.6;">📞 <strong>${c.tel}</strong><br>✉️ ${c.email}</div>
+      ${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" style="width:100%; margin-top:10px;" onclick="showSection('admin'); showAdminTab('users');">MODIFIER CONTACT</button>` : ''}
     </div></div>
   `).join('');
 }
@@ -282,3 +257,36 @@ function initDate() { const el = document.getElementById('center-title'); if (el
 function showToast(msg, type = '') { const t = document.getElementById('toast'); if (t) { t.textContent = msg; t.className = 'toast show ' + type; setTimeout(() => t.className = 'toast', 3000); } }
 function ouvrirModal(id) { document.getElementById('modal-overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
 function fermerModal() { document.getElementById('modal-overlay').classList.remove('open'); document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
+
+// Fonctions Admin manquantes
+function renderAdminCasernes() {
+  const tbody = document.getElementById('adm-casernes-list');
+  tbody.innerHTML = CASERNES.map((c, cIdx) => `
+    <tr style="background:#edf2f7; font-weight:800;"><td colspan="2">${c.nom}</td></tr>
+    ${c.sections.map((s, sIdx) => `
+      <tr><td style="padding-left:30px;">${s.nom}</td><td><button class="btn btn-danger btn-sm" onclick="CASERNES[${cIdx}].sections.splice(${sIdx},1); sauvegarderDonnees(); renderAdminCasernes();">✕</button></td></tr>
+    `).join('')}
+    <tr><td colspan="2"><button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cIdx})">+ Ajouter Section</button></td></tr>
+  `).join('');
+}
+function renderAdminEngins() {
+  const tbody = document.getElementById('adm-engins-list');
+  const allS = []; CASERNES.forEach(c => c.sections.forEach(s => allS.push({id: s.id, nom: `${c.nom} > ${s.nom}`})));
+  tbody.innerHTML = ENGINS.map((e, idx) => `
+    <tr>
+      <td><input type="text" value="${e.nom}" onchange="ENGINS[${idx}].nom=this.value; sauvegarderDonnees();"></td>
+      <td><select onchange="ENGINS[${idx}].section=this.value; sauvegarderDonnees();">${allS.map(s => `<option value="${s.id}" ${e.section === s.id ? 'selected' : ''}>${s.nom}</option>`).join('')}</select></td>
+      <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1); sauvegarderDonnees(); renderAdminEngins();">✕</button></td>
+    </tr>
+  `).join('');
+}
+function ajouterEnginAdmin() {
+  if (CASERNES[0].sections.length === 0) return showToast("Créez une section !", "error");
+  ENGINS.push({ id: "E"+Date.now(), nom: "NOUVEAU", section: CASERNES[0].sections[0].id, statut: "disponible" });
+  renderAdminEngins(); sauvegarderDonnees();
+}
+function sauvegarderToutAdmin() {
+  CONFIG.nom = document.getElementById('adm-centre-nom').value;
+  CONFIG.centre = document.getElementById('adm-centre-code').value;
+  sauvegarderDonnees(); initDate(); showToast("Enregistré !");
+}
