@@ -1,0 +1,147 @@
+/* ============================================================
+   SYSTEL POMPIERS - AUTH & PRO UI
+   ============================================================ */
+
+.login-page {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+.auth-card {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  padding: 40px;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-logo {
+  font-size: 32px;
+  font-weight: 800;
+  color: #2d3748;
+  letter-spacing: -1px;
+}
+.auth-logo span { color: #e53e3e; }
+
+.auth-header p {
+  color: #718096;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.btn-block { width: 100%; justify-content: center; padding: 12px; margin-top: 10px; }
+
+.login-error {
+  color: #e53e3e;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 15px;
+  min-height: 18px;
+}
+
+/* UI Adjustments */
+.tag-centre {
+  background: #e53e3e;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-left: 10px;
+}
+
+.info-strip {
+  height: 32px;
+  background: #1a202c;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 11px;
+  justify-content: space-between;
+}
+
+.info-strip-left { display: flex; gap: 20px; }
+
+#user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 15px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.badge-admin { background: #fed7d7; color: #822727; }
+.badge-bmpm { background: #bee3f8; color: #2a4365; }
+
+.dashboard-grid {
+  display: flex;
+  gap: 20px;
+}
+.dashboard-left { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+.dashboard-right { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+.mb-10 { margin-bottom: 10px; }
+
+.admin-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #718096;
+  border-bottom: 2px solid transparent;
+}
+
+.admin-tab-btn.active {
+  color: #1a3a6a;
+  border-bottom-color: #1a3a6a;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.annuaire-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.annuaire-card {
+  transition: transform 0.2s;
+}
+.annuaire-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-grid {
+  display: flex;
+  gap: 20px;
+}
+.dashboard-left { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+.dashboard-right { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+

@@ -1,0 +1,81 @@
+{
+  "centre": {
+    "code": "SMT",
+    "nom": "Centre de Secours SMT",
+    "ville": "Marseille",
+    "departement": "13",
+    "adresse": "Centre de Secours SMT, Marseille 13",
+    "telephone": "04 91 XX XX XX",
+    "email": "smt@sdis13.fr",
+    "coordonnees": {
+      "lat": 43.2965,
+      "lng": 5.3810
+    },
+    "sdis": "SDIS 13 - Bouches-du-Rhône",
+    "region": "Provence-Alpes-Côte d'Azur"
+  },
+  "gardes": {
+    "types": [
+      { "code": "G1", "label": "GARDE 1 (Jour)", "debut": "07:30", "fin": "19:30", "couleur": "#2ecc40" },
+      { "code": "G2", "label": "GARDE 2 (Nuit)", "debut": "19:30", "fin": "07:30", "couleur": "#3498db" },
+      { "code": "AST", "label": "ASTREINTE", "debut": "00:00", "fin": "23:59", "couleur": "#f1c40f" },
+      { "code": "REPOS", "label": "Repos", "debut": null, "fin": null, "couleur": "#808080" },
+      { "code": "FORM", "label": "Formation", "debut": "08:00", "fin": "17:00", "couleur": "#9b59b6" }
+    ],
+    "gardeActuelle": {
+      "type": "HIVER NUIT",
+      "debut": "22:00",
+      "fin": "07:30",
+      "date": "2026-05-04"
+    }
+  },
+  "engins": {
+    "types": [
+      { "code": "FPT", "label": "Fourgon Pompe Tonne", "categorie": "Incendie" },
+      { "code": "VSAV", "label": "Véhicule de Secours et d'Assistance aux Victimes", "categorie": "Secours" },
+      { "code": "CCF", "label": "Camion-Citerne Feux de Forêts", "categorie": "Feux de forêt" },
+      { "code": "FAC", "label": "Fourgon d'Appui Commandement", "categorie": "Commandement" },
+      { "code": "VLHR", "label": "Véhicule Léger Hors Route", "categorie": "Logistique" },
+      { "code": "FI", "label": "Fourgon d'Intervention", "categorie": "Incendie" },
+      { "code": "VLDE", "label": "Véhicule Léger de Désincarcération", "categorie": "Secours" },
+      { "code": "CSR", "label": "Camion de Secours Routier", "categorie": "Secours routier" }
+    ],
+    "statuts": [
+      { "code": "disponible", "label": "Disponible", "couleur": "#2ecc40" },
+      { "code": "intervention", "label": "En intervention", "couleur": "#e74c3c" },
+      { "code": "indisponible", "label": "Indisponible", "couleur": "#808080" }
+    ]
+  },
+  "personnels": {
+    "grades": [
+      "Sapeur", "Caporal", "Caporal-Chef", "Sergent", "Sergent-Chef",
+      "Adjudant", "Adjudant-Chef", "Lieutenant", "Capitaine",
+      "Commandant", "Lieutenant-Colonel", "Colonel"
+    ],
+    "specialites": [
+      "INC", "SAP", "GRIMP", "NRBC", "SAUV", "PLONGEE", "CYNO", "FORÊT", "ELAGUEUR"
+    ],
+    "statuts": [
+      "GARDE 1", "GARDE 2", "ASTREINTE", "C.ORG", "Repos", "Formation", "Congé", "Maladie"
+    ]
+  },
+  "interventions": {
+    "types": [
+      { "code": "INC", "label": "Incendie", "priorite": 1 },
+      { "code": "SAP", "label": "Secours à personne", "priorite": 1 },
+      { "code": "AVP", "label": "Accident de la route", "priorite": 2 },
+      { "code": "NRBC", "label": "Risque technologique", "priorite": 1 },
+      { "code": "INOND", "label": "Inondation", "priorite": 2 },
+      { "code": "FAUSSE", "label": "Fausse alerte", "priorite": 3 },
+      { "code": "DIVERS", "label": "Divers", "priorite": 3 }
+    ],
+    "statuts": ["En cours", "En attente", "Terminée"]
+  },
+  "systeme": {
+    "version": "SYSTEL WEB1",
+    "url": "https://portail.bmpm13.fr/systel-alerte-web/",
+    "locale": "fr_FR",
+    "fuseau": "Europe/Paris",
+    "rafraichissement": 30
+  }
+}
