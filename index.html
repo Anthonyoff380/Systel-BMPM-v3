@@ -46,19 +46,20 @@
     </div>
     
     <div id="topbar-right">
-      <div id="user-info">
-        <span id="user-display-name">Utilisateur</span>
-        <span id="user-role-badge" class="badge">ROLE</span>
+      <div id="user-info" onclick="openProfilMenu()" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
+        <div class="avatar-sm" id="top-avatar"><img src="https://www.w3schools.com/howto/img_avatar.png"></div>
+        <div style="text-align:right">
+          <div id="user-display-name" style="font-weight:700; font-size:13px;">Utilisateur</div>
+          <span id="user-role-badge" class="badge">ROLE</span>
+        </div>
       </div>
-      <button class="btn btn-secondary btn-sm" id="admin-shortcut" onclick="showSection('admin')" style="display:none;">⚙️</button>
-      <button class="btn btn-danger btn-sm" onclick="handleLogout()">🚪</button>
+      <button class="btn btn-danger btn-sm" onclick="handleLogout()" style="margin-left:15px;">🚪</button>
     </div>
   </div>
   
-  <div class="info-strip">
+      <div class="info-strip">
     <div class="info-strip-left">
-      <span><strong>SESSION :</strong> <span id="session-code" style="color: #63b3ed;">---</span></span>
-      <span><strong>ETAT :</strong> <span style="color: #68d391;">● OPÉRATIONNEL</span></span>
+      <span><strong>ETAT DU SYSTÈME :</strong> <span style="color: #68d391;">● OPÉRATIONNEL</span></span>
     </div>
     <div id="current-clock">--:--:--</div>
   </div>
@@ -184,10 +185,10 @@
             <table class="data-table">
               <thead>
                 <tr>
+                  <th>Photo</th>
                   <th>Nom</th>
                   <th>Prénom</th>
                   <th>Grade</th>
-                  <th>Spécialité</th>
                   <th>Statut</th>
                   <th>Actions</th>
                 </tr>
@@ -227,7 +228,7 @@
           <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">ENREGISTRER</button>
         </div>
         <div class="admin-tabs">
-          <button class="admin-tab-btn active" onclick="showAdminTab('centre')">Centre</button>
+          <button class="admin-tab-btn active" onclick="showAdminTab('centre')">Config Systel</button>
           <button class="admin-tab-btn" onclick="showAdminTab('casernes')">Casernes & Sections</button>
           <button class="admin-tab-btn" onclick="showAdminTab('engins')">Engins</button>
           <button class="admin-tab-btn" onclick="showAdminTab('users')">Comptes Utilisateurs</button>
@@ -320,6 +321,61 @@
   </div>
 </div>
 
+<div id="toast" class="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/synoptique.js"></script>
+<script src="js/interventions.js"></script>
+<script src="js/planning.js"></script>
+<script src="js/personnels.js"></script>
+<script src="js/annuaire.js"></script>
+</body>
+</html>
+
+<!-- MODALE PROFIL -->
+<div id="modal-profil" class="modal">
+  <div class="modal-header">VOTRE PROFIL</div>
+  <div class="modal-body" style="text-align:center;">
+    <div class="avatar-lg" style="margin: 0 auto 15px;"><img id="prof-img" src=""></div>
+    <h2 id="prof-name">---</h2>
+    <p id="prof-grade" style="color:var(--accent); font-weight:800;"></p>
+    <p>Rôle : <span id="prof-role" class="badge"></span></p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="fermerModal()">FERMER</button>
+  </div>
+</div>
+
+<!-- MODALE COMPTE ADMIN -->
+<div id="modal-user-admin" class="modal" style="width:600px;">
+  <div class="modal-header">GESTION DU COMPTE</div>
+  <div class="modal-body">
+    <div style="display:flex; gap:20px;">
+      <div style="text-align:center;">
+        <div class="avatar-lg" style="margin-bottom:10px;"><img id="mu-photo-preview" src="https://www.w3schools.com/howto/img_avatar.png"></div>
+        <input type="file" id="mu-photo-input" style="display:none;" onchange="handlePhotoUpload(event)">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mu-photo-input').click()">CHANGER PHOTO</button>
+      </div>
+      <div style="flex:1;">
+        <div class="form-group"><label>Identifiant</label><input type="text" id="mu-id"></div>
+        <div class="form-group"><label>Nom Complet</label><input type="text" id="mu-name"></div>
+        <div class="form-group"><label>Mot de passe</label><input type="password" id="mu-pwd"></div>
+        <div class="form-group">
+          <label>Rôle</label>
+          <select id="mu-role"><option value="BMPM">BMPM</option><option value="ADMIN">ADMIN</option></select>
+        </div>
+        <div class="form-group"><label>Grade</label><input type="text" id="mu-grade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
+    <button class="btn btn-primary" onclick="sauvegarderUserAdmin()">ENREGISTRER</button>
+  </div>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
 <div id="toast" class="toast"></div>
 
 <script src="js/data.js"></script>
