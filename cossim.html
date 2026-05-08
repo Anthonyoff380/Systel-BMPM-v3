@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COSSIM - BMPM</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:#1a202c; color:white; min-height:100vh; font-family:'Inter','Segoe UI',system-ui,sans-serif; }
+
+    /* HEADER */
+    .cossim-header { background:#2d3748; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #e53e3e; position:sticky; top:0; z-index:100; }
+    .cossim-logo { font-size:22px; font-weight:900; letter-spacing:-1px; }
+    .cossim-logo span { color:#e53e3e; }
+    .cossim-nav { display:flex; gap:5px; }
+    .cossim-nav-btn { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#a0aec0; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px; transition:all 0.15s; }
+    .cossim-nav-btn:hover, .cossim-nav-btn.active { background:rgba(229,62,62,0.2); color:white; border-color:#e53e3e; }
+    .cossim-back { background:#e53e3e; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:800; font-size:13px; }
+
+    /* PAGES */
+    .cossim-page { display:none; padding:24px; }
+    .cossim-page.active { display:block; }
+
+    /* CRÉATION INTERVENTION */
+    .creation-layout { display:grid; grid-template-columns:1fr 280px; gap:20px; max-width:1200px; }
+    .creation-main { display:flex; flex-direction:column; gap:15px; }
+    .creation-sidebar { display:flex; flex-direction:column; gap:15px; }
+    
+    .cossim-card { background:#2d3748; border-radius:10px; border:1px solid rgba(255,255,255,0.08); overflow:hidden; }
+    .cossim-card-header { padding:14px 18px; background:rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.08); font-weight:800; font-size:13px; color:#a0aec0; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:8px; }
+    .cossim-card-body { padding:18px; }
+    
+    .cossim-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .cossim-form-full { grid-column:1/-1; }
+    .cossim-label { display:block; font-size:12px; font-weight:700; color:#a0aec0; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
+    .cossim-input { width:100%; background:#1a202c; border:1px solid rgba(255,255,255,0.12); color:white; padding:10px 14px; border-radius:6px; font-size:14px; }
+    .cossim-input:focus { outline:none; border-color:#e53e3e; }
+    .cossim-input option { background:#2d3748; }
+    .cossim-select { appearance:none; }
+
+    /* SERVICES */
+    .services-grid { display:flex; flex-direction:column; gap:6px; max-height:300px; overflow-y:auto; }
+    .service-item { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; cursor:pointer; transition:background 0.15s; }
+    .service-item:hover { background:rgba(255,255,255,0.05); }
+    .service-item input[type=checkbox] { cursor:pointer; width:15px; height:15px; }
+    .service-item label { cursor:pointer; font-size:13px; color:#e2e8f0; }
+    .service-count { background:#e53e3e; color:white; font-size:11px; font-weight:800; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-left:auto; }
+
+    /* ENGAGEMENT VÉHICULES */
+    .engagement-section { margin-top:15px; }
+    .engagement-title { font-size:13px; font-weight:800; color:#a0aec0; margin-bottom:10px; text-transform:uppercase; }
+    .engins-engagement-grid { display:grid; gap:8px; }
+    .engin-engagement-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#1a202c; border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; transition:all 0.15s; }
+    .engin-engagement-item:hover { border-color:#e53e3e; background:rgba(229,62,62,0.08); }
+    .engin-engagement-item.selected { border-color:#38a169; background:rgba(56,161,105,0.1); }
+    .engin-name { font-weight:800; font-size:13px; flex:1; }
+    .engin-section-tag { font-size:11px; color:#718096; }
+    .engin-statut-dot { width:10px; height:10px; border-radius:50%; background:#38a169; }
+    .engin-statut-dot.indispo { background:#e53e3e; }
+    .engin-statut-dot.inter { background:#f97316; }
+
+    /* SOUS-CATÉGORIES ENGINS (équipe) */
+    .engin-equipe-section { padding:10px 14px; background:#1a202c; border:1px solid rgba(255,255,255,0.08); border-radius:8px; margin-top:5px; display:none; }
+    .engin-equipe-section.visible { display:block; }
+    .equipe-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:12px; color:#a0aec0; }
+    .equipe-row input { background:#2d3748; border:1px solid rgba(255,255,255,0.1); color:white; padding:5px 10px; border-radius:4px; font-size:12px; flex:1; }
+
+    /* ENGAGEMENT BUTTONS */
+    .engagement-buttons { display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; padding:18px; background:#2d3748; border-radius:10px; border:1px solid rgba(255,255,255,0.08); justify-content:center; }
+    .btn-regulation { background:#38a169; color:white; padding:12px 24px; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; }
+    .btn-diffusion { background:#3182ce; color:white; padding:12px 24px; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; }
+    .btn-annuler { background:#718096; color:white; padding:12px 24px; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; }
+    .btn-engagement { background:#e53e3e; color:white; padding:12px 24px; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; }
+    .btn-engagement-veh { background:#dd6b20; color:white; padding:12px 24px; border:none; border-radius:8px; font-weight:800; cursor:pointer; font-size:14px; }
+
+    /* SYNOPTIQUE COSSIM */
+    .synop-cossim { background:#1a202c; }
+    .synop-cossim-header { padding:15px 20px; background:#2d3748; border-bottom:2px solid #e53e3e; display:flex; align-items:center; gap:15px; }
+    .synop-counter { font-size:14px; color:#a0aec0; font-weight:700; }
+    .synop-inter-list { padding:15px; }
+    
+    .synop-inter-row { background:#2d3748; border-radius:8px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.08); overflow:hidden; }
+    .synop-inter-row-header { display:grid; grid-template-columns:60px 120px 80px 1fr 1fr 1fr; align-items:center; gap:10px; padding:12px 15px; cursor:pointer; }
+    .synop-row-num { font-weight:900; color:#e53e3e; font-size:16px; }
+    .synop-row-date { font-size:11px; color:#718096; }
+    .synop-row-type { font-weight:800; color:white; font-size:13px; }
+    .synop-row-lieu { font-size:12px; color:#a0aec0; }
+    .synop-row-obs { font-size:12px; color:#718096; }
+    
+    .synop-inter-row-body { padding:10px 15px; border-top:1px solid rgba(255,255,255,0.06); display:none; }
+    .synop-inter-row-body.open { display:block; }
+    .synop-services-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
+    .synop-service-chip { background:rgba(255,255,255,0.08); color:#a0aec0; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; }
+    .synop-engins-dark { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .synop-engin-dark { padding:6px 14px; border-radius:6px; font-size:12px; font-weight:800; border:2px solid; cursor:pointer; }
+    .synop-actions-dark { display:flex; gap:8px; }
+    .synop-action-dark { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:white; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px; }
+    .synop-action-dark:hover { background:rgba(255,255,255,0.12); }
+
+    /* TICKET DÉPART */
+    .ticket-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:500; align-items:center; justify-content:center; }
+    .ticket-overlay.open { display:flex; }
+    .ticket-modal { background:#2d3748; border-radius:12px; width:700px; max-height:90vh; overflow-y:auto; border:2px solid #e53e3e; }
+    .ticket-header { background:#e53e3e; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .ticket-header h2 { font-size:18px; font-weight:900; color:white; }
+    .ticket-body { padding:24px; }
+    .ticket-section { margin-bottom:20px; }
+    .ticket-section h3 { font-size:13px; font-weight:800; color:#a0aec0; text-transform:uppercase; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:6px; }
+    .ticket-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .ticket-field { background:#1a202c; padding:10px 14px; border-radius:6px; }
+    .ticket-field-label { font-size:11px; color:#718096; font-weight:700; margin-bottom:3px; }
+    .ticket-field-value { font-size:14px; font-weight:800; color:white; }
+
+    /* TOAST */
+    .cossim-toast { position:fixed; bottom:20px; right:20px; background:#2d3748; color:white; padding:12px 20px; border-radius:8px; font-weight:700; z-index:9999; transform:translateY(100px); transition:transform 0.3s; }
+    .cossim-toast.show { transform:translateY(0); }
+
+    /* Page Synoptique externe */
+    .ext-synop-btn { background:#7c3aed; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-weight:800; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="cossim-header">
+    <div class="cossim-logo">COS<span>SIM</span> <span style="font-size:14px; color:#a0aec0; font-weight:600;">Centre PTR</span></div>
+    <div class="cossim-nav">
+      <button class="cossim-nav-btn active" data-page="creation" onclick="showCossimPage('creation', this)">📞 Création Intervention</button>
+      <button class="cossim-nav-btn" data-page="synoptique" onclick="showCossimPage('synoptique', this)">📊 Synoptique</button>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="synoptique_ext.html" class="ext-synop-btn" target="_blank">📺 Synoptique TV</a>
+      <a href="intranet.html" class="cossim-back">← Intranet</a>
+    </div>
+  </div>
+
+  <!-- PAGE CRÉATION -->
+  <div class="cossim-page active" id="cossim-page-creation">
+    <div class="creation-layout">
+      <div class="creation-main">
+        <!-- INFORMATIONS -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">📋 Informations</div>
+          <div class="cossim-card-body">
+            <div class="cossim-form-grid">
+              <div><label class="cossim-label">Numéro contre appel</label><input class="cossim-input" id="c-nca" placeholder="N° contre appel"></div>
+              <div><label class="cossim-label">Nom du contact</label><input class="cossim-input" id="c-contact" placeholder="Nom du contact"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOCALISATION -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">📍 Localisation</div>
+          <div class="cossim-card-body">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="cossim-label">Commune</label>
+              <input class="cossim-input" id="c-commune" placeholder="🔍 Rechercher une commune...">
+            </div>
+            <div class="cossim-form-grid">
+              <div><label class="cossim-label">Quartier</label><input class="cossim-input" id="c-quartier" placeholder="Quartier"></div>
+              <div><label class="cossim-label">Voie</label><input class="cossim-input" id="c-voie" placeholder="Voie / Rue"></div>
+              <div><label class="cossim-label">Numéro</label><input class="cossim-input" id="c-numero" placeholder="123"></div>
+              <div><label class="cossim-label">Précision</label><input class="cossim-input" id="c-precision" placeholder="Bâtiment A, 2ème étage..."></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETABLISSEMENT -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">🏢 Établissement répertorié</div>
+          <div class="cossim-card-body">
+            <input class="cossim-input" id="c-etablissement" placeholder="Sélectionnez un établissement">
+          </div>
+        </div>
+
+        <!-- SINISTRE -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">⚠️ Sinistre</div>
+          <div class="cossim-card-body">
+            <div class="cossim-form-grid">
+              <div>
+                <label class="cossim-label">Type de sinistre</label>
+                <select class="cossim-input cossim-select" id="c-sinistre">
+                  <option value="">Sélectionnez un sinistre</option>
+                  <option>ACCIDENT DE CIRCULATION</option>
+                  <option>ACCIDENT DE CIRCULATION DÉSINCARCÉRATION</option>
+                  <option>INCENDIE DE VÉHICULE</option>
+                  <option>INCENDIE D'HABITATION</option>
+                  <option>INCENDIE DE FORÊT / DFCI</option>
+                  <option>MALAISE / DÉTRESSE</option>
+                  <option>ARRÊT CARDIAQUE</option>
+                  <option>NOYADE</option>
+                  <option>CHUTE</option>
+                  <option>EXPLOSION</option>
+                  <option>FUITE DE GAZ</option>
+                  <option>INONDATION</option>
+                  <option>DIVERSES AIDES À PERSONNES</option>
+                </select>
+              </div>
+              <div>
+                <label class="cossim-label">Niveau</label>
+                <select class="cossim-input cossim-select" id="c-niveau">
+                  <option value="1">Niveau 1</option>
+                  <option value="2">Niveau 2</option>
+                  <option value="3">Niveau 3</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENGAGEMENT VÉHICULES -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">🚒 Engagement Véhicules</div>
+          <div class="cossim-card-body">
+            <div class="engagement-title">Sélection des engins à engager :</div>
+            <div class="engins-engagement-grid" id="engins-engagement-list"></div>
+            
+            <!-- Sous-catégories / équipe par engin -->
+            <div id="equipes-par-engin"></div>
+          </div>
+        </div>
+
+        <!-- OBSERVATIONS -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">📝 Observations</div>
+          <div class="cossim-card-body">
+            <textarea class="cossim-input" id="c-observations" rows="4" placeholder="Détails de l'intervention, observations particulières, témoignages, contexte..."></textarea>
+          </div>
+        </div>
+
+        <!-- BOUTONS -->
+        <div class="engagement-buttons">
+          <button class="btn-regulation" onclick="actionRegulation()">🚒 Régulation</button>
+          <button class="btn-diffusion" onclick="actionDiffusion()">🛡️ Diffusion ICM</button>
+          <button class="btn-annuler" onclick="reinitialiserFormulaire()">✕ Annuler</button>
+          <button class="btn-engagement-veh" onclick="engagerVehicules()">🚒 Engagement Véhicule</button>
+          <button class="btn-engagement" onclick="engagerIntervention()">📡 Engagement</button>
+        </div>
+      </div>
+
+      <!-- SIDEBAR DROITE -->
+      <div class="creation-sidebar">
+        <!-- SERVICES CONCERNÉS -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">
+            👥 Services concernés
+            <span class="service-count" id="services-count">0</span>
+          </div>
+          <div class="cossim-card-body" style="padding:10px;">
+            <div class="services-grid" id="services-grid"></div>
+          </div>
+        </div>
+
+        <!-- GÉOLOCALISATION mini -->
+        <div class="cossim-card">
+          <div class="cossim-card-header">🗺️ Géolocalisation</div>
+          <div class="cossim-card-body" style="padding:5px;">
+            <div style="background:#1a202c; height:150px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#4a5568; font-size:12px;">Carte GTA V</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE SYNOPTIQUE -->
+  <div class="cossim-page" id="cossim-page-synoptique">
+    <div class="synop-cossim-header">
+      <div style="font-size:16px; font-weight:900;">SYNOPTIQUE DES INTERVENTIONS</div>
+      <div class="synop-counter" id="synop-counter">0 intervention(s) en cours</div>
+      <button class="btn-engagement" style="margin-left:auto; padding:8px 16px; font-size:13px;" onclick="showCossimPage('creation', document.querySelector('[data-page=creation]'))">+ Nouvelle Intervention</button>
+    </div>
+    <div class="synop-inter-list" id="synop-inter-list"></div>
+  </div>
+
+  <!-- TICKET DÉPART -->
+  <div class="ticket-overlay" id="ticket-overlay">
+    <div class="ticket-modal">
+      <div class="ticket-header">
+        <h2>🚒 TICKET DE DÉPART — <span id="ticket-engin-nom"></span></h2>
+        <button onclick="document.getElementById('ticket-overlay').classList.remove('open')" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:800;">✕</button>
+      </div>
+      <div class="ticket-body">
+        <div class="ticket-section">
+          <h3>Intervention</h3>
+          <div class="ticket-grid">
+            <div class="ticket-field"><div class="ticket-field-label">Numéro</div><div class="ticket-field-value" id="t-num">--</div></div>
+            <div class="ticket-field"><div class="ticket-field-label">Date</div><div class="ticket-field-value" id="t-date">--</div></div>
+            <div class="ticket-field"><div class="ticket-field-label">Type</div><div class="ticket-field-value" id="t-type">--</div></div>
+            <div class="ticket-field"><div class="ticket-field-label">Niveau</div><div class="ticket-field-value" id="t-niveau">--</div></div>
+          </div>
+        </div>
+        <div class="ticket-section">
+          <h3>Localisation</h3>
+          <div class="ticket-grid">
+            <div class="ticket-field" style="grid-column:1/-1;"><div class="ticket-field-label">Adresse</div><div class="ticket-field-value" id="t-adresse">--</div></div>
+            <div class="ticket-field"><div class="ticket-field-label">Commune</div><div class="ticket-field-value" id="t-commune">--</div></div>
+            <div class="ticket-field"><div class="ticket-field-label">Précision</div><div class="ticket-field-value" id="t-precision">--</div></div>
+          </div>
+        </div>
+        <div class="ticket-section">
+          <h3>Équipe</h3>
+          <div id="t-equipe" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+        <div class="ticket-section">
+          <h3>Observations</h3>
+          <div class="ticket-field" style="grid-column:1/-1;"><div class="ticket-field-value" id="t-obs" style="font-weight:400; font-size:13px; color:#a0aec0;">--</div></div>
+        </div>
+        <div style="text-align:center; margin-top:15px;">
+          <button class="btn-engagement" onclick="document.getElementById('ticket-overlay').classList.remove('open'); ouvrirBERSurEngin(ticketEnginId)">📻 Ouvrir BER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cossim-toast" class="cossim-toast"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    // ===== INIT =====
+    const SERVICES_DISPONIBLES = ["CORD","COZ","DGAC","DIR","ENEDIS","GENDARMERIE","GRDF","OFFICIER CODIS","POLICE NATIONALE","SDIS 13","SAMU 13","CHEF DE SALLE CTA/CODIS","MERLIN (CDC)","ARAMIS Marseille (PREFET)","HERCALES AUB (MCS)","DRAGON 131","MEDECIN LEGAL","COMMUNICATION SDIS 13"];
+    
+    let selectedServices = [];
+    let selectedEngins = {};  // { enginId: { chefAgres, equipe: [] } }
+    let ticketEnginId = null;
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      chargerDonnees();
+      synchroniserTout();
+      renderServicesGrid();
+      renderEnginsEngagement();
+      
+      // Charger inter depuis Systel si ouvert depuis là
+      const interFromSystel = localStorage.getItem('systel_cossim_inter');
+      if (interFromSystel) {
+        showCossimPage('synoptique', document.querySelector('[data-page=synoptique]'));
+        localStorage.removeItem('systel_cossim_inter');
+      }
+    });
+
+    function synchroniserTout() {
+      USERS.forEach(u => {
+        if (!u.roles) u.roles = [u.role || 'BMPM'];
+        if (!u.role) u.role = u.roles[0];
+        if (!u.lastname && u.name) { const p = u.name.split(' '); u.lastname = p[0]; u.firstname = p.slice(1).join(' '); }
+      });
+      PERSONNELS = USERS.map(u => ({ id: u.id, nom: u.lastname || u.id.toUpperCase(), prenom: u.firstname || "", grade: u.grade || "Sapeur", photo: u.photo }));
+    }
+
+    function chargerDonnees() {
+      const d = (key) => localStorage.getItem('systel_' + key);
+      if (d('config')) CONFIG = JSON.parse(d('config'));
+      if (d('casernes')) CASERNES = JSON.parse(d('casernes'));
+      if (d('engins')) ENGINS = JSON.parse(d('engins'));
+      if (d('users')) USERS = JSON.parse(d('users'));
+      if (d('interventions')) INTERVENTIONS = JSON.parse(d('interventions'));
+      if (d('feuilles_garde')) FEUILLES_GARDE = JSON.parse(d('feuilles_garde'));
+    }
+    function sauvegarderDonnees() {
+      const s = (key, val) => localStorage.setItem('systel_' + key, JSON.stringify(val));
+      s('config', CONFIG); s('casernes', CASERNES); s('engins', ENGINS); s('users', USERS); s('interventions', INTERVENTIONS); s('feuilles_garde', FEUILLES_GARDE);
+    }
+    function userHasRole(user, role) { if (!user) return false; if (user.roles && Array.isArray(user.roles)) return user.roles.includes(role); return user.role === role; }
+    function userIsAdmin(user) { return userHasRole(user, 'ADMIN'); }
+
+    // ===== NAVIGATION =====
+    function showCossimPage(name, btn) {
+      document.querySelectorAll('.cossim-page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.cossim-nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('cossim-page-' + name).classList.add('active');
+      if (btn) btn.classList.add('active');
+      if (name === 'synoptique') renderSynoptiqueCossim();
+      if (name === 'creation') renderEnginsEngagement();
+    }
+
+    // ===== SERVICES =====
+    function renderServicesGrid() {
+      const grid = document.getElementById('services-grid');
+      grid.innerHTML = SERVICES_DISPONIBLES.map(s => `
+        <div class="service-item">
+          <input type="checkbox" id="srv-${s.replace(/\s/g,'_')}" value="${s}" onchange="toggleService('${s}')">
+          <label for="srv-${s.replace(/\s/g,'_')}">${s}</label>
+        </div>
+      `).join('');
+    }
+    function toggleService(s) {
+      const idx = selectedServices.indexOf(s);
+      if (idx === -1) selectedServices.push(s); else selectedServices.splice(idx, 1);
+      document.getElementById('services-count').textContent = selectedServices.length;
+    }
+
+    // ===== ENGINS ENGAGEMENT =====
+    function renderEnginsEngagement() {
+      const list = document.getElementById('engins-engagement-list');
+      const equipesContainer = document.getElementById('equipes-par-engin');
+      
+      list.innerHTML = ENGINS.map(e => {
+        const statDot = e.statut === 'disponible' ? '' : (e.statut === 'indisponible' ? ' indispo' : ' inter');
+        const isSelected = !!selectedEngins[e.id];
+        return `
+          <div class="engin-engagement-item ${isSelected ? 'selected' : ''}" id="engin-item-${e.id}" onclick="toggleEnginEngagement('${e.id}')">
+            <div class="engin-statut-dot${statDot}"></div>
+            <div class="engin-name">${e.nom}</div>
+            <div class="engin-section-tag">${getSectionNom(e.section)}</div>
+            ${isSelected ? '<span style="color:#38a169; font-weight:800; font-size:16px;">✓</span>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Afficher les sous-catégories d'équipe pour chaque engin sélectionné
+      equipesContainer.innerHTML = Object.keys(selectedEngins).map(enginId => {
+        const engin = ENGINS.find(e => e.id === enginId);
+        if (!engin) return '';
+        const personnelsOptions = PERSONNELS.map(p => `<option value="${p.id}">${p.nom} ${p.prenom} (${p.grade})</option>`).join('');
+        return `
+          <div class="engin-equipe-section visible" id="equipe-${enginId}">
+            <div style="font-weight:800; color:#a0aec0; font-size:13px; margin-bottom:10px;">🚒 Équipe — ${engin.nom}</div>
+            <div class="equipe-row">
+              <span style="width:100px; flex-shrink:0;">Chef d'agrès</span>
+              <select class="cossim-input" id="chef-${enginId}" style="padding:5px 10px; font-size:12px;">
+                <option value="">-- Sélectionner --</option>
+                ${personnelsOptions}
+              </select>
+            </div>
+            <div class="equipe-row">
+              <span style="width:100px; flex-shrink:0;">Pilote</span>
+              <select class="cossim-input" id="pilote-${enginId}" style="padding:5px 10px; font-size:12px;">
+                <option value="">-- Sélectionner --</option>
+                ${personnelsOptions}
+              </select>
+            </div>
+            <div class="equipe-row">
+              <span style="width:100px; flex-shrink:0;">Équipiers</span>
+              <input class="cossim-input" id="equipiers-${enginId}" placeholder="Noms des équipiers..." style="padding:5px 10px; font-size:12px;">
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleEnginEngagement(enginId) {
+      if (selectedEngins[enginId]) delete selectedEngins[enginId];
+      else selectedEngins[enginId] = { chefAgres: null, equipe: [] };
+      renderEnginsEngagement();
+    }
+
+    function getSectionNom(sectionId) {
+      for (const c of CASERNES) {
+        const s = c.sections.find(x => x.id === sectionId);
+        if (s) return `${c.nom} > ${s.nom}`;
+      }
+      return sectionId;
+    }
+
+    // ===== ACTIONS =====
+    function genNumeroIntervention() {
+      const n = INTERVENTIONS.filter(i => i.statut === 'En cours').length + 1;
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}${String(n).padStart(3,'0')}`;
+    }
+
+    function collecterDonneesFormulaire() {
+      const commune = document.getElementById('c-commune').value;
+      const voie = document.getElementById('c-voie').value;
+      const numero = document.getElementById('c-numero').value;
+      const adresse = [numero, voie, commune].filter(Boolean).join(' ');
+      return {
+        nca: document.getElementById('c-nca').value,
+        contact: document.getElementById('c-contact').value,
+        commune, voie, numero,
+        quartier: document.getElementById('c-quartier').value,
+        precision: document.getElementById('c-precision').value,
+        etablissement: document.getElementById('c-etablissement').value,
+        sinistre: document.getElementById('c-sinistre').value,
+        niveau: document.getElementById('c-niveau').value,
+        observations: document.getElementById('c-observations').value,
+        adresse: adresse || '--',
+        services: [...selectedServices],
+        engins: Object.keys(selectedEngins)
+      };
+    }
+
+    function collecterEquipes() {
+      const equipes = {};
+      Object.keys(selectedEngins).forEach(enginId => {
+        equipes[enginId] = {
+          chefAgres: document.getElementById('chef-' + enginId)?.value || null,
+          pilote: document.getElementById('pilote-' + enginId)?.value || null,
+          equipiers: document.getElementById('equipiers-' + enginId)?.value || ''
+        };
+      });
+      return equipes;
+    }
+
+    function actionRegulation() { showCossimToast("Régulation envoyée !"); }
+    function actionDiffusion() { showCossimToast("Diffusion ICM envoyée !"); }
+    function reinitialiserFormulaire() {
+      document.querySelectorAll('.cossim-input').forEach(i => { if (i.tagName !== 'SELECT') i.value = ''; else i.selectedIndex = 0; });
+      selectedServices = []; selectedEngins = {};
+      document.getElementById('services-count').textContent = '0';
+      document.querySelectorAll('#services-grid input').forEach(cb => cb.checked = false);
+      renderEnginsEngagement();
+    }
+
+    function engagerVehicules() {
+      if (Object.keys(selectedEngins).length === 0) return showCossimToast("Sélectionnez au moins un engin !", "error");
+      const data = collecterDonneesFormulaire();
+      const equipes = collecterEquipes();
+      // Mettre à jour les engins en intervention
+      Object.keys(selectedEngins).forEach(enginId => {
+        const engin = ENGINS.find(e => e.id === enginId);
+        if (engin) {
+          engin.statut = 'intervention';
+          engin.berStatut = 1; // PARTIS
+          engin.chefAgres = equipes[enginId]?.chefAgres || null;
+        }
+      });
+      sauvegarderDonnees();
+      showCossimToast(`${Object.keys(selectedEngins).length} véhicule(s) engagé(s) !`);
+    }
+
+    function engagerIntervention() {
+      const data = collecterDonneesFormulaire();
+      if (!data.sinistre) return showCossimToast("Sélectionnez un sinistre !", "error");
+      const equipes = collecterEquipes();
+      const interNum = genNumeroIntervention();
+      const now = new Date().toISOString();
+
+      const intervention = {
+        id: interNum,
+        numero: interNum,
+        date: now,
+        type: data.sinistre,
+        adresse: data.adresse,
+        commune: data.commune,
+        precision: data.precision,
+        observations: data.observations,
+        services: data.services,
+        engins: data.engins,
+        niveau: data.niveau,
+        statut: 'En cours'
+      };
+
+      INTERVENTIONS.push(intervention);
+
+      // Mettre les engins en intervention + envoyer BIP
+      data.engins.forEach(enginId => {
+        const engin = ENGINS.find(e => e.id === enginId);
+        if (engin) {
+          engin.statut = 'intervention';
+          engin.berStatut = 1; // PARTIS auto
+          engin.chefAgres = equipes[enginId]?.chefAgres || null;
+        }
+        
+        // BIP pour le chef d'agrès
+        const chefId = equipes[enginId]?.chefAgres;
+        if (chefId) {
+          const enginObj = ENGINS.find(e => e.id === enginId);
+          const bipData = {
+            userId: chefId,
+            enginId,
+            enginNom: enginObj?.nom || enginId,
+            interventionId: interNum,
+            interNum,
+            motif: data.sinistre,
+            place: 'Chef d\'agrès',
+            isChefAgres: true,
+            acquitte: false,
+            timestamp: Date.now()
+          };
+          localStorage.setItem('systel_bip_' + chefId, JSON.stringify(bipData));
+        }
+
+        // BIP pour l'équipe
+        const equipiersStr = equipes[enginId]?.equipiers || '';
+        // Envoyer ticket de départ
+        ouvrirTicketDepart(enginId, intervention, equipes[enginId]);
+      });
+
+      // Créer feuille de garde auto si pas existante
+      const today = new Date().toISOString().slice(0,10);
+      data.engins.forEach(enginId => {
+        if (!FEUILLES_GARDE[enginId]) FEUILLES_GARDE[enginId] = {};
+        if (!FEUILLES_GARDE[enginId][today]) {
+          const equipe = [];
+          const eq = equipes[enginId];
+          if (eq?.chefAgres) { const p = PERSONNELS.find(x => x.id === eq.chefAgres); if (p) equipe.push({ id: p.id, nom: `${p.nom} ${p.prenom}`, grade: p.grade, fonction: "Chef d'agrès" }); }
+          if (eq?.pilote) { const p = PERSONNELS.find(x => x.id === eq.pilote); if (p) equipe.push({ id: p.id, nom: `${p.nom} ${p.prenom}`, grade: p.grade, fonction: "Pilote" }); }
+          FEUILLES_GARDE[enginId][today] = { enginId, date: today, equipe, creePar: 'COSSIM (auto)', creeLe: now, status: 'brouillon' };
+        }
+      });
+
+      sauvegarderDonnees();
+      showCossimToast(`✅ Intervention ${interNum} créée !`);
+      setTimeout(() => { showCossimPage('synoptique', document.querySelector('[data-page=synoptique]')); reinitialiserFormulaire(); }, 1500);
+    }
+
+    // ===== TICKET DE DÉPART =====
+    function ouvrirTicketDepart(enginId, inter, equipe) {
+      const engin = ENGINS.find(e => e.id === enginId);
+      ticketEnginId = enginId;
+      document.getElementById('ticket-engin-nom').textContent = engin?.nom || enginId;
+      document.getElementById('t-num').textContent = inter.numero || inter.id;
+      document.getElementById('t-date').textContent = new Date(inter.date).toLocaleString('fr-FR');
+      document.getElementById('t-type').textContent = inter.type;
+      document.getElementById('t-niveau').textContent = 'Niveau ' + (inter.niveau || '1');
+      document.getElementById('t-adresse').textContent = inter.adresse;
+      document.getElementById('t-commune').textContent = inter.commune || '--';
+      document.getElementById('t-precision').textContent = inter.precision || '--';
+      document.getElementById('t-obs').textContent = inter.observations || '--';
+      
+      const equipeContainer = document.getElementById('t-equipe');
+      const membres = [];
+      if (equipe?.chefAgres) { const p = PERSONNELS.find(x => x.id === equipe.chefAgres); if (p) membres.push({ role: "Chef d'agrès", nom: `${p.nom} ${p.prenom}` }); }
+      if (equipe?.pilote) { const p = PERSONNELS.find(x => x.id === equipe.pilote); if (p) membres.push({ role: "Pilote", nom: `${p.nom} ${p.prenom}` }); }
+      
+      equipeContainer.innerHTML = membres.map(m => `
+        <div class="ticket-field" style="display:flex; gap:15px; align-items:center;">
+          <div style="width:120px; flex-shrink:0;"><div class="ticket-field-label">${m.role}</div></div>
+          <div class="ticket-field-value">${m.nom}</div>
+        </div>
+      `).join('') || '<div style="color:#718096; font-size:13px;">Aucune équipe renseignée</div>';
+      
+      document.getElementById('ticket-overlay').classList.add('open');
+    }
+
+    function ouvrirBERSurEngin(enginId) {
+      // Sera géré dans l'onglet Systel
+      showCossimToast("BER disponible dans SYSTEL > Interventions");
+    }
+
+    // ===== SYNOPTIQUE COSSIM =====
+    function renderSynoptiqueCossim() {
+      chargerDonnees();
+      const enCours = INTERVENTIONS.filter(i => i.statut === 'En cours');
+      document.getElementById('synop-counter').textContent = `${enCours.length} intervention(s) en cours`;
+      
+      const container = document.getElementById('synop-inter-list');
+      if (enCours.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:60px; color:#4a5568; font-size:16px;">✅ Aucune intervention en cours</div>';
+        return;
+      }
+
+      container.innerHTML = enCours.map(inter => {
+        const enginsHTML = (inter.engins || []).map(eId => {
+          const engin = ENGINS.find(e => e.id === eId);
+          if (!engin) return '';
+          const ber = engin.berStatut ? BER_STATUTS.find(b => b.code === engin.berStatut) : null;
+          const style = ber && ber.couleur ? `background:${ber.couleur}; color:white; border-color:${ber.couleur};` : 'background:#ffedd5; color:#9a3412; border-color:#f97316;';
+          return `<div class="synop-engin-dark" style="${style}">${engin.nom}${ber ? ` (${ber.code})` : ''}</div>`;
+        }).join('');
+        const servicesHTML = (inter.services || []).map(s => `<span class="synop-service-chip">${s}</span>`).join('');
+        const dateStr = inter.date ? new Date(inter.date).toLocaleString('fr-FR') : '--';
+
+        return `
+          <div class="synop-inter-row">
+            <div class="synop-inter-row-header" onclick="toggleSynopRow('${inter.id}')">
+              <div class="synop-row-num">#${inter.numero || inter.id}</div>
+              <div class="synop-row-date">${dateStr}</div>
+              <div><span class="badge badge-danger">EN COURS</span></div>
+              <div class="synop-row-type">🏠 ${inter.type}</div>
+              <div class="synop-row-lieu">${inter.adresse}</div>
+              <div class="synop-row-obs">${inter.observations || ''}</div>
+            </div>
+            <div class="synop-inter-row-body" id="synop-body-${inter.id}">
+              ${servicesHTML ? `<div class="synop-services-tags">${servicesHTML}</div>` : ''}
+              <div class="synop-engins-dark">${enginsHTML || '<span style="color:#4a5568;font-size:12px;">Aucun engin</span>'}</div>
+              <div class="synop-actions-dark">
+                <button class="synop-action-dark" onclick="terminerInterSynop('${inter.id}')">🔴 Terminer</button>
+                <button class="synop-action-dark" onclick="showCossimPage('creation', document.querySelector('[data-page=creation]'))">+ Renfort</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleSynopRow(id) {
+      const el = document.getElementById('synop-body-' + id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function terminerInterSynop(id) {
+      if (!confirm("Terminer cette intervention ?")) return;
+      const i = INTERVENTIONS.find(x => x.id === id);
+      if (i) {
+        i.statut = 'Terminée';
+        (i.engins || []).forEach(eId => {
+          const engin = ENGINS.find(e => e.id === eId);
+          if (engin) { engin.statut = 'disponible'; engin.berStatut = null; }
+        });
+        sauvegarderDonnees();
+        renderSynoptiqueCossim();
+        showCossimToast("Intervention terminée !");
+      }
+    }
+
+    function showCossimToast(msg, type = '') {
+      const t = document.getElementById('cossim-toast');
+      t.textContent = msg;
+      t.className = 'cossim-toast show' + (type ? ' ' + type : '');
+      setTimeout(() => t.className = 'cossim-toast', 3000);
+    }
+  </script>
+</body>
+</html>
