@@ -148,11 +148,20 @@
         </div>
         
         <div id="admin-tab-centre" class="admin-tab-content">
-          <div class="card"><div class="card-body admin-form-grid">
-            <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
-            <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
-            <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
-          </div></div>
+          <div class="card">
+            <div class="card-body admin-form-grid">
+              <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
+              <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
+              <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
+            </div>
+          </div>
+          <div class="card" style="margin-top:20px; border: 1px solid #fed7d7;">
+            <div class="card-body">
+              <h3 style="color:#c53030; margin-top:0;">Zone de Danger</h3>
+              <p style="font-size:12px; color:#718096; margin-bottom:15px;">Si le système présente des bugs d'affichage ou si vous voulez tout recommencer à zéro.</p>
+              <button class="btn btn-danger" onclick="resetSystem()">RÉINITIALISER TOUT LE SYSTÈME</button>
+            </div>
+          </div>
         </div>
 
         <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">

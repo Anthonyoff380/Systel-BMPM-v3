@@ -85,7 +85,15 @@ function initApp() {
   document.getElementById('nav-admin').style.display = (currentUser.role === 'ADMIN') ? 'flex' : 'none';
 
   initDate();
+  synchroniserTout(); // Forcer la synchro au démarrage
   showSection('synoptique');
+}
+
+function resetSystem() {
+  if (confirm("⚠️ ATTENTION : Cela va supprimer TOUTES vos modifications (engins, personnels, plannings) et restaurer le système par défaut. Continuer ?")) {
+    localStorage.clear();
+    location.reload();
+  }
 }
 
 // ===== NAVIGATION =====
