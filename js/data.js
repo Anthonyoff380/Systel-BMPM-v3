@@ -1,57 +1,63 @@
 /* ============================================================
-   SYSTEL POMPIERS - DATA JS (PTR VERSION v18)
+   SYSTEL POMPIERS - DONNÉES (PTR VERSION v11 - CONFIG INTRANET)
    ============================================================ */
 
 let CONFIG = {
-  nom: "Centre de Secours PTR",
+  nom: "Centre PTR",
   centre: "PTR",
   ville: "Marseille",
-  gps: [43.2965, 5.3698]
+  dateGarde: "Lundi 08 Mai 2026",
+  typeGarde: "HIVER JOUR",
+  lastUpdate: new Date().toISOString()
 };
 
+// Configuration de l'Intranet
 let INTRANET_CONFIG = {
-  title: "INTRANET BMPM",
-  subtitle: "Intranet BMPM - Simulations",
+  title: "PORTAIL INTRANET",
+  subtitle: "Centre de Secours PTR - Marseille",
   items: [
-    { id: "systel", title: "SYSTEL", desc: "Système d'Alerte et de Gestion des Moyens", url: "index.html", img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?q=80&w=400&h=400&fit=crop" },
-    { id: "cossim", title: "COSSIM", desc: "Centre Opérationnel de Simulation", url: "cossim.html", img: "https://images.unsplash.com/photo-1454165833767-027eeef1593e?q=80&w=400&h=400&fit=crop" }
+    { id: "systel", title: "SYSTEL", desc: "Gestion opérationnelle et effectifs.", img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400&h=400&fit=crop", url: "index.html" },
+    { id: "cossim", title: "COSSIM", desc: "Centre de commandement PTR.", img: "https://images.unsplash.com/photo-1516533076085-50370d2d5c21?w=400&h=400&fit=crop", url: "cossim.html" }
   ]
 };
 
 let CASERNES = [
-  {
-    id: "bmpm",
-    nom: "BMPM",
-    sections: [
-      { id: "0-EM", nom: "0 - EM" },
-      { id: "1-SANTE", nom: "1 - SANTÉ" },
-      { id: "2-SLZ", nom: "2 - SLZ" },
-      { id: "6-PTR", nom: "6 - PTR" }
-    ]
-  },
-  {
-    id: "sdis13",
-    nom: "SDIS 13",
-    sections: [
-      { id: "4-ROG", nom: "4 - ROG" },
-      { id: "ALLAUCH", nom: "ALLAUCH" }
-    ]
-  }
+  { id: "BMPM", nom: "BMPM", sections: [
+    { id: "0-EM", nom: "0 - EM" },
+    { id: "1-SANTE", nom: "1 - SANTÉ" },
+    { id: "6-PTR", nom: "6 - PTR" }
+  ]}
 ];
 
 let ENGINS = [
-  { id: "E1", nom: "VSAV 01", section: "6-PTR", statut: "disponible" },
-  { id: "E2", nom: "VPL 01", section: "6-PTR", statut: "intervention" },
-  { id: "E3", nom: "FPT 01", section: "4-ROG", statut: "disponible" }
+  { id: "VSAV01-PTR", nom: "VSAV 01", section: "6-PTR", statut: "disponible" }
 ];
 
 let USERS = [
-  { id: "admin", lastname: "ADMINISTRATEUR", firstname: "", name: "ADMINISTRATEUR", pwd: "123", role: "ADMIN", grade: "Officier", tel: "06 00 00 00 00", email: "admin@ptr.fr", photo: "" },
-  { id: "k.ianis", lastname: "KLEIN", firstname: "Ianis", name: "KLEIN Ianis", pwd: "ptr", role: "BMPM", grade: "Lieutenant", tel: "06 01 02 03 04", email: "k.ianis@ptr.fr", photo: "" }
+  { 
+    id: "admin", 
+    name: "ADMINISTRATEUR", 
+    pwd: "123", 
+    role: "ADMIN", 
+    grade: "Officier",
+    tel: "06 00 00 00 00",
+    email: "admin@ptr.fr",
+    photo: null 
+  },
+  { 
+    id: "k.ianis", 
+    name: "KLEIN Ianis", 
+    pwd: "ptr", 
+    role: "BMPM", 
+    grade: "Sapeur",
+    tel: "06 11 22 33 44",
+    email: "k.ianis@ptr.fr",
+    photo: null
+  }
 ];
 
-let PLANNING = {};
-let INTERVENTIONS = [];
 let PERSONNELS = [];
 let ANNUAIRE = [];
+let PLANNING = {};
+let INTERVENTIONS = [];
 let currentUser = null;
