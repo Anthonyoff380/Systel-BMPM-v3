@@ -126,7 +126,34 @@
 
       <!-- CARTOGRAPHIE -->
       <div id="section-cartographie" class="section">
-        <div class="card"><iframe src="https://gta-5-map.com/" style="width:100%; height:700px; border:none;"></iframe></div>
+        <div class="section-header">
+          <div class="section-title">CARTOGRAPHIE OPÉRATIONNELLE</div>
+          <div style="display:flex; gap:10px;">
+            <select id="map-marker-type" class="form-control" style="width:180px; font-size:12px; height:36px;">
+              <option value="caserne">🏠 Caserne</option>
+              <option value="etares">⚡ ETARES</option>
+              <option value="parcellaire">📦 Parcellaire</option>
+              <option value="hydrant">💧 Poteau incendie</option>
+              <option value="zone">⚠️ Zone à risque</option>
+              <option value="pv">🚗 Point de rassemblement</option>
+            </select>
+            <button class="btn btn-primary" onclick="activerAjoutMarqueur()" id="btn-add-marker">+ Ajouter lieu</button>
+            <button class="btn btn-secondary" onclick="annulerAjoutMarqueur()" id="btn-cancel-marker" style="display:none;">Annuler</button>
+          </div>
+        </div>
+        <div id="map-container" style="position:relative; height:calc(100vh - 180px);">
+          <div id="leaflet-map" style="width:100%; height:100%; border-radius:6px;"></div>
+          <div id="map-adding-hint" style="display:none; position:absolute; top:10px; left:50%; transform:translateX(-50%); background:#e53e3e; color:white; padding:8px 20px; border-radius:20px; font-weight:700; z-index:1000; pointer-events:none;">📍 Cliquez sur la carte pour placer le marqueur</div>
+          <div id="map-legend" style="position:absolute; bottom:20px; left:10px; background:white; padding:12px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; font-size:12px; min-width:160px;">
+            <div style="font-weight:800; margin-bottom:8px; color:#1a202c;">LÉGENDE</div>
+            <div>🏠 Caserne</div>
+            <div>⚡ ETARES</div>
+            <div>📦 Parcellaire</div>
+            <div>💧 Poteau incendie</div>
+            <div>⚠️ Zone à risque</div>
+            <div>🚗 Point rassemblement</div>
+          </div>
+        </div>
       </div>
 
       <!-- ADMIN -->
@@ -231,6 +258,23 @@
 <div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
 <div id="toast" class="toast"></div>
 
+<!-- MODAL PERSONNEL DETAIL -->
+<div id="modal-personnel-detail" class="modal" style="max-width:400px;">
+  <div class="modal-header">FICHE PERSONNEL</div>
+  <div class="modal-body" style="text-align:center;">
+    <div class="avatar-md" style="width:80px;height:80px;margin:0 auto 15px;"><img id="pd-img" src="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"></div>
+    <div style="font-size:20px;font-weight:900;color:var(--primary);" id="pd-nom"></div>
+    <div style="margin:5px 0;"><span class="badge badge-info" id="pd-grade" style="font-size:13px;"></span></div>
+    <div style="margin:5px 0;"><span class="badge badge-warning" id="pd-role" style="font-size:12px;"></span></div>
+    <div style="margin:10px 0;"><span class="badge" id="pd-statut" style="font-size:13px;"></span></div>
+    <div style="margin-top:15px;font-size:13px;text-align:left;background:#f8fafc;padding:12px;border-radius:8px;">
+      <div>📞 <strong id="pd-tel"></strong></div>
+      <div style="margin-top:5px;">✉️ <span id="pd-email"></span></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">FERMER</button></div>
+</div>
+
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/synoptique.js"></script>
@@ -238,5 +282,137 @@
 <script src="js/planning.js"></script>
 <script src="js/personnels.js"></script>
 <script src="js/annuaire.js"></script>
-</body>
-</html>
+
+<!-- LEAFLET MAP -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+/* PERSONNELS SYNOPTIQUE */
+.personnels-synoptique-grid { display: flex; flex-direction: column; gap: 8px; }
+.personnels-stats-bar { display: flex; gap: 15px; padding: 8px 12px; background: #f0f4f8; border-radius: 6px; font-weight: 700; font-size: 13px; margin-bottom: 5px; }
+.stat-dispo { color: #38a169; }
+.stat-indispo { color: #e53e3e; }
+.stat-total { color: #4a5568; margin-left: auto; }
+.personnel-card-syn { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+.personnel-card-syn:hover { transform: translateX(4px); }
+.syn-dispo { background: #f0fff4; border-color: #9ae6b4; }
+.syn-indispo { background: #fff5f5; border-color: #fed7d7; }
+.syn-avatar img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; }
+.syn-info { flex: 1; }
+.syn-name { font-weight: 800; font-size: 13px; color: var(--primary); }
+.syn-grade { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+/* LEAFLET custom markers */
+.map-marker-icon { font-size: 24px; text-align: center; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+</style>
+<script>
+// ===== CARTOGRAPHIE LEAFLET =====
+let leafletMap = null;
+let mapAddingMode = false;
+let mapMarkers = [];
+
+const MARKER_TYPES = {
+  caserne:    { emoji: '🏠', color: '#e53e3e', label: 'Caserne' },
+  etares:     { emoji: '⚡', color: '#dd6b20', label: 'ETARES' },
+  parcellaire:{ emoji: '📦', color: '#3182ce', label: 'Parcellaire' },
+  hydrant:    { emoji: '💧', color: '#2b6cb0', label: 'Poteau incendie' },
+  zone:       { emoji: '⚠️', color: '#e53e3e', label: 'Zone à risque' },
+  pv:         { emoji: '🚗', color: '#38a169', label: 'Point rassemblement' },
+};
+
+function initMap() {
+  if (leafletMap) return;
+  leafletMap = L.map('leaflet-map').setView([43.2965, 5.3698], 13); // Marseille
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap | BMPM SYSTEL',
+    maxZoom: 19
+  }).addTo(leafletMap);
+
+  // Charger les marqueurs sauvegardés
+  const saved = localStorage.getItem('systel_map_markers');
+  if (saved) {
+    mapMarkers = JSON.parse(saved);
+    mapMarkers.forEach(m => addLeafletMarker(m));
+  } else {
+    // Marqueur initial - caserne PTR
+    const defMarker = { id: Date.now(), type: 'caserne', lat: 43.2965, lng: 5.3698, nom: 'Caserne PTR', note: '' };
+    mapMarkers.push(defMarker);
+    addLeafletMarker(defMarker);
+    saveMapMarkers();
+  }
+
+  leafletMap.on('click', function(e) {
+    if (!mapAddingMode) return;
+    const type = document.getElementById('map-marker-type').value;
+    const nom = prompt(`Nom du lieu (${MARKER_TYPES[type].label}) :`);
+    if (!nom) return;
+    const note = prompt('Note / commentaire (optionnel) :') || '';
+    const marker = { id: Date.now(), type, lat: e.latlng.lat, lng: e.latlng.lng, nom, note };
+    mapMarkers.push(marker);
+    addLeafletMarker(marker);
+    saveMapMarkers();
+    annulerAjoutMarqueur();
+  });
+}
+
+function addLeafletMarker(m) {
+  const info = MARKER_TYPES[m.type] || MARKER_TYPES.caserne;
+  const icon = L.divIcon({
+    html: `<div class="map-marker-icon">${info.emoji}</div>`,
+    iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -18],
+    className: ''
+  });
+  const marker = L.marker([m.lat, m.lng], { icon }).addTo(leafletMap);
+  marker.bindPopup(`
+    <div style="min-width:160px; font-family:Inter,sans-serif;">
+      <div style="font-size:16px; margin-bottom:3px;">${info.emoji} <strong>${m.nom}</strong></div>
+      <div style="font-size:11px; color:#718096; text-transform:uppercase; font-weight:700;">${info.label}</div>
+      ${m.note ? `<div style="margin-top:6px;font-size:12px;color:#4a5568;">${m.note}</div>` : ''}
+      <div style="margin-top:8px; font-size:10px; color:#a0aec0;">Lat: ${m.lat.toFixed(5)} | Lng: ${m.lng.toFixed(5)}</div>
+      <button onclick="supprimerMarqueur(${m.id})" style="margin-top:8px;background:#e53e3e;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;">✕ Supprimer</button>
+    </div>
+  `);
+  m._leaflet = marker;
+}
+
+function supprimerMarqueur(id) {
+  const idx = mapMarkers.findIndex(m => m.id === id);
+  if (idx === -1) return;
+  if (mapMarkers[idx]._leaflet) leafletMap.removeLayer(mapMarkers[idx]._leaflet);
+  mapMarkers.splice(idx, 1);
+  saveMapMarkers();
+  leafletMap.closePopup();
+}
+
+function saveMapMarkers() {
+  const toSave = mapMarkers.map(({id, type, lat, lng, nom, note}) => ({id, type, lat, lng, nom, note}));
+  localStorage.setItem('systel_map_markers', JSON.stringify(toSave));
+}
+
+function activerAjoutMarqueur() {
+  mapAddingMode = true;
+  document.getElementById('btn-add-marker').style.display = 'none';
+  document.getElementById('btn-cancel-marker').style.display = 'block';
+  document.getElementById('map-adding-hint').style.display = 'block';
+  leafletMap.getContainer().style.cursor = 'crosshair';
+}
+
+function annulerAjoutMarqueur() {
+  mapAddingMode = false;
+  document.getElementById('btn-add-marker').style.display = 'block';
+  document.getElementById('btn-cancel-marker').style.display = 'none';
+  document.getElementById('map-adding-hint').style.display = 'none';
+  if (leafletMap) leafletMap.getContainer().style.cursor = '';
+}
+
+// Init map quand section cartographie est ouverte
+const _origShowSection = showSection;
+function showSection(name) {
+  _origShowSection(name);
+  if (name === 'cartographie') {
+    setTimeout(() => {
+      initMap();
+      if (leafletMap) leafletMap.invalidateSize();
+    }, 100);
+  }
+}
+</script>
