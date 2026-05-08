@@ -15,7 +15,7 @@
       <div class="auth-header">
         <div class="auth-logo">PIO</div>
         <h2>CONNEXION SYSTEL</h2>
-        <p>Veuillez vous identifier pour accéder au réseau</p>
+        <p>Veuillez vous identifier</p>
       </div>
       <form onsubmit="handleLogin(event)">
         <div class="form-group"><label>Identifiant</label><input type="text" id="login-id" required></div>
@@ -46,7 +46,7 @@
         <div class="nav-group-label">Portail</div>
         <a href="intranet.html" class="nav-item" style="text-decoration:none;">🏠 Retour Intranet</a>
       </nav>
-      <div class="sidebar-footer" onclick="handleLogout()">🚪 Déconnexion</div>
+      <div class="sidebar-footer" onclick="handleLogout()">🚪 DÉCONNEXION</div>
     </div>
 
     <div id="main-content">
@@ -118,20 +118,15 @@
         </div>
         
         <div id="admin-tab-centre" class="admin-tab-content">
-          <div class="card">
-            <div class="card-body admin-form-grid">
-              <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
-              <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
-              <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
-            </div>
-          </div>
-          <div class="card" style="margin-top:20px; border: 1px solid #fed7d7;">
-            <div class="card-body">
-              <h3 style="color:#c53030; margin-top:0;">Zone de Danger</h3>
-              <p style="font-size:12px; color:#718096; margin-bottom:15px;">Réinitialiser le système si bug d'affichage.</p>
-              <button class="btn btn-danger" onclick="resetSystem()">RÉINITIALISER TOUT LE SYSTÈME</button>
-            </div>
-          </div>
+          <div class="card"><div class="card-body admin-form-grid">
+            <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
+            <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
+            <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
+          </div></div>
+          <div class="card" style="margin-top:20px; border: 1px solid #fed7d7;"><div class="card-body">
+            <h3 style="color:#c53030; margin-top:0;">Zone de Danger</h3>
+            <button class="btn btn-danger" onclick="resetSystem()">RÉINITIALISER TOUT LE SYSTÈME</button>
+          </div></div>
         </div>
 
         <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
@@ -149,22 +144,19 @@
             <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
           </div></div>
         </div>
-        <div id="admin-tab-intranet" class="admin-tab-content" style="display:none;">
-          <div id="adm-intranet-list"></div>
-        </div>
+        <div id="admin-tab-intranet" class="admin-tab-content" style="display:none;"><div id="adm-intranet-list"></div></div>
       </div>
     </div>
   </div>
 
   <!-- MODALS -->
   <div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
-  
   <div id="modal-profil" class="modal">
     <div class="modal-header">PROFIL UTILISATEUR<span class="close" onclick="fermerModal()">&times;</span></div>
     <div class="modal-body" style="text-align:center;">
       <div class="avatar-lg" style="margin: 0 auto 15px;"><img id="prof-img" src=""></div>
       <h2 id="prof-name" style="margin:0;">...</h2>
-      <p id="prof-grade" style="font-weight:700; color:var(--text-muted); text-transform:uppercase;"></p>
+      <p id="prof-grade" style="font-weight:700; color:#718096; text-transform:uppercase;"></p>
       <div id="prof-role" class="badge">...</div>
     </div>
   </div>
@@ -175,7 +167,7 @@
       <div style="width:150px; text-align:center;">
         <div class="avatar-lg" style="margin-bottom:10px;"><img id="mu-photo-preview" src="https://www.w3schools.com/howto/img_avatar.png"></div>
         <input type="file" id="mu-photo-input" style="display:none;" onchange="handlePhotoUpload(event)">
-        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mu-photo-input').click()">CHANGER PHOTO</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mu-photo-input').click()">PHOTO</button>
       </div>
       <div style="flex:1;">
         <div class="form-group"><label>ID (Login)</label><input type="text" id="mu-id"></div>
