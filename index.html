@@ -70,6 +70,7 @@
       <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
       <div class="nav-group-label">Outils</div>
       <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
+      <div class="nav-item" data-section="effectifs" onclick="showSection('effectifs')">👥 Effectifs</div>
       <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">📍 Cartographie</div>
       <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">⚙️ Configuration</div>
       <div class="nav-group-label">Portail</div>
@@ -122,6 +123,16 @@
       <div id="section-annuaire" class="section">
         <div class="section-header"><div class="section-title">ANNUAIRE</div></div>
         <div class="annuaire-grid" id="annuaire-grid"></div>
+      </div>
+
+
+      <!-- EFFECTIFS -->
+      <div id="section-effectifs" class="section">
+        <div class="section-header">
+          <div class="section-title">EFFECTIFS DU CENTRE</div>
+          <button class="btn btn-secondary btn-sm" onclick="renderEffectifs()" style="font-size:12px;">🔄 Actualiser</button>
+        </div>
+        <div id="effectifs-container"></div>
       </div>
 
       <!-- CARTOGRAPHIE -->
@@ -282,6 +293,7 @@
 <script src="js/planning.js"></script>
 <script src="js/personnels.js"></script>
 <script src="js/annuaire.js"></script>
+<script src="js/effectifs.js"></script>
 
 <!-- LEAFLET MAP -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
