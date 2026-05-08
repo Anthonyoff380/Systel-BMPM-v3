@@ -28,26 +28,23 @@
       </div>
       <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
     </form>
-    <div id="login-error" class="login-error"></div>
+    <div id="login-error" class="login-error" style="color:#e53e3e; margin-top:10px; font-weight:700; text-align:center;"></div>
   </div>
 </div>
 
-<!-- ===== APPLICATION PRINCIPALE (Masquée par défaut) ===== -->
+<!-- ===== APPLICATION PRINCIPALE ===== -->
 <div id="app-container" style="display: none;">
-  <!-- BARRE SUPÉRIEURE -->
   <div id="topbar">
     <div id="topbar-left">
       <div id="systel-logo">SYS<span>TEL</span></div>
       <div class="tag-centre">Centre PTR</div>
     </div>
-    
     <div id="topbar-center">
       <div id="center-title">CENTRE PTR - <span id="header-date">--/--/----</span> (WEB1)</div>
     </div>
-    
     <div id="topbar-right">
       <div id="user-info" onclick="openProfilMenu()" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
-        <div class="avatar-sm" id="top-avatar"><img src="https://www.w3schools.com/howto/img_avatar.png"></div>
+        <div class="avatar-sm" id="top-avatar"><img id="top-avatar-img" src="https://www.w3schools.com/howto/img_avatar.png"></div>
         <div style="text-align:right">
           <div id="user-display-name" style="font-weight:700; font-size:13px;">Utilisateur</div>
           <span id="user-role-badge" class="badge">ROLE</span>
@@ -57,7 +54,7 @@
     </div>
   </div>
   
-      <div class="info-strip">
+  <div class="info-strip">
     <div class="info-strip-left">
       <span><strong>ETAT DU SYSTÈME :</strong> <span style="color: #68d391;">● OPÉRATIONNEL</span></span>
     </div>
@@ -65,291 +62,133 @@
   </div>
 
   <div id="main-layout">
-    <!-- MENU LATÉRAL -->
     <nav id="sidebar">
       <div class="nav-group-label">Opérationnel</div>
-      <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">
-        <span class="nav-icon">📊</span>
-        <span class="nav-label">Synoptique</span>
-      </div>
-      <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">
-        <span class="nav-icon">🔍</span>
-        <span class="nav-label">Interventions</span>
-      </div>
-      
+      <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">📊 Synoptique</div>
+      <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">🔍 Interventions</div>
       <div class="nav-group-label">Gestion</div>
-      <div class="nav-item" data-section="planning" onclick="showSection('planning')">
-        <span class="nav-icon">📅</span>
-        <span class="nav-label">Planning</span>
-      </div>
-      <div class="nav-item" data-section="personnels" onclick="showSection('personnels')">
-        <span class="nav-icon">👥</span>
-        <span class="nav-label">Effectifs</span>
-      </div>
-      
+      <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
+      <div class="nav-item" data-section="personnels" onclick="showSection('personnels')">👥 Effectifs</div>
       <div class="nav-group-label">Outils</div>
-      <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">
-        <span class="nav-icon">📖</span>
-        <span class="nav-label">Annuaire</span>
-      </div>
-      <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">
-        <span class="nav-icon">📍</span>
-        <span class="nav-label">Cartographie</span>
-      </div>
-      <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label">Configuration</span>
-      </div>
+      <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
+      <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">📍 Cartographie</div>
+      <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">⚙️ Configuration</div>
+      <div class="nav-group-label">Portail</div>
+      <a href="intranet.html" class="nav-item" style="text-decoration:none;">🏠 Intranet</a>
     </nav>
 
-    <!-- CONTENU -->
     <div id="content-area">
       <!-- SYNOPTIQUE -->
       <div id="section-synoptique" class="section active-section">
-        <div class="section-header">
-          <div class="section-title">SYNOPTIQUE DES MOYENS</div>
-        </div>
-        
-        <div id="synoptique-main-container">
-          <!-- Injecté par synoptique.js -->
-        </div>
-
+        <div class="section-header"><div class="section-title">SYNOPTIQUE DES MOYENS</div></div>
+        <div id="synoptique-main-container"></div>
         <div class="card" style="margin-top:20px;">
           <div class="card-header">PERSONNELS DU CENTRE</div>
-          <div class="card-body" id="personnels-grid"></div>
+          <div id="personnels-grid" class="card-body"></div>
         </div>
       </div>
 
       <!-- INTERVENTIONS -->
       <div id="section-interventions" class="section">
         <div class="section-header">
-          <div class="section-title">GESTION DES INTERVENTIONS</div>
-          <button class="btn btn-primary" onclick="nouvelleIntervention()">+ Nouvelle Intervention</button>
+          <div class="section-title">INTERVENTIONS</div>
+          <button class="btn btn-primary" onclick="nouvelleIntervention()">+ Nouvelle</button>
         </div>
-        <div class="card">
-          <div class="card-body">
-            <div class="toolbar">
-              <input type="text" id="search-intervention" placeholder="Rechercher..." oninput="filtrerInterventions()" />
-              <select id="filtre-statut" onchange="filtrerInterventions()">
-                <option value="">Tous les statuts</option>
-                <option value="En cours">En cours</option>
-                <option value="Terminée">Terminée</option>
-              </select>
-            </div>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>N°</th>
-                  <th>Date/Heure</th>
-                  <th>Type</th>
-                  <th>Adresse</th>
-                  <th>Engins</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="interventions-tbody"></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-body">
+          <table class="data-table">
+            <thead><tr><th>N°</th><th>Date</th><th>Type</th><th>Adresse</th><th>Engins</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="interventions-tbody"></tbody>
+          </table>
+        </div></div>
       </div>
 
       <!-- PLANNING -->
       <div id="section-planning" class="section">
         <div class="section-header">
-          <div class="section-title">PLANNING DES GARDES</div>
+          <div class="section-title">PLANNING</div>
           <div class="planning-nav">
             <button class="btn btn-secondary" onclick="semainePrecedente()">◀</button>
             <span id="planning-semaine-label">---</span>
             <button class="btn btn-secondary" onclick="semaineSuivante()">▶</button>
           </div>
         </div>
-        <div class="card">
-          <div class="card-body">
-            <table class="data-table planning-table">
-              <thead id="planning-thead"></thead>
-              <tbody id="planning-tbody"></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-body">
+          <table class="data-table"><thead id="planning-thead"></thead><tbody id="planning-tbody"></tbody></table>
+        </div></div>
       </div>
 
       <!-- EFFECTIFS -->
       <div id="section-personnels" class="section">
-        <div class="section-header">
-          <div class="section-title">GESTION DES EFFECTIFS</div>
-          <button class="btn btn-primary" onclick="ajouterPersonnel()">+ Ajouter Personnel</button>
-        </div>
-        <div class="card">
-          <div class="card-body">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Photo</th>
-                  <th>Nom</th>
-                  <th>Prénom</th>
-                  <th>Grade</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="personnels-tbody"></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="section-header"><div class="section-title">EFFECTIFS</div></div>
+        <div class="card"><div class="card-body">
+          <table class="data-table">
+            <thead><tr><th>Photo</th><th>Nom</th><th>Prénom</th><th>Grade</th><th>Statut</th></tr></thead>
+            <tbody id="personnels-tbody"></tbody>
+          </table>
+        </div></div>
       </div>
 
       <!-- ANNUAIRE -->
       <div id="section-annuaire" class="section">
-        <div class="section-header">
-          <div class="section-title">ANNUAIRE DU CENTRE</div>
-        </div>
+        <div class="section-header"><div class="section-title">ANNUAIRE</div></div>
         <div class="annuaire-grid" id="annuaire-grid"></div>
       </div>
 
-      <!-- CARTOGRAPHIE (GTA) -->
+      <!-- CARTOGRAPHIE -->
       <div id="section-cartographie" class="section">
-        <div class="section-header">
-          <div class="section-title">CARTOGRAPHIE OPÉRATIONNELLE</div>
-          <button class="btn btn-secondary" onclick="centrerCarte()">CENTRE PTR</button>
-        </div>
-        <div class="card map-card">
-          <div id="gta-map-container" class="gta-map-container">
-            <!-- La carte GTA sera injectée ici -->
-            <iframe src="https://gta-5-map.com/" id="gta-map-iframe" style="width:100%; height:600px; border:none;"></iframe>
-          </div>
-        </div>
+        <div class="card"><iframe src="https://gta-5-map.com/" style="width:100%; height:700px; border:none;"></iframe></div>
       </div>
 
       <!-- ADMIN -->
       <div id="section-admin" class="section">
-        <div class="section-header">
-          <div class="section-title">PANEL D'ADMINISTRATION</div>
-          <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">ENREGISTRER</button>
-        </div>
+        <div class="section-header"><div class="section-title">CONFIGURATION</div></div>
         <div class="admin-tabs">
           <button class="admin-tab-btn active" onclick="showAdminTab('centre')">Config Systel</button>
-          <button class="admin-tab-btn" onclick="showAdminTab('casernes')">Casernes & Sections</button>
+          <button class="admin-tab-btn" onclick="showAdminTab('casernes')">Casernes</button>
           <button class="admin-tab-btn" onclick="showAdminTab('engins')">Engins</button>
-          <button class="admin-tab-btn" onclick="showAdminTab('users')">Comptes Utilisateurs</button>
+          <button class="admin-tab-btn" onclick="showAdminTab('users')">Comptes</button>
         </div>
-        
         <div id="admin-tab-centre" class="admin-tab-content">
-          <div class="card">
-            <div class="card-body admin-form-grid">
-              <div class="form-group"><label>Nom du Centre</label><input type="text" id="adm-centre-nom"></div>
-              <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
-              <div class="form-group"><label>Ville</label><input type="text" id="adm-centre-ville"></div>
-            </div>
-          </div>
+          <div class="card"><div class="card-body admin-form-grid">
+            <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
+            <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
+            <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
+          </div></div>
         </div>
-
         <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
-          <div class="card">
-            <div class="card-body">
-              <table class="data-table">
-                <thead><tr><th>Nom</th><th>Actions</th></tr></thead>
-                <tbody id="adm-casernes-list"></tbody>
-              </table>
-            </div>
-          </div>
+          <div class="card"><div class="card-body"><table class="data-table"><thead><tr><th>Nom</th><th>Actions</th></tr></thead><tbody id="adm-casernes-list"></tbody></table></div></div>
         </div>
-
         <div id="admin-tab-engins" class="admin-tab-content" style="display:none;">
-          <div class="card">
-            <div class="card-body">
-              <button class="btn btn-success btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
-              <table class="data-table">
-                <thead><tr><th>Nom</th><th>Centre / Section</th><th>Actions</th></tr></thead>
-                <tbody id="adm-engins-list"></tbody>
-              </table>
-            </div>
-          </div>
+          <div class="card"><div class="card-body">
+            <button class="btn btn-success btn-sm" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
+            <table class="data-table"><thead><tr><th>Nom</th><th>Section</th><th>Actions</th></tr></thead><tbody id="adm-engins-list"></tbody></table>
+          </div></div>
         </div>
-
         <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
-          <div class="card">
-            <div class="card-body">
-              <button class="btn btn-success btn-sm mb-10" onclick="ajouterUserAdmin()">+ Créer un Compte</button>
-              <table class="data-table">
-                <thead><tr><th>Identifiant</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead>
-                <tbody id="adm-users-list"></tbody>
-              </table>
-            </div>
-          </div>
+          <div class="card"><div class="card-body">
+            <button class="btn btn-success btn-sm" onclick="ajouterUserAdmin()">+ Créer Compte</button>
+            <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
+          </div></div>
         </div>
-      </div>
-    </div><!-- content-area -->
-
-    <!-- PANEL DROIT -->
-    <div id="right-panel">
-      <div class="filter-group">
-        <div class="filter-title">Filtres</div>
-        <label class="checkbox-pro"><input type="checkbox" id="rp-engins" checked onchange="updateSynoptique()"> Engins</label>
-        <label class="checkbox-pro"><input type="checkbox" id="rp-personnels" checked onchange="updateSynoptique()"> Personnels</label>
-      </div>
-      <div class="filter-group">
-        <div class="filter-title">Tri</div>
-        <label class="checkbox-pro"><input type="radio" name="rp-tri" value="nom" checked onchange="updateSynoptique()"> Par nom</label>
-        <label class="checkbox-pro"><input type="radio" name="rp-tri" value="etat" onchange="updateSynoptique()"> Par état</label>
       </div>
     </div>
   </div>
 </div>
 
 <!-- MODALES -->
-<div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
-
-<!-- Modal User Admin -->
-<div id="modal-user-admin" class="modal">
-  <div class="modal-header"><span class="modal-title">Gestion de Compte</span></div>
-  <div class="modal-body">
-    <div class="form-group"><label>Identifiant</label><input type="text" id="mu-id"></div>
-    <div class="form-group"><label>Nom Complet</label><input type="text" id="mu-name"></div>
-    <div class="form-group"><label>Mot de passe</label><input type="password" id="mu-pwd"></div>
-    <div class="form-group">
-      <label>Rôle</label>
-      <select id="mu-role">
-        <option value="BMPM">BMPM (Utilisateur)</option>
-        <option value="ADMIN">ADMIN (Administrateur)</option>
-      </select>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-primary" onclick="sauvegarderUserAdmin()">Enregistrer</button>
-    <button class="btn btn-secondary" onclick="fermerModal()">Annuler</button>
-  </div>
-</div>
-
-<div id="toast" class="toast"></div>
-
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
-<script src="js/synoptique.js"></script>
-<script src="js/interventions.js"></script>
-<script src="js/planning.js"></script>
-<script src="js/personnels.js"></script>
-<script src="js/annuaire.js"></script>
-</body>
-</html>
-
-<!-- MODALE PROFIL -->
 <div id="modal-profil" class="modal">
-  <div class="modal-header">VOTRE PROFIL</div>
+  <div class="modal-header">PROFIL UTILISATEUR</div>
   <div class="modal-body" style="text-align:center;">
-    <div class="avatar-lg" style="margin: 0 auto 15px;"><img id="prof-img" src=""></div>
+    <div class="avatar-lg" style="margin:0 auto 15px;"><img id="prof-img" src=""></div>
     <h2 id="prof-name">---</h2>
     <p id="prof-grade" style="color:var(--accent); font-weight:800;"></p>
     <p>Rôle : <span id="prof-role" class="badge"></span></p>
   </div>
-  <div class="modal-footer">
-    <button class="btn btn-secondary" onclick="fermerModal()">FERMER</button>
-  </div>
+  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">FERMER</button></div>
 </div>
 
-<!-- MODALE COMPTE ADMIN -->
 <div id="modal-user-admin" class="modal" style="width:600px;">
-  <div class="modal-header">GESTION DU COMPTE</div>
+  <div class="modal-header">MODIFIER COMPTE</div>
   <div class="modal-body">
     <div style="display:flex; gap:20px;">
       <div style="text-align:center;">
@@ -358,21 +197,15 @@
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mu-photo-input').click()">CHANGER PHOTO</button>
       </div>
       <div style="flex:1;">
-        <div class="form-group"><label>Identifiant</label><input type="text" id="mu-id"></div>
+        <div class="form-group"><label>ID</label><input type="text" id="mu-id"></div>
         <div class="form-group"><label>Nom Complet</label><input type="text" id="mu-name"></div>
         <div class="form-group"><label>Mot de passe</label><input type="password" id="mu-pwd"></div>
-        <div class="form-group">
-          <label>Rôle</label>
-          <select id="mu-role"><option value="BMPM">BMPM</option><option value="ADMIN">ADMIN</option></select>
-        </div>
         <div class="form-group"><label>Grade</label><input type="text" id="mu-grade"></div>
+        <div class="form-group"><label>Rôle</label><select id="mu-role"><option value="BMPM">BMPM</option><option value="ADMIN">ADMIN</option></select></div>
       </div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
-    <button class="btn btn-primary" onclick="sauvegarderUserAdmin()">ENREGISTRER</button>
-  </div>
+  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button><button class="btn btn-primary" onclick="sauvegarderUserAdmin()">ENREGISTRER</button></div>
 </div>
 
 <div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>

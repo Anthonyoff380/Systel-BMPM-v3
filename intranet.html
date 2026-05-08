@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INTRANET - Centre PTR</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body.intranet-bg {
+      background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .intranet-container {
+      text-align: center;
+      color: white;
+      width: 100%;
+      max-width: 900px;
+    }
+    .intranet-header { margin-bottom: 50px; }
+    .intranet-logo { font-size: 48px; font-weight: 900; letter-spacing: -2px; }
+    .intranet-logo span { color: #e53e3e; }
+    
+    .portal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      padding: 20px;
+    }
+    .portal-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 40px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .portal-card:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-10px);
+      border-color: #e53e3e;
+    }
+    .portal-icon { font-size: 60px; }
+    .portal-title { font-size: 24px; font-weight: 800; text-transform: uppercase; }
+    .portal-desc { font-size: 14px; color: #a0aec0; }
+  </style>
+</head>
+<body class="intranet-bg">
+  <div class="intranet-container">
+    <div class="intranet-header">
+      <div class="intranet-logo">PORTAIL<span>INTRANET</span></div>
+      <p style="color: #a0aec0; font-weight: 600; margin-top: 10px;">Centre de Secours PTR - Marseille</p>
+    </div>
+    
+    <div class="portal-grid">
+      <a href="index.html" class="portal-card">
+        <div class="portal-icon">📊</div>
+        <div class="portal-title">SYSTEL</div>
+        <div class="portal-desc">Gestion opérationnelle, plannings et effectifs en temps réel.</div>
+      </a>
+      
+      <a href="cossim.html" class="portal-card">
+        <div class="portal-icon">🚒</div>
+        <div class="portal-title">COSSIM</div>
+        <div class="portal-desc">Centre Opérationnel de Surveillance et de Secours de l'Intérieur de Marseille.</div>
+      </a>
+    </div>
+    
+    <div style="margin-top: 50px; font-size: 12px; color: #718096;">
+      © 2026 - Direction des Systèmes d'Information - PTR
+    </div>
+  </div>
+</body>
+</html>
