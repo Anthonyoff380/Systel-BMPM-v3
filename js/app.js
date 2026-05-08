@@ -14,7 +14,7 @@ function synchroniserTout() {
   USERS.forEach(u => {
     if (!u.tel) u.tel = "06 XX XX XX XX";
     if (!u.email) u.email = `${u.id}@ptr.fr`;
-    if (!u.grade) u.grade = (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
+    if (!u.grade) u.grade = u.grade || (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
   });
 
   PERSONNELS = USERS.map(u => {
@@ -24,8 +24,6 @@ function synchroniserTout() {
       nom: (names[0] || u.id).toUpperCase(),
       prenom: names.slice(1).join(' ') || "",
       grade: u.grade,
-      statut: "Garde",
-      disponible: true,
       photo: u.photo
     };
   });
@@ -223,15 +221,13 @@ function handlePhotoUpload(e) {
 function renderPersonnels() {
   const tbody = document.getElementById('personnels-tbody');
   if (!tbody) return;
-  // ALIGNEMENT STRICT : PHOTO | NOM | PRENOM | GRADE | STATUT | ACTIONS
+  // ALIGNEMENT STRICT PTR v12 : PHOTO | NOM | PRENOM | GRADE
   tbody.innerHTML = PERSONNELS.map(p => `
     <tr>
       <td><div class="avatar-sm"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div></td>
       <td style="font-weight:700;">${p.nom}</td>
       <td>${p.prenom}</td>
       <td><span class="badge badge-info">${p.grade}</span></td>
-      <td><span class="badge ${p.disponible ? 'badge-success' : 'badge-danger'}">${p.statut}</span></td>
-      <td>${currentUser.role === 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="showSection('admin'); showAdminTab('users');">⚙️</button>` : ''}</td>
     </tr>
   `).join('');
 }
