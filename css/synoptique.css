@@ -1,137 +1,89 @@
 /* ============================================================
-   SYSTEL POMPIERS - CSS SYNOPTIQUE RÉALISTE
+   SYSTEL POMPIERS - CSS SYNOPTIQUE (PTR VERSION CORRIGÉE)
    ============================================================ */
 
-/* ===== LIGNE GARDE COURANTE ===== */
 .synop-info-bar {
-  background: var(--white);
-  padding: 12px 16px;
-  border-radius: var(--radius);
+  background: white;
+  padding: 15px 20px;
+  border-radius: 8px;
   border: 1px solid var(--border-color);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.synop-info-item { display: flex; align-items: center; gap: 8px; }
-.synop-info-label { font-weight: 700; color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
-.synop-info-value { font-weight: 600; color: var(--primary); }
-
-/* ===== GRILLE ENGINS ===== */
-.engins-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.engin-card {
-  background: var(--white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
+  justify-content: space-around;
   box-shadow: var(--shadow-sm);
 }
 
-.engin-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.synop-info-item { display: flex; align-items: center; gap: 10px; }
+.synop-info-label { font-weight: 800; color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+.synop-info-value { font-weight: 800; color: var(--accent); font-size: 16px; }
 
-.engin-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* GRILLE ENGINS */
+.engins-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
 }
 
-.engin-name { font-weight: 700; font-size: 14px; color: var(--primary); }
-.engin-status-dot { width: 10px; height: 10px; border-radius: 50%; }
+.engin-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-top: 5px solid var(--success);
+}
 
-.engin-card.status-disponible { border-top: 4px solid var(--success); }
-.engin-card.status-intervention { border-top: 4px solid var(--accent); }
-.engin-card.status-indisponible { border-top: 4px solid var(--text-muted); opacity: 0.7; }
+.engin-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.engin-card.status-intervention { border-top-color: var(--accent); }
+.engin-card.status-indisponible { border-top-color: var(--text-muted); opacity: 0.6; }
 
-.engin-type { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.engin-name { font-weight: 800; font-size: 14px; color: var(--primary); display: block; margin-bottom: 5px; }
+.engin-type { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
 
-/* ===== PERSONNELS SYNOPTIQUE ===== */
+/* GRILLE PERSONNELS */
 .personnels-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .personnel-card {
   background: #f8fafc;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: 10px 14px;
+  border-radius: 6px;
+  padding: 12px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  transition: all 0.2s;
+  border-left: 4px solid var(--success);
 }
 
-.personnel-card:hover { background: #edf2f7; border-color: #cbd5e0; }
+.personnel-card:hover { background: #edf2f7; }
+.personnel-card.dispo-false { border-left-color: var(--accent); opacity: 0.7; }
 
 .personnel-info { display: flex; flex-direction: column; }
-.personnel-name { font-weight: 700; font-size: 12px; }
-.personnel-statut { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+.personnel-name { font-weight: 800; font-size: 13px; color: var(--primary); }
+.personnel-statut { font-size: 11px; font-weight: 600; color: var(--text-muted); }
 
-.personnel-card.dispo-true { border-left: 4px solid var(--success); }
-.personnel-card.dispo-false { border-left: 4px solid var(--accent); opacity: 0.8; }
+/* PLANNING CELLS */
+.cell-g1 { background-color: #c6f6d5 !important; color: #22543d !important; font-weight: 800; }
+.cell-g2 { background-color: #bee3f8 !important; color: #2a4365 !important; font-weight: 800; }
+.cell-ast { background-color: #feebc8 !important; color: #744210 !important; font-weight: 800; }
+.cell-repos { background-color: #f7fafc !important; color: #a0aec0 !important; }
 
-/* ===== INTERVENTIONS LIST ===== */
+/* INTERVENTIONS */
 .intervention-mini-card {
   background: #fff5f5;
   border: 1px solid #feb2b2;
-  border-radius: var(--radius);
-  padding: 10px;
-  margin-bottom: 8px;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.intervention-mini-info { display: flex; flex-direction: column; gap: 2px; }
-.intervention-mini-type { font-weight: 700; color: #c53030; }
+.intervention-mini-type { font-weight: 800; color: #c53030; font-size: 13px; }
 .intervention-mini-addr { font-size: 11px; color: #742a2a; }
-
-/* ===== RIGHT PANEL (RÉALISTE) ===== */
-#right-panel {
-  width: 240px;
-  background: var(--white);
-  border-left: 1px solid var(--border-color);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
-}
-
-.filter-group { display: flex; flex-direction: column; gap: 10px; }
-.filter-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
-.checkbox-pro { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; }
-.checkbox-pro input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
-
-/* ===== PLANNING (PRO) ===== */
-.planning-table th { font-size: 10px; padding: 8px; text-align: center; }
-.planning-table td { padding: 4px; height: 40px; width: 60px; text-align: center; font-weight: 700; font-size: 11px; }
-
-.cell-g1 { background-color: #c6f6d5; color: #22543d; }
-.cell-g2 { background-color: #bee3f8; color: #2a4365; }
-.cell-ast { background-color: #feebc8; color: #744210; }
-.cell-repos { background-color: #f7fafc; color: #a0aec0; }
-.cell-form { background-color: #e9d8fd; color: #553c9a; }
-
-/* ===== CARTOGRAPHIE (PRO) ===== */
-#map-wrapper {
-  height: 500px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-  position: relative;
-}

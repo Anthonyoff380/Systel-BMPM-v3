@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - MODULE SYNOPTIQUE (RÉALISTE)
+   SYSTEL POMPIERS - MODULE SYNOPTIQUE (PTR VERSION CORRIGÉE)
    ============================================================ */
 
 function updateSynoptique() {
@@ -10,8 +10,10 @@ function updateSynoptique() {
   // Mise à jour des compteurs
   const total = PERSONNELS.length;
   const dispo = PERSONNELS.filter(p => p.disponible).length;
-  document.getElementById('total-personnels').textContent = total;
-  document.getElementById('dispo-personnels').textContent = dispo;
+  const totalEl = document.getElementById('total-personnels');
+  const dispoEl = document.getElementById('dispo-personnels');
+  if (totalEl) totalEl.textContent = total;
+  if (dispoEl) dispoEl.textContent = dispo;
 }
 
 // ===== MOYENS EN INTERVENTION =====
@@ -22,15 +24,15 @@ function renderMoyensIntervention() {
   const enginsEnIntervention = ENGINS.filter(e => e.statut === 'intervention');
 
   if (enginsEnIntervention.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:10px;">Aucun moyen engagé actuellement.</div>';
+    container.innerHTML = '<div style="color:var(--text-muted); font-style:italic; padding:10px; font-size:12px;">Aucun moyen engagé.</div>';
     return;
   }
 
   container.innerHTML = enginsEnIntervention.map(e => `
-    <div class="intervention-mini-card" onclick="showSection('interventions')">
+    <div class="intervention-mini-card">
       <div class="intervention-mini-info">
         <div class="intervention-mini-type">${e.nom}</div>
-        <div class="intervention-mini-addr">En intervention opérationnelle</div>
+        <div class="intervention-mini-addr">Opération en cours</div>
       </div>
       <span class="badge badge-danger">ENGAGÉ</span>
     </div>
@@ -42,20 +44,12 @@ function renderEngins() {
   const grid = document.getElementById('engins-grid');
   if (!grid) return;
 
-  const showEngins = document.getElementById('rp-engins')?.checked !== false;
-  if (!showEngins) { grid.innerHTML = ''; return; }
-
   grid.className = "engins-container";
   grid.innerHTML = ENGINS.map(e => {
     const statusClass = `status-${e.statut}`;
-    const dotClass = e.statut === 'disponible' ? 'var(--success)' : (e.statut === 'intervention' ? 'var(--accent)' : 'var(--text-muted)');
-
     return `
       <div class="engin-card ${statusClass}" onclick="toggleEnginStatut('${e.id}')">
-        <div class="engin-card-header">
-          <span class="engin-name">${e.nom}</span>
-          <div class="engin-status-dot" style="background-color: ${dotClass}"></div>
-        </div>
+        <span class="engin-name">${e.nom}</span>
         <span class="engin-type">${e.type}</span>
       </div>
     `;
@@ -71,33 +65,23 @@ function toggleEnginStatut(id) {
   
   sauvegarderDonnees();
   updateSynoptique();
-  showToast(`${engin.nom} : passage au statut ${engin.statut.toUpperCase()}`, engin.statut === 'intervention' ? 'error' : 'success');
 }
 
 // ===== PERSONNELS SYNOPTIQUE =====
 function renderPersonnelsSynoptique() {
   const grid = document.getElementById('personnels-grid');
-  const totalEl = document.getElementById('total-personnels');
-  const dispoEl = document.getElementById('dispo-personnels');
   if (!grid) return;
 
-  const showPersonnels = document.getElementById('rp-personnels')?.checked !== false;
-  if (!showPersonnels) { grid.innerHTML = ''; return; }
-
-  // Tri
+  let liste = [...PERSONNELS];
   const triEl = document.querySelector('input[name="rp-tri"]:checked');
   const tri = triEl ? triEl.value : 'nom';
 
-  let liste = [...PERSONNELS];
   if (tri === 'nom') {
     liste.sort((a, b) => a.nom.localeCompare(b.nom));
   } else if (tri === 'etat') {
-    const ordre = { 'GARDE 1': 0, 'GARDE 2': 1, 'ASTREINTE': 2, 'C.ORG': 3, 'Repos': 4 };
+    const ordre = { 'Garde 1': 0, 'Garde 2': 1, 'ASTREINTE': 2, 'Repos': 3 };
     liste.sort((a, b) => (ordre[a.statut] ?? 9) - (ordre[b.statut] ?? 9));
   }
-
-  if (totalEl) totalEl.textContent = `Total : ${liste.length}`;
-  if (dispoEl) dispoEl.textContent = `Disponibles : ${liste.filter(p => p.disponible).length}`;
 
   grid.className = "personnels-container";
   grid.innerHTML = liste.map(p => `
@@ -115,8 +99,6 @@ function togglePersonnelDispo(id) {
   const p = PERSONNELS.find(x => x.id === id);
   if (!p) return;
   p.disponible = !p.disponible;
-  
   sauvegarderDonnees();
   updateSynoptique();
-  showToast(`${p.nom} ${p.prenom} est maintenant ${p.disponible ? 'DISPONIBLE' : 'INDISPONIBLE'}`);
 }

@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - APPLICATION PRINCIPALE (AUTH & ROLES)
+   SYSTEL POMPIERS - APP JS (PTR VERSION CORRIGÉE & AUTOMATISÉE)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +17,7 @@ function checkAuth() {
   } else {
     document.getElementById('auth-container').style.display = 'flex';
     document.getElementById('app-container').style.display = 'none';
-    document.body.className = 'login-page';
+    document.body.classList.add('login-page');
   }
 }
 
@@ -46,14 +46,14 @@ function handleLogout() {
 
 function initApp() {
   document.getElementById('auth-container').style.display = 'none';
-  document.getElementById('app-container').style.display = 'block';
-  document.body.className = '';
+  document.getElementById('app-container').style.display = 'flex';
+  document.body.classList.remove('login-page');
 
   // Affichage infos utilisateur
   document.getElementById('user-display-name').textContent = currentUser.name;
   const badge = document.getElementById('user-role-badge');
   badge.textContent = currentUser.role;
-  badge.className = 'badge ' + (currentUser.role === 'ADMIN' ? 'badge-admin' : 'badge-bmpm');
+  badge.className = 'badge ' + (currentUser.role === 'ADMIN' ? 'badge-danger' : 'badge-info');
 
   // Restrictions de rôle
   if (currentUser.role === 'ADMIN') {
@@ -81,12 +81,16 @@ function chargerDonnees() {
   const savedPersonnels = localStorage.getItem('systel_personnels');
   const savedInterventions = localStorage.getItem('systel_interventions');
   const savedUsers = localStorage.getItem('systel_users');
+  const savedAnnuaire = localStorage.getItem('systel_annuaire');
+  const savedPlanning = localStorage.getItem('systel_planning');
 
   if (savedConfig) Object.assign(CONFIG, JSON.parse(savedConfig));
   if (savedEngins) ENGINS = JSON.parse(savedEngins);
   if (savedPersonnels) PERSONNELS = JSON.parse(savedPersonnels);
   if (savedInterventions) INTERVENTIONS = JSON.parse(savedInterventions);
   if (savedUsers) USERS = JSON.parse(savedUsers);
+  if (savedAnnuaire) ANNUAIRE = JSON.parse(savedAnnuaire);
+  if (savedPlanning) PLANNING = JSON.parse(savedPlanning);
 }
 
 function sauvegarderDonnees() {
@@ -95,11 +99,12 @@ function sauvegarderDonnees() {
   localStorage.setItem('systel_personnels', JSON.stringify(PERSONNELS));
   localStorage.setItem('systel_interventions', JSON.stringify(INTERVENTIONS));
   localStorage.setItem('systel_users', JSON.stringify(USERS));
+  localStorage.setItem('systel_annuaire', JSON.stringify(ANNUAIRE));
+  localStorage.setItem('systel_planning', JSON.stringify(PLANNING));
 }
 
 // ===== NAVIGATION =====
 function showSection(name) {
-  // Sécurité Rôle
   if (name === 'admin' && currentUser.role !== 'ADMIN') {
     showToast("Accès refusé : Droits insuffisants", "error");
     return;
@@ -124,9 +129,7 @@ function showSection(name) {
 function startClock() {
   setInterval(() => {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('fr-FR');
-    const el = document.getElementById('current-clock');
-    if (el) el.textContent = timeStr;
+    document.getElementById('current-clock').textContent = now.toLocaleTimeString('fr-FR');
   }, 1000);
 }
 
@@ -140,7 +143,7 @@ function initDate() {
   if (garde) garde.textContent = `${CONFIG.dateGarde} · ${CONFIG.typeGarde}`;
 }
 
-// ===== ADMIN PANEL (USERS) =====
+// ===== ADMIN PANEL =====
 function showAdminTab(tabName) {
   document.querySelectorAll('.admin-tab-content').forEach(tab => tab.style.display = 'none');
   document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -149,6 +152,12 @@ function showAdminTab(tabName) {
   event.target.classList.add('active');
 
   if (tabName === 'users') renderAdminUsers();
+  if (tabName === 'engins') renderAdminEngins();
+  if (tabName === 'centre') {
+    document.getElementById('adm-centre-nom').value = CONFIG.nom;
+    document.getElementById('adm-centre-code').value = CONFIG.centre;
+    document.getElementById('adm-centre-ville').value = CONFIG.ville;
+  }
 }
 
 function renderAdminUsers() {
@@ -157,13 +166,30 @@ function renderAdminUsers() {
     <tr>
       <td>${u.id}</td>
       <td>${u.name}</td>
-      <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin' : 'badge-bmpm'}">${u.role}</span></td>
+      <td><span class="badge ${u.role === 'ADMIN' ? 'badge-danger' : 'badge-info'}">${u.role}</span></td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editerUserAdmin(${idx})">Modifier</button>
         <button class="btn btn-danger btn-sm" onclick="supprimerUserAdmin(${idx})">Supprimer</button>
       </td>
     </tr>
   `).join('');
+}
+
+function renderAdminEngins() {
+  const tbody = document.getElementById('adm-engins-list');
+  tbody.innerHTML = ENGINS.map((e, idx) => `
+    <tr>
+      <td><input type="text" value="${e.nom}" onchange="ENGINS[${idx}].nom=this.value; sauvegarderDonnees();"></td>
+      <td><input type="text" value="${e.type}" onchange="ENGINS[${idx}].type=this.value; sauvegarderDonnees();"></td>
+      <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1); renderAdminEngins(); sauvegarderDonnees();">Supprimer</button></td>
+    </tr>
+  `).join('');
+}
+
+function ajouterEnginAdmin() {
+  ENGINS.push({ id: "NEW"+Date.now(), nom: "NOUVEL ENGIN", type: "FPT", statut: "disponible", etat: "P" });
+  renderAdminEngins();
+  sauvegarderDonnees();
 }
 
 let userEditIdx = null;
@@ -187,29 +213,75 @@ function editerUserAdmin(idx) {
 }
 
 function sauvegarderUserAdmin() {
-  const u = {
-    id: document.getElementById('mu-id').value,
-    name: document.getElementById('mu-name').value,
-    pwd: document.getElementById('mu-pwd').value,
-    role: document.getElementById('mu-role').value
-  };
+  const id = document.getElementById('mu-id').value;
+  const name = document.getElementById('mu-name').value;
+  const pwd = document.getElementById('mu-pwd').value;
+  const role = document.getElementById('mu-role').value;
 
-  if (userEditIdx !== null) USERS[userEditIdx] = u;
-  else USERS.push(u);
+  if (!id || !name) return showToast("Veuillez remplir les champs.", "error");
+
+  const u = { id, name, pwd, role };
+
+  if (userEditIdx !== null) {
+    // Mise à jour de l'existant
+    const oldId = USERS[userEditIdx].id;
+    USERS[userEditIdx] = u;
+    // Mettre à jour l'effectif correspondant
+    const p = PERSONNELS.find(pers => pers.nom.toUpperCase() === name.split(' ')[0].toUpperCase());
+    if (p) { p.nom = name.split(' ')[0].toUpperCase(); p.prenom = name.split(' ')[1] || ""; }
+  } else {
+    // Nouveau compte
+    USERS.push(u);
+    // CRÉATION AUTOMATIQUE EFFECTIF & ANNUAIRE
+    const names = name.split(' ');
+    const nom = (names[0] || "NOM").toUpperCase();
+    const prenom = names[1] || "Prénom";
+    
+    const newId = Date.now();
+    PERSONNELS.push({
+      id: newId,
+      nom: nom,
+      prenom: prenom,
+      grade: role === 'ADMIN' ? 'Officier' : 'Sapeur',
+      specialite: "INC",
+      statut: "Repos",
+      disponible: true
+    });
+
+    ANNUAIRE.push({
+      id: newId,
+      nom: `${nom} ${prenom}`,
+      type: "Personnel",
+      tel: "06 XX XX XX XX",
+      email: `${prenom.toLowerCase()}.${nom.toLowerCase()}@ptr.fr`
+    });
+  }
 
   sauvegarderDonnees();
   renderAdminUsers();
+  renderPersonnels();
+  renderAnnuaire();
+  updateSynoptique();
   fermerModal();
-  showToast("Compte utilisateur mis à jour");
+  showToast("Compte et effectif synchronisés !");
 }
 
 function supprimerUserAdmin(idx) {
-  if (USERS[idx].id === 'admin') return showToast("Impossible de supprimer le compte admin principal", "error");
-  if (confirm("Supprimer cet utilisateur ?")) {
+  if (USERS[idx].id === 'admin') return showToast("Action impossible.", "error");
+  if (confirm("Supprimer ce compte ? (L'effectif lié restera)")) {
     USERS.splice(idx, 1);
     sauvegarderDonnees();
     renderAdminUsers();
   }
+}
+
+function sauvegarderToutAdmin() {
+  CONFIG.nom = document.getElementById('adm-centre-nom').value;
+  CONFIG.centre = document.getElementById('adm-centre-code').value;
+  CONFIG.ville = document.getElementById('adm-centre-ville').value;
+  sauvegarderDonnees();
+  initDate();
+  showToast("Configurations enregistrées !");
 }
 
 // ===== UTILS =====
@@ -228,4 +300,37 @@ function ouvrirModal(id) {
 function fermerModal() {
   document.getElementById('modal-overlay').classList.remove('open');
   document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getStatutBadge(statut) {
+  const map = {
+    'En cours':   '<span class="badge badge-danger">En cours</span>',
+    'Terminée':   '<span class="badge badge-success">Terminée</span>',
+    'disponible': '<span class="badge badge-success">Disponible</span>',
+    'intervention':'<span class="badge badge-danger">Intervention</span>',
+    'indisponible':'<span class="badge badge-info">Indisponible</span>',
+  };
+  return map[statut] || `<span class="badge badge-info">${statut}</span>`;
+}
+
+function getGardeClass(type) {
+  if (!type) return '';
+  if (type.includes('GARDE 1')) return 'cell-g1';
+  if (type.includes('GARDE 2')) return 'cell-g2';
+  if (type.includes('ASTREINTE')) return 'cell-ast';
+  return 'cell-repos';
+}
+
+function getGardeShort(type) {
+  if (!type) return 'REPOS';
+  if (type.includes('GARDE 1')) return 'G1';
+  if (type.includes('GARDE 2')) return 'G2';
+  if (type.includes('ASTREINTE')) return 'AST';
+  return 'REPOS';
 }
