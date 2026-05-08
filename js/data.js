@@ -37,8 +37,6 @@ let USERS = [
   { 
     id: "admin", 
     name: "ADMINISTRATEUR", 
-    lastname: "ADMINISTRATEUR",
-    firstname: "",
     pwd: "123", 
     role: "ADMIN", 
     grade: "Officier",
@@ -48,12 +46,10 @@ let USERS = [
   },
   { 
     id: "k.ianis", 
-    name: "KLEIN Ianis",
-    lastname: "KLEIN",
-    firstname: "Ianis",
+    name: "KLEIN Ianis", 
     pwd: "ptr", 
     role: "BMPM", 
-    grade: "Lieutenant",
+    grade: "Sapeur",
     tel: "06 11 22 33 44",
     email: "k.ianis@ptr.fr",
     photo: null

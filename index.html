@@ -1,175 +1,114 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SYSTEL - Centre PTR</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/synoptique.css" />
-  <link rel="stylesheet" href="css/auth.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYSTEL - PIO BMPM</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/synoptique.css">
+  <link rel="stylesheet" href="css/auth.css">
 </head>
-<body class="login-page">
-
-<!-- ===== PORTAIL DE CONNEXION ===== -->
-<div id="auth-container" class="auth-container">
-  <div class="auth-card">
-    <div class="auth-header">
-      <div class="auth-logo">SYS<span>TEL</span></div>
-      <p>Portail Opérationnel - Centre PTR</p>
+<body>
+  <!-- AUTH PORTAL -->
+  <div id="auth-container" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">PIO</div>
+        <h2>CONNEXION SYSTEL</h2>
+        <p>Veuillez vous identifier pour accéder au réseau</p>
+      </div>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group"><label>Identifiant</label><input type="text" id="login-id" required></div>
+        <div class="form-group"><label>Mot de passe</label><input type="password" id="login-pwd" required></div>
+        <div id="login-error" class="error-msg"></div>
+        <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
+      </form>
     </div>
-    <form id="login-form" onsubmit="handleLogin(event)">
-      <div class="form-group">
-        <label>Identifiant</label>
-        <input type="text" id="login-id" required placeholder="Ex: k.ianis" />
-      </div>
-      <div class="form-group">
-        <label>Mot de passe</label>
-        <input type="password" id="login-pwd" required placeholder="••••••••" />
-      </div>
-      <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
-    </form>
-    <div id="login-error" class="login-error" style="color:#e53e3e; margin-top:10px; font-weight:700; text-align:center;"></div>
   </div>
-</div>
 
-<!-- ===== APPLICATION PRINCIPALE ===== -->
-<div id="app-container" style="display: none;">
-  <div id="topbar">
-    <div id="topbar-left">
-      <div id="systel-logo">SYS<span>TEL</span></div>
-      <div class="tag-centre">Centre PTR</div>
+  <!-- MAIN APP -->
+  <div id="app-container" style="display:none;">
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">PIO</div>
+        <div class="sidebar-subtitle">BMPM</div>
+      </div>
+      <nav>
+        <div class="nav-group-label">Opérationnel</div>
+        <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">📊 Synoptique</div>
+        <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">🔍 Interventions</div>
+        <div class="nav-group-label">Gestion</div>
+        <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
+        <div class="nav-group-label">Outils</div>
+        <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
+        <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">📍 Cartographie</div>
+        <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">⚙️ Configuration</div>
+        <div class="nav-group-label">Portail</div>
+        <a href="intranet.html" class="nav-item" style="text-decoration:none;">🏠 Retour Intranet</a>
+      </nav>
+      <div class="sidebar-footer" onclick="handleLogout()">🚪 Déconnexion</div>
     </div>
-    <div id="topbar-center">
-      <div id="center-title">CENTRE PTR - <span id="header-date">--/--/----</span> (WEB1)</div>
-    </div>
-    <div id="topbar-right">
-      <div id="user-info" onclick="openProfilMenu()" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
-        <div class="avatar-sm" id="top-avatar"><img id="top-avatar-img" src="https://www.w3schools.com/howto/img_avatar.png"></div>
-        <div style="text-align:right">
-          <div id="user-display-name" style="font-weight:700; font-size:13px;">Utilisateur</div>
-          <span id="user-role-badge" class="badge">ROLE</span>
+
+    <div id="main-content">
+      <header id="topbar">
+        <div id="center-title">CENTRE PTR - 08/05/2026 (WEB1)</div>
+        <div class="topbar-right">
+          <div id="current-clock" class="clock">00:00:00</div>
+          <div class="user-profile-trigger" onclick="openProfilMenu()">
+            <div class="avatar-sm"><img id="top-avatar-img" src=""></div>
+            <div class="user-info-text">
+              <div id="user-display-name" class="user-name">...</div>
+              <div id="user-role-badge" class="badge">...</div>
+            </div>
+          </div>
         </div>
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="handleLogout()" style="margin-left:15px;">🚪</button>
-    </div>
-  </div>
-  
-  <div class="info-strip">
-    <div class="info-strip-left">
-      <span><strong>ETAT DU SYSTÈME :</strong> <span style="color: #68d391;">● OPÉRATIONNEL</span></span>
-    </div>
-    <div id="current-clock">--:--:--</div>
-  </div>
+      </header>
 
-  <div id="main-layout">
-    <nav id="sidebar">
-      <div class="nav-group-label">Opérationnel</div>
-      <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">📊 Synoptique</div>
-      <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">🔍 Interventions</div>
-      <div class="nav-group-label">Gestion</div>
-      <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
-      <div class="nav-group-label">Outils</div>
-      <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
-      <div class="nav-item" data-section="effectifs" onclick="showSection('effectifs')">👥 Effectifs</div>
-      <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">📍 Cartographie</div>
-      <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">⚙️ Configuration</div>
-      <div class="nav-group-label">Portail</div>
-      <a href="intranet.html" class="nav-item" style="text-decoration:none;">🏠 Intranet</a>
-    </nav>
-
-    <div id="content-area">
       <!-- SYNOPTIQUE -->
       <div id="section-synoptique" class="section active-section">
-        <div class="section-header"><div class="section-title">SYNOPTIQUE DES MOYENS</div></div>
         <div id="synoptique-main-container"></div>
-        <div class="card" style="margin-top:20px;">
-          <div class="card-header">PERSONNELS DU CENTRE</div>
-          <div id="personnels-grid" class="card-body"></div>
+        <div class="synoptique-side-panel">
+          <div class="panel-header">PERSONNELS DU CENTRE</div>
+          <div id="personnels-grid" class="personnels-container"></div>
         </div>
       </div>
 
       <!-- INTERVENTIONS -->
       <div id="section-interventions" class="section">
         <div class="section-header">
-          <div class="section-title">INTERVENTIONS</div>
-          <button class="btn btn-primary" onclick="nouvelleIntervention()">+ Nouvelle</button>
+          <div class="section-title">SUIVI DES INTERVENTIONS</div>
+          <button class="btn btn-primary btn-sm" onclick="ouvrirModalInter()">+ NOUVELLE INTERVENTION</button>
         </div>
         <div class="card"><div class="card-body">
-          <table class="data-table">
-            <thead><tr><th>N°</th><th>Date</th><th>Type</th><th>Adresse</th><th>Engins</th><th>Statut</th><th>Actions</th></tr></thead>
-            <tbody id="interventions-tbody"></tbody>
-          </table>
+          <table class="data-table"><thead><tr><th>Heure</th><th>Lieu</th><th>Type</th><th>Engins</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="inter-tbody"></tbody></table>
         </div></div>
       </div>
 
       <!-- PLANNING -->
       <div id="section-planning" class="section">
-        <div class="section-header">
-          <div class="section-title">PLANNING</div>
-          <div class="planning-nav">
-            <button class="btn btn-secondary" onclick="semainePrecedente()">◀</button>
-            <span id="planning-semaine-label">---</span>
-            <button class="btn btn-secondary" onclick="semaineSuivante()">▶</button>
-          </div>
-        </div>
+        <div class="section-header"><div class="section-title">PLANNING DE GARDE</div></div>
         <div class="card"><div class="card-body">
           <table class="data-table"><thead id="planning-thead"></thead><tbody id="planning-tbody"></tbody></table>
         </div></div>
       </div>
 
-
-
       <!-- ANNUAIRE -->
       <div id="section-annuaire" class="section">
-        <div class="section-header"><div class="section-title">ANNUAIRE</div></div>
+        <div class="section-header"><div class="section-title">ANNUAIRE DU CENTRE</div></div>
         <div class="annuaire-grid" id="annuaire-grid"></div>
-      </div>
-
-
-      <!-- EFFECTIFS -->
-      <div id="section-effectifs" class="section">
-        <div class="section-header">
-          <div class="section-title">EFFECTIFS DU CENTRE</div>
-          <button class="btn btn-secondary btn-sm" onclick="renderEffectifs()" style="font-size:12px;">🔄 Actualiser</button>
-        </div>
-        <div id="effectifs-container"></div>
       </div>
 
       <!-- CARTOGRAPHIE -->
       <div id="section-cartographie" class="section">
-        <div class="section-header">
-          <div class="section-title">CARTOGRAPHIE OPÉRATIONNELLE</div>
-          <div style="display:flex; gap:10px;">
-            <select id="map-marker-type" class="form-control" style="width:180px; font-size:12px; height:36px;">
-              <option value="caserne">🏠 Caserne</option>
-              <option value="etares">⚡ ETARES</option>
-              <option value="parcellaire">📦 Parcellaire</option>
-              <option value="hydrant">💧 Poteau incendie</option>
-              <option value="zone">⚠️ Zone à risque</option>
-              <option value="pv">🚗 Point de rassemblement</option>
-            </select>
-            <button class="btn btn-primary" onclick="activerAjoutMarqueur()" id="btn-add-marker">+ Ajouter lieu</button>
-            <button class="btn btn-secondary" onclick="annulerAjoutMarqueur()" id="btn-cancel-marker" style="display:none;">Annuler</button>
-          </div>
-        </div>
-        <div id="map-container" style="position:relative; height:calc(100vh - 180px);">
-          <div id="leaflet-map" style="width:100%; height:100%; border-radius:6px;"></div>
-          <div id="map-adding-hint" style="display:none; position:absolute; top:10px; left:50%; transform:translateX(-50%); background:#e53e3e; color:white; padding:8px 20px; border-radius:20px; font-weight:700; z-index:1000; pointer-events:none;">📍 Cliquez sur la carte pour placer le marqueur</div>
-          <div id="map-legend" style="position:absolute; bottom:20px; left:10px; background:white; padding:12px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:1000; font-size:12px; min-width:160px;">
-            <div style="font-weight:800; margin-bottom:8px; color:#1a202c;">LÉGENDE</div>
-            <div>🏠 Caserne</div>
-            <div>⚡ ETARES</div>
-            <div>📦 Parcellaire</div>
-            <div>💧 Poteau incendie</div>
-            <div>⚠️ Zone à risque</div>
-            <div>🚗 Point rassemblement</div>
-          </div>
+        <div class="section-header"><div class="section-title">CARTOGRAPHIE OPÉRATIONNELLE</div></div>
+        <div class="card" style="height:calc(100vh - 180px);">
+          <iframe src="https://www.gta-5-map.com/" style="width:100%; height:100%; border:none;"></iframe>
         </div>
       </div>
 
-      <!-- ADMIN -->
+      <!-- ADMINISTRATION -->
       <div id="section-admin" class="section">
-        <div class="section-header"><div class="section-title">CONFIGURATION</div></div>
+        <div class="section-header"><div class="section-title">PANEL ADMINISTRATION</div></div>
         <div class="admin-tabs">
           <button class="admin-tab-btn active" onclick="showAdminTab('centre')">Config Systel</button>
           <button class="admin-tab-btn" onclick="showAdminTab('casernes')">Casernes</button>
@@ -189,7 +128,7 @@
           <div class="card" style="margin-top:20px; border: 1px solid #fed7d7;">
             <div class="card-body">
               <h3 style="color:#c53030; margin-top:0;">Zone de Danger</h3>
-              <p style="font-size:12px; color:#718096; margin-bottom:15px;">Si le système présente des bugs d'affichage ou si vous voulez tout recommencer à zéro.</p>
+              <p style="font-size:12px; color:#718096; margin-bottom:15px;">Réinitialiser le système si bug d'affichage.</p>
               <button class="btn btn-danger" onclick="resetSystem()">RÉINITIALISER TOUT LE SYSTÈME</button>
             </div>
           </div>
@@ -198,55 +137,42 @@
         <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
           <div class="card"><div class="card-body"><table class="data-table"><thead><tr><th>Nom</th><th>Actions</th></tr></thead><tbody id="adm-casernes-list"></tbody></table></div></div>
         </div>
-
         <div id="admin-tab-engins" class="admin-tab-content" style="display:none;">
           <div class="card"><div class="card-body">
-            <button class="btn btn-success btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
+            <button class="btn btn-primary btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
             <table class="data-table"><thead><tr><th>Nom</th><th>Section</th><th>Actions</th></tr></thead><tbody id="adm-engins-list"></tbody></table>
           </div></div>
         </div>
-
         <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
-          <div class="card">
-            <div class="card-body">
-              <button class="btn btn-success btn-sm mb-10" onclick="ajouterUserAdmin()">+ Créer Compte</button>
-              <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
-            </div>
-          </div>
+          <div class="card"><div class="card-body">
+            <button class="btn btn-primary btn-sm mb-10" onclick="ajouterUserAdmin()">+ Créer Compte</button>
+            <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôle</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
+          </div></div>
         </div>
-
         <div id="admin-tab-intranet" class="admin-tab-content" style="display:none;">
-          <div class="card">
-            <div class="card-body">
-              <div class="form-group"><label>Titre Portail</label><input type="text" id="adm-intra-title" onchange="INTRANET_CONFIG.title=this.value; sauvegarderDonnees();"></div>
-              <div class="form-group"><label>Sous-titre</label><input type="text" id="adm-intra-subtitle" onchange="INTRANET_CONFIG.subtitle=this.value; sauvegarderDonnees();"></div>
-              <hr>
-              <div id="adm-intranet-list"></div>
-            </div>
-          </div>
+          <div id="adm-intranet-list"></div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- MODALES -->
-<div id="modal-profil" class="modal">
-  <div class="modal-header">PROFIL UTILISATEUR</div>
-  <div class="modal-body" style="text-align:center;">
-    <div class="avatar-lg" style="margin:0 auto 15px;"><img id="prof-img" src=""></div>
-    <h2 id="prof-name">---</h2>
-    <p id="prof-grade" style="color:var(--accent); font-weight:800;"></p>
-    <p>Rôle : <span id="prof-role" class="badge"></span></p>
+  <!-- MODALS -->
+  <div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
+  
+  <div id="modal-profil" class="modal">
+    <div class="modal-header">PROFIL UTILISATEUR<span class="close" onclick="fermerModal()">&times;</span></div>
+    <div class="modal-body" style="text-align:center;">
+      <div class="avatar-lg" style="margin: 0 auto 15px;"><img id="prof-img" src=""></div>
+      <h2 id="prof-name" style="margin:0;">...</h2>
+      <p id="prof-grade" style="font-weight:700; color:var(--text-muted); text-transform:uppercase;"></p>
+      <div id="prof-role" class="badge">...</div>
+    </div>
   </div>
-  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">FERMER</button></div>
-</div>
 
-<div id="modal-user-admin" class="modal" style="width:600px;">
-  <div class="modal-header">GESTION DU COMPTE</div>
-  <div class="modal-body">
-    <div style="display:flex; gap:20px;">
-      <div style="text-align:center;">
+  <div id="modal-user-admin" class="modal">
+    <div class="modal-header">GESTION COMPTE<span class="close" onclick="fermerModal()">&times;</span></div>
+    <div class="modal-body admin-form-grid" style="display:flex; gap:20px;">
+      <div style="width:150px; text-align:center;">
         <div class="avatar-lg" style="margin-bottom:10px;"><img id="mu-photo-preview" src="https://www.w3schools.com/howto/img_avatar.png"></div>
         <input type="file" id="mu-photo-input" style="display:none;" onchange="handlePhotoUpload(event)">
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mu-photo-input').click()">CHANGER PHOTO</button>
@@ -260,171 +186,19 @@
         <div class="form-group"><label>Téléphone</label><input type="text" id="mu-tel"></div>
         <div class="form-group"><label>Email</label><input type="text" id="mu-email"></div>
         <div class="form-group"><label>Rôle</label><select id="mu-role"><option value="BMPM">BMPM</option><option value="ADMIN">ADMIN</option></select></div>
+        <button class="btn btn-primary btn-block" onclick="sauvegarderUserAdmin()">ENREGISTRER</button>
       </div>
     </div>
   </div>
-  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button><button class="btn btn-primary" onclick="sauvegarderUserAdmin()">ENREGISTRER</button></div>
-</div>
 
-<div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
-<div id="toast" class="toast"></div>
+  <div id="toast" class="toast">Message</div>
 
-<!-- MODAL PERSONNEL DETAIL -->
-<div id="modal-personnel-detail" class="modal" style="max-width:400px;">
-  <div class="modal-header">FICHE PERSONNEL</div>
-  <div class="modal-body" style="text-align:center;">
-    <div class="avatar-md" style="width:80px;height:80px;margin:0 auto 15px;"><img id="pd-img" src="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"></div>
-    <div style="font-size:20px;font-weight:900;color:var(--primary);" id="pd-nom"></div>
-    <div style="margin:5px 0;"><span class="badge badge-info" id="pd-grade" style="font-size:13px;"></span></div>
-    <div style="margin:5px 0;"><span class="badge badge-warning" id="pd-role" style="font-size:12px;"></span></div>
-    <div style="margin:10px 0;"><span class="badge" id="pd-statut" style="font-size:13px;"></span></div>
-    <div style="margin-top:15px;font-size:13px;text-align:left;background:#f8fafc;padding:12px;border-radius:8px;">
-      <div>📞 <strong id="pd-tel"></strong></div>
-      <div style="margin-top:5px;">✉️ <span id="pd-email"></span></div>
-    </div>
-  </div>
-  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">FERMER</button></div>
-</div>
-
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
-<script src="js/synoptique.js"></script>
-<script src="js/interventions.js"></script>
-<script src="js/planning.js"></script>
-<script src="js/personnels.js"></script>
-<script src="js/annuaire.js"></script>
-<script src="js/effectifs.js"></script>
-
-<!-- LEAFLET MAP -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<style>
-/* PERSONNELS SYNOPTIQUE */
-.personnels-synoptique-grid { display: flex; flex-direction: column; gap: 8px; }
-.personnels-stats-bar { display: flex; gap: 15px; padding: 8px 12px; background: #f0f4f8; border-radius: 6px; font-weight: 700; font-size: 13px; margin-bottom: 5px; }
-.stat-dispo { color: #38a169; }
-.stat-indispo { color: #e53e3e; }
-.stat-total { color: #4a5568; margin-left: auto; }
-.personnel-card-syn { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
-.personnel-card-syn:hover { transform: translateX(4px); }
-.syn-dispo { background: #f0fff4; border-color: #9ae6b4; }
-.syn-indispo { background: #fff5f5; border-color: #fed7d7; }
-.syn-avatar img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0; }
-.syn-info { flex: 1; }
-.syn-name { font-weight: 800; font-size: 13px; color: var(--primary); }
-.syn-grade { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-/* LEAFLET custom markers */
-.map-marker-icon { font-size: 24px; text-align: center; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
-</style>
-<script>
-// ===== CARTOGRAPHIE LEAFLET =====
-let leafletMap = null;
-let mapAddingMode = false;
-let mapMarkers = [];
-
-const MARKER_TYPES = {
-  caserne:    { emoji: '🏠', color: '#e53e3e', label: 'Caserne' },
-  etares:     { emoji: '⚡', color: '#dd6b20', label: 'ETARES' },
-  parcellaire:{ emoji: '📦', color: '#3182ce', label: 'Parcellaire' },
-  hydrant:    { emoji: '💧', color: '#2b6cb0', label: 'Poteau incendie' },
-  zone:       { emoji: '⚠️', color: '#e53e3e', label: 'Zone à risque' },
-  pv:         { emoji: '🚗', color: '#38a169', label: 'Point rassemblement' },
-};
-
-function initMap() {
-  if (leafletMap) return;
-  leafletMap = L.map('leaflet-map').setView([43.2965, 5.3698], 13); // Marseille
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap | BMPM SYSTEL',
-    maxZoom: 19
-  }).addTo(leafletMap);
-
-  // Charger les marqueurs sauvegardés
-  const saved = localStorage.getItem('systel_map_markers');
-  if (saved) {
-    mapMarkers = JSON.parse(saved);
-    mapMarkers.forEach(m => addLeafletMarker(m));
-  } else {
-    // Marqueur initial - caserne PTR
-    const defMarker = { id: Date.now(), type: 'caserne', lat: 43.2965, lng: 5.3698, nom: 'Caserne PTR', note: '' };
-    mapMarkers.push(defMarker);
-    addLeafletMarker(defMarker);
-    saveMapMarkers();
-  }
-
-  leafletMap.on('click', function(e) {
-    if (!mapAddingMode) return;
-    const type = document.getElementById('map-marker-type').value;
-    const nom = prompt(`Nom du lieu (${MARKER_TYPES[type].label}) :`);
-    if (!nom) return;
-    const note = prompt('Note / commentaire (optionnel) :') || '';
-    const marker = { id: Date.now(), type, lat: e.latlng.lat, lng: e.latlng.lng, nom, note };
-    mapMarkers.push(marker);
-    addLeafletMarker(marker);
-    saveMapMarkers();
-    annulerAjoutMarqueur();
-  });
-}
-
-function addLeafletMarker(m) {
-  const info = MARKER_TYPES[m.type] || MARKER_TYPES.caserne;
-  const icon = L.divIcon({
-    html: `<div class="map-marker-icon">${info.emoji}</div>`,
-    iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -18],
-    className: ''
-  });
-  const marker = L.marker([m.lat, m.lng], { icon }).addTo(leafletMap);
-  marker.bindPopup(`
-    <div style="min-width:160px; font-family:Inter,sans-serif;">
-      <div style="font-size:16px; margin-bottom:3px;">${info.emoji} <strong>${m.nom}</strong></div>
-      <div style="font-size:11px; color:#718096; text-transform:uppercase; font-weight:700;">${info.label}</div>
-      ${m.note ? `<div style="margin-top:6px;font-size:12px;color:#4a5568;">${m.note}</div>` : ''}
-      <div style="margin-top:8px; font-size:10px; color:#a0aec0;">Lat: ${m.lat.toFixed(5)} | Lng: ${m.lng.toFixed(5)}</div>
-      <button onclick="supprimerMarqueur(${m.id})" style="margin-top:8px;background:#e53e3e;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;">✕ Supprimer</button>
-    </div>
-  `);
-  m._leaflet = marker;
-}
-
-function supprimerMarqueur(id) {
-  const idx = mapMarkers.findIndex(m => m.id === id);
-  if (idx === -1) return;
-  if (mapMarkers[idx]._leaflet) leafletMap.removeLayer(mapMarkers[idx]._leaflet);
-  mapMarkers.splice(idx, 1);
-  saveMapMarkers();
-  leafletMap.closePopup();
-}
-
-function saveMapMarkers() {
-  const toSave = mapMarkers.map(({id, type, lat, lng, nom, note}) => ({id, type, lat, lng, nom, note}));
-  localStorage.setItem('systel_map_markers', JSON.stringify(toSave));
-}
-
-function activerAjoutMarqueur() {
-  mapAddingMode = true;
-  document.getElementById('btn-add-marker').style.display = 'none';
-  document.getElementById('btn-cancel-marker').style.display = 'block';
-  document.getElementById('map-adding-hint').style.display = 'block';
-  leafletMap.getContainer().style.cursor = 'crosshair';
-}
-
-function annulerAjoutMarqueur() {
-  mapAddingMode = false;
-  document.getElementById('btn-add-marker').style.display = 'block';
-  document.getElementById('btn-cancel-marker').style.display = 'none';
-  document.getElementById('map-adding-hint').style.display = 'none';
-  if (leafletMap) leafletMap.getContainer().style.cursor = '';
-}
-
-// Init map quand section cartographie est ouverte
-const _origShowSection = showSection;
-function showSection(name) {
-  _origShowSection(name);
-  if (name === 'cartographie') {
-    setTimeout(() => {
-      initMap();
-      if (leafletMap) leafletMap.invalidateSize();
-    }, 100);
-  }
-}
-</script>
+  <script src="js/data.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/synoptique.js"></script>
+  <script src="js/interventions.js"></script>
+  <script src="js/planning.js"></script>
+  <script src="js/annuaire.js"></script>
+</body>
+</html>

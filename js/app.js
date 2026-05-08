@@ -14,36 +14,29 @@ function synchroniserTout() {
   USERS.forEach(u => {
     if (!u.tel) u.tel = "06 XX XX XX XX";
     if (!u.email) u.email = `${u.id}@ptr.fr`;
-    // Grade par défaut robuste - ne jamais laisser undefined
-    if (!u.grade || u.grade === 'undefined') {
-      u.grade = (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
-    }
+    if (!u.grade) u.grade = (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
     // Séparation Nom/Prénom si besoin
     if (u.name && !u.lastname) {
       const parts = u.name.split(' ');
       u.lastname = parts[0].toUpperCase();
       u.firstname = parts.slice(1).join(' ');
     }
-    if (u.lastname) u.lastname = u.lastname.toUpperCase();
   });
-
-  const sessionUser = sessionStorage.getItem('systel_user');
-  const connectedId = sessionUser ? JSON.parse(sessionUser).id : null;
 
   PERSONNELS = USERS.map(u => ({
     id: u.id,
-    nom: u.lastname || u.name.split(' ')[0].toUpperCase(),
-    prenom: u.firstname || u.name.split(' ').slice(1).join(' '),
-    grade: u.grade || 'Sapeur',
-    // STATUT AUTOMATIQUE : DISPO si connecté, sinon INDISPO
-    statut: (connectedId && connectedId === u.id) ? "DISPO" : "INDISPO",
+    nom: u.lastname || u.id.toUpperCase(),
+    prenom: u.firstname || "",
+    grade: u.grade,
+    // STATUT AUTOMATIQUE : DISPO si connecté (sessionStorage), sinon INDISPO
+    statut: (sessionStorage.getItem('systel_user') && JSON.parse(sessionStorage.getItem('systel_user')).id === u.id) ? "DISPO" : "INDISPO",
     photo: u.photo
   }));
 
   ANNUAIRE = USERS.map(u => ({
     id: u.id,
-    nom: `${u.lastname || u.name.split(' ')[0]} ${u.firstname || u.name.split(' ').slice(1).join(' ')}`.trim(),
-    grade: u.grade || 'Sapeur',
+    nom: `${u.lastname || ""} ${u.firstname || ""}`.trim() || u.name,
+    grade: u.grade,
     tel: u.tel,
     email: u.email,
     photo: u.photo
@@ -115,7 +108,6 @@ function showSection(name) {
   if (name === 'synoptique') updateSynoptique();
   if (name === 'planning') renderPlanning();
   if (name === 'annuaire') renderAnnuaire();
-  if (name === 'effectifs') renderEffectifs();
   if (name === 'admin') showAdminTab('centre');
 }
 

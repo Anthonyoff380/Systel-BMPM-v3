@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - MODULE SYNOPTIQUE (BMPM v18 - CORRIGÉ)
+   SYSTEL POMPIERS - MODULE SYNOPTIQUE (PTR VERSION v17)
    ============================================================ */
 
 function updateSynoptique() {
@@ -21,12 +21,12 @@ function updateSynoptique() {
             const enginsSection = ENGINS.filter(e => e.section === section.id);
             const hasEngins = enginsSection.length > 0;
             const statusColor = hasEngins ? 'green' : 'red';
-
+            
             return `
               <div class="section-row">
                 <div class="section-label ${statusColor}">
                   <div class="section-name">${section.nom}</div>
-                  <div class="section-stats">(${enginsSection.length})</div>
+                  <div class="section-stats">(${enginsSection.length}/0/0)</div>
                 </div>
                 <div class="section-engins">
                   ${enginsSection.map(e => `
@@ -46,6 +46,33 @@ function updateSynoptique() {
   renderPersonnelsSynoptique();
 }
 
+function renderPersonnelsSynoptique() {
+  const grid = document.getElementById('personnels-grid');
+  if (!grid) return;
+  
+  // FORCER LA SYNCHRO DES STATUTS AVANT LE RENDU
+  const currentUserId = sessionStorage.getItem('systel_user') ? JSON.parse(sessionStorage.getItem('systel_user')).id : null;
+
+  grid.innerHTML = USERS.map(u => {
+    // Statut : DISPO si c'est l'utilisateur actuel connecté, sinon INDISPO
+    const isConnected = (currentUserId === u.id);
+    const statut = isConnected ? "DISPO" : "INDISPO";
+    const grade = u.grade || (u.role === 'ADMIN' ? 'Officier' : 'Sapeur');
+    const nomComplet = `${u.lastname || u.id.toUpperCase()} ${u.firstname || ""}`.trim();
+
+    return `
+      <div class="card" style="display:flex; align-items:center; gap:12px; padding:10px; margin-bottom:8px; border-left: 4px solid ${isConnected ? '#48bb78' : '#e53e3e'};">
+        <div class="avatar-sm"><img src="${u.photo || 'https://www.w3schools.com/howto/img_avatar.png'}"></div>
+        <div style="flex:1;">
+          <div style="font-weight:800; font-size:13px; color:var(--primary);">${nomComplet}</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">${grade}</div>
+        </div>
+        <span class="badge ${isConnected ? 'badge-success' : 'badge-danger'}" style="font-size:9px;">${statut}</span>
+      </div>
+    `;
+  }).join('');
+}
+
 function toggleEnginStatut(id) {
   const engin = ENGINS.find(e => e.id === id);
   if (!engin) return;
@@ -54,75 +81,4 @@ function toggleEnginStatut(id) {
   engin.statut = cycle[(idx + 1) % cycle.length];
   sauvegarderDonnees();
   updateSynoptique();
-}
-
-function renderPersonnelsSynoptique() {
-  const grid = document.getElementById('personnels-grid');
-  if (!grid) return;
-
-  const sessionUser = sessionStorage.getItem('systel_user');
-  const connectedId = sessionUser ? JSON.parse(sessionUser).id : null;
-
-  PERSONNELS.forEach(p => {
-    const user = USERS.find(u => u.id === p.id);
-    p.statut = (connectedId && connectedId === p.id) ? "DISPO" : "INDISPO";
-    if (user && user.grade && user.grade !== 'undefined') {
-      p.grade = user.grade;
-    } else if (!p.grade || p.grade === 'undefined') {
-      p.grade = 'Sapeur';
-    }
-  });
-
-  const dispo = PERSONNELS.filter(p => p.statut === 'DISPO').length;
-  const total = PERSONNELS.length;
-
-  grid.className = "personnels-synoptique-grid";
-  grid.innerHTML = `
-    <div class="personnels-stats-bar">
-      <span class="stat-dispo">✔ DISPO : ${dispo}</span>
-      <span class="stat-indispo">✖ INDISPO : ${total - dispo}</span>
-      <span class="stat-total">TOTAL : ${total}</span>
-    </div>
-    ${PERSONNELS.map(p => {
-      const grade = (p.grade && p.grade !== 'undefined' && p.grade !== '') ? p.grade : 'N/A';
-      const isDispo = p.statut === 'DISPO';
-      return `
-        <div class="personnel-card-syn ${isDispo ? 'syn-dispo' : 'syn-indispo'}" onclick="showPersonnelDetail('${p.id}')">
-          <div class="syn-avatar"><img src="${p.photo || 'https://www.w3schools.com/howto/img_avatar.png'}" onerror="this.src='https://www.w3schools.com/howto/img_avatar.png'"></div>
-          <div class="syn-info">
-            <div class="syn-name">${p.nom} ${p.prenom}</div>
-            <div class="syn-grade">${grade}</div>
-          </div>
-          <span class="badge ${isDispo ? 'badge-success' : 'badge-danger'}">${p.statut}</span>
-        </div>
-      `;
-    }).join('')}
-  `;
-}
-
-function showPersonnelDetail(pid) {
-  const p = PERSONNELS.find(x => x.id === pid);
-  const u = USERS.find(x => x.id === pid);
-  if (!p) return;
-
-  let grade = 'N/A';
-  if (u && u.grade && u.grade !== 'undefined' && u.grade !== '') {
-    grade = u.grade;
-  } else if (p.grade && p.grade !== 'undefined' && p.grade !== '') {
-    grade = p.grade;
-  }
-
-  const modal = document.getElementById('modal-personnel-detail');
-  if (modal) {
-    document.getElementById('pd-img').src = p.photo || 'https://www.w3schools.com/howto/img_avatar.png';
-    document.getElementById('pd-nom').textContent = p.nom + ' ' + p.prenom;
-    document.getElementById('pd-grade').textContent = grade;
-    document.getElementById('pd-role').textContent = u ? u.role : '—';
-    document.getElementById('pd-tel').textContent = u ? (u.tel || '—') : '—';
-    document.getElementById('pd-email').textContent = u ? (u.email || '—') : '—';
-    const statusEl = document.getElementById('pd-statut');
-    statusEl.textContent = p.statut;
-    statusEl.className = 'badge ' + (p.statut === 'DISPO' ? 'badge-success' : 'badge-danger');
-    ouvrirModal('modal-personnel-detail');
-  }
 }
