@@ -9,7 +9,7 @@ function renderInterventionsSynoptique() {
   const nbEngins = enCours.reduce((acc,i) => acc + (i.engins||[]).length, 0);
   let html = `<div class="synop-inter-header">
     <span>${enCours.length} Intervention${enCours.length>1?'s':''} en cours &bull; ${nbEngins} Engins engagés</span>
-    <a href="cossim.html" class="btn btn-primary btn-sm" style="text-decoration:none;">🚨 OUVRIR COSSIM</a>
+    ${(typeof currentUser !== "undefined" && userHasCOSSIM(currentUser)) ? '<a href="cossim.html" class="btn btn-primary btn-sm" style="text-decoration:none;">🚨 OUVRIR COSSIM</a>' : ""}
   </div>`;
   if (enCours.length === 0) {
     html += `<div class="synop-inter-empty">✅ Aucune intervention en cours</div>`;
@@ -45,7 +45,7 @@ function renderInterventionCard(inter) {
         ${servicesHTML ? `<div class="synop-services-row">${servicesHTML}</div>` : ''}
         <div class="synop-engins-row">${enginsHTML||'<span style="color:#999;font-size:12px;">Aucun engin engagé</span>'}</div>
         <div class="synop-inter-actions">
-          <button class="synop-action-btn" onclick="terminerIntervention('${inter.id}')" title="Terminer">🔴</button>
+          ${(typeof currentUser !== "undefined" && userHasCOSSIM(currentUser)) ? `<button class="synop-action-btn" onclick="terminerIntervention('${inter.id}')" title="Terminer">🔴</button>` : ""}
           <button class="synop-action-btn" onclick="relancerCOSSIM('${inter.id}')" title="Ouvrir COSSIM">🟢</button>
           <button class="synop-action-btn" onclick="infoIntervention('${inter.id}')" title="Info">ℹ️</button>
         </div>
@@ -64,18 +64,26 @@ function toggleInterCard(id) {
 
 function terminerIntervention(id) {
   if (!confirm("Terminer cette intervention ?")) return;
-  const i = INTERVENTIONS.find(x => x.id === id);
-  if (i) {
-    i.statut = 'Terminée';
-    (i.engins||[]).forEach(eId => {
-      const engin = ENGINS.find(e => e.id === eId);
-      if (engin) { engin.statut = 'disponible'; engin.berStatut = null; }
-    });
-    sauvegarderDonnees();
-    renderInterventionsSynoptique();
-    updateSynoptique();
-    showToast("Intervention terminée !");
-  }
+  // Trouver et mettre à jour le statut
+  const idx = INTERVENTIONS.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const inter = INTERVENTIONS[idx];
+  inter.statut = 'Terminée';
+  inter.dateFin = new Date().toISOString();
+  // Remettre tous les engins engagés en disponible
+  (inter.engins || []).forEach(eId => {
+    const engin = ENGINS.find(e => e.id === eId);
+    if (engin) {
+      engin.statut = 'disponible';
+      engin.berStatut = null;
+      engin.chefAgres = null;
+    }
+  });
+  sauvegarderDonnees();
+  // Forcer re-render complet
+  renderInterventionsSynoptique();
+  if (typeof updateSynoptique === 'function') updateSynoptique();
+  showToast("Intervention #" + id + " terminée !");
 }
 function relancerCOSSIM(id) { localStorage.setItem('systel_cossim_inter', id); window.open('cossim.html','_blank'); }
 function infoIntervention(id) {
@@ -100,8 +108,13 @@ function ouvrirBER(enginId) {
     const activeBtn = document.getElementById('ber-btn-' + engin.berStatut);
     if (activeBtn) activeBtn.classList.add('ber-active-btn');
     const ber = BER_STATUTS.find(b => b.code === engin.berStatut);
-    const lbl = document.getElementById('ber-active-label');
-    if (lbl && ber) { lbl.textContent = '✓ ' + ber.code + ' – ' + ber.label; lbl.style.display = 'block'; }
+    // Mettre à jour l'écran LCD
+  const lcd2 = document.getElementById('ber-lcd-statut');
+  const lcdE = document.getElementById('ber-lcd-engin');
+  const lcdC = document.getElementById('ber-lcd-code');
+  if (lcd2) lcd2.textContent = ber ? ber.label : 'En attente';
+  if (lcdE) lcdE.textContent = engin.nom;
+  if (lcdC) { lcdC.textContent = ber ? ber.code : ''; lcdC.style.color = ber?.couleur || '#0a2a10'; }
   } else {
     const lbl = document.getElementById('ber-active-label');
     if (lbl) lbl.style.display = 'none';
@@ -122,18 +135,23 @@ function changerStatutBER(code) {
     engin.statut = 'intervention';
   }
   sauvegarderDonnees();
-  // Mettre à jour visuel des boutons
+  // Reset tous les boutons
   for (let i = 1; i <= 9; i++) {
     const btn = document.getElementById('ber-btn-' + i);
     if (btn) btn.classList.remove('ber-active-btn');
   }
+  // Activer le bouton cliqué
   const activeBtn = document.getElementById('ber-btn-' + code);
   if (activeBtn) activeBtn.classList.add('ber-active-btn');
+  // Mettre à jour l'écran LCD de la radio
   const ber = BER_STATUTS.find(b => b.code === code);
-  const lbl = document.getElementById('ber-active-label');
-  if (lbl && ber) { lbl.textContent = '✓ ' + ber.code + ' – ' + ber.label; lbl.style.display = 'block'; }
+  const lcd = document.getElementById('ber-lcd-statut');
+  const lcdEngin = document.getElementById('ber-lcd-engin');
+  const lcdCode = document.getElementById('ber-lcd-code');
+  if (lcd) lcd.textContent = ber ? ber.label : '--';
+  if (lcdEngin) lcdEngin.textContent = engin.nom;
+  if (lcdCode) { lcdCode.textContent = ber ? ber.code : ''; lcdCode.style.color = ber?.couleur || '#0a2a10'; }
   renderInterventionsSynoptique();
-  updateSynoptique();
-  const berInfo = BER_STATUTS.find(b => b.code === code);
-  showToast(`${engin.nom} → ${berInfo ? berInfo.label : code}`);
+  if (typeof updateSynoptique === 'function') updateSynoptique();
+  showToast(engin.nom + ' → ' + (ber ? ber.label : code));
 }

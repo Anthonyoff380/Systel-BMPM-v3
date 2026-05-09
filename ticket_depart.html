@@ -2,260 +2,227 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TICKET DE DÉPART — Chef d'agrès</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TICKET DE DÉPART</title>
   <style>
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body {
-      background: #0d1117;
-      color: #e2e8f0;
-      font-family: 'Courier New', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 30px 16px;
-    }
-    .ticket-header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-    .ticket-header h1 {
-      font-size: 22px;
-      font-weight: 900;
-      color: #fc8181;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .ticket-header .subtitle {
-      font-size: 13px;
-      color: #718096;
-      margin-top: 4px;
-    }
-    .ticket-card {
-      background: #161b22;
-      border: 2px solid #e53e3e;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 480px;
-      padding: 24px;
-      margin-bottom: 20px;
-    }
-    .ticket-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 10px 0;
-      border-bottom: 1px solid #21262d;
-      gap: 12px;
-    }
-    .ticket-row:last-child { border-bottom: none; }
-    .ticket-label {
-      font-size: 11px;
-      color: #718096;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-      min-width: 110px;
-    }
-    .ticket-value {
-      font-size: 14px;
-      font-weight: 900;
-      color: #fbd38d;
-      text-align: right;
-      flex: 1;
-    }
-    .ticket-motif {
-      font-size: 18px;
-      font-weight: 900;
-      color: #fc8181;
-      text-align: center;
-      margin-bottom: 20px;
-      padding: 14px;
-      background: rgba(229,62,62,0.1);
-      border-radius: 8px;
-      border: 1px solid rgba(229,62,62,0.3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .badge-ca {
-      display: inline-block;
-      background: #e53e3e;
-      color: white;
-      font-size: 12px;
-      font-weight: 900;
-      padding: 4px 14px;
-      border-radius: 20px;
-      letter-spacing: 1px;
-      margin-bottom: 16px;
-    }
-    .postes-section {
-      background: #161b22;
-      border: 1px solid #21262d;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 480px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .postes-section h3 {
-      font-size: 12px;
-      color: #718096;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 14px;
-    }
-    .poste-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid #21262d;
-    }
-    .poste-row:last-child { border-bottom: none; }
-    .poste-num {
-      font-size: 12px;
-      color: #4a5568;
-      min-width: 20px;
-    }
-    .poste-abrev {
-      background: #e53e3e;
-      color: white;
-      font-size: 11px;
-      font-weight: 900;
-      padding: 3px 10px;
-      border-radius: 4px;
-      min-width: 50px;
-      text-align: center;
-    }
-    .poste-label {
-      font-size: 13px;
-      color: #a0aec0;
-      flex: 1;
-    }
-    .poste-agent {
-      font-size: 13px;
-      font-weight: 700;
-      color: #7fff50;
-    }
-    .timestamp {
-      font-size: 11px;
-      color: #4a5568;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .btn-print {
-      background: #e53e3e;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 30px;
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-    .btn-print:hover { background: #c53030; }
-    .btn-close {
-      background: transparent;
-      color: #718096;
-      border: 1px solid #21262d;
-      border-radius: 8px;
-      padding: 10px 24px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .btn-close:hover { color: #a0aec0; }
-    .btns { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:480px; }
-    @media print {
-      body { background: white; color: black; padding: 10px; }
-      .ticket-card, .postes-section { border-color: #333; background: white; }
-      .ticket-value { color: #333; }
-      .ticket-label { color: #666; }
-      .btn-print, .btn-close { display: none; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#e8e8e8;font-family:'Times New Roman',Times,serif;color:#000;}
+    .print-bar{display:flex;gap:10px;justify-content:center;padding:10px;background:#2d3748;position:sticky;top:0;z-index:10;}
+    .btn-print{background:#e53e3e;color:#fff;border:none;padding:8px 24px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;}
+    .btn-close-pg{background:#fff;color:#333;border:1px solid #ccc;padding:8px 18px;border-radius:5px;font-size:13px;cursor:pointer;}
+    .page{background:#fff;width:210mm;margin:10px auto;padding:12mm 15mm;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+
+    /* HEADER */
+    .doc-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;margin-bottom:5mm;gap:4mm;}
+    .doc-top-left{font-size:9.5pt;line-height:1.7;}
+    .doc-top-mid{text-align:center;font-size:28pt;font-weight:900;letter-spacing:3px;padding:0 8mm;}
+    .doc-top-right{text-align:right;}
+    .engin-big{font-size:26pt;font-weight:900;letter-spacing:-0.5px;}
+    .engin-sub{font-size:9pt;color:#555;margin-top:1mm;}
+
+    /* CADRE SINISTRE */
+    .sinistre-box{border:2.5px solid #000;text-align:center;padding:4px;margin-bottom:4mm;}
+    .sinistre-box div{font-size:13pt;font-weight:900;letter-spacing:2px;}
+
+    /* SECTIONS */
+    .section{border:1.5px solid #000;margin-bottom:3.5mm;}
+    .s-title{background:#000;color:#fff;text-align:center;font-size:10pt;font-weight:700;padding:2px 6px;letter-spacing:1px;}
+    .s-body{padding:3.5mm 5mm;}
+
+    /* GRILLE */
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5mm 10mm;}
+    .irow{display:flex;gap:4px;align-items:baseline;min-height:6mm;}
+    .ilbl{font-weight:700;white-space:nowrap;min-width:88px;font-size:9.5pt;}
+    .ival{border-bottom:1px solid #bbb;flex:1;min-height:5.5mm;padding-left:2px;font-size:9.5pt;line-height:1.4;}
+
+    /* OBS */
+    .obs-body{font-size:9.5pt;line-height:1.9;min-height:24mm;white-space:pre-wrap;}
+
+    /* TABLE ARMEMENT */
+    .arm-table{width:100%;border-collapse:collapse;font-size:9.5pt;}
+    .arm-table th{font-weight:700;padding:1.5px 5px;border-bottom:1.5px solid #000;font-size:9pt;text-align:left;}
+    .arm-table td{padding:2.5px 5px;border-bottom:1px solid #ddd;}
+    .arm-table tr:last-child td{border-bottom:none;}
+
+    /* BAS 2 COLONNES */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm;margin-top:3.5mm;}
+    .btable{width:100%;border-collapse:collapse;font-size:9pt;}
+    .btable th{font-weight:700;padding:1.5px 4px;border-bottom:1.5px solid #000;text-align:left;}
+    .btable td{padding:2px 4px;border-bottom:1px solid #eee;}
+    .btable tr:last-child td{border-bottom:none;}
+    .empty-row{color:#aaa;font-style:italic;font-size:8.5pt;}
+
+    @media print{
+      body{background:#fff;}
+      .print-bar{display:none;}
+      .page{margin:0;padding:10mm 14mm;box-shadow:none;width:100%;}
     }
   </style>
 </head>
 <body>
 
-<div class="ticket-header">
-  <div class="badge-ca">CHEF D'AGRÈS — C/A</div>
-  <h1>🚒 Ticket de départ</h1>
-  <div class="subtitle" id="ts">Chargement...</div>
-</div>
-
-<div class="ticket-card">
-  <div class="ticket-motif" id="t-motif">---</div>
-  <div class="ticket-row">
-    <span class="ticket-label">Engin</span>
-    <span class="ticket-value" id="t-engin">---</span>
-  </div>
-  <div class="ticket-row">
-    <span class="ticket-label">N° Intervention</span>
-    <span class="ticket-value" id="t-inter">---</span>
-  </div>
-  <div class="ticket-row">
-    <span class="ticket-label">Adresse</span>
-    <span class="ticket-value" id="t-adresse">---</span>
-  </div>
-  <div class="ticket-row">
-    <span class="ticket-label">Heure départ</span>
-    <span class="ticket-value" id="t-heure">---</span>
-  </div>
-</div>
-
-<div class="postes-section" id="postes-section" style="display:none;">
-  <h3>Composition de l'équipage</h3>
-  <div id="postes-list"></div>
-</div>
-
-<div class="btns">
+<div class="print-bar">
   <button class="btn-print" onclick="window.print()">🖨️ IMPRIMER</button>
-  <button class="btn-close" onclick="window.close()">Fermer</button>
+  <button class="btn-close-pg" onclick="window.close()">✕ Fermer</button>
 </div>
 
+<div class="page">
+
+  <!-- EN-TÊTE -->
+  <div class="doc-top">
+    <div class="doc-top-left">
+      <div id="h-type" style="font-weight:700;">RENFORT STANDARD</div>
+      <div id="h-datetime" style="font-size:9pt;color:#444;"></div>
+    </div>
+    <div class="doc-top-mid" id="h-centre">PTR</div>
+    <div class="doc-top-right">
+      <div class="engin-big" id="h-engin">--</div>
+      <div class="engin-sub" id="h-num">N° --</div>
+    </div>
+  </div>
+
+  <!-- TITRE INTERVENTION -->
+  <div class="sinistre-box">
+    <div id="t-sinistre">INTERVENTION</div>
+  </div>
+
+  <!-- LOCALISATION -->
+  <div class="section">
+    <div class="s-title">LOCALISATION DU SINISTRE</div>
+    <div class="s-body">
+      <div class="info-grid">
+        <div class="irow"><span class="ilbl">Commune:</span><span class="ival" id="t-commune"></span></div>
+        <div class="irow"><span class="ilbl">Numéro:</span><span class="ival" id="t-numero"></span></div>
+        <div class="irow"><span class="ilbl">Voie:</span><span class="ival" id="t-voie"></span></div>
+        <div class="irow"><span class="ilbl">ETARE:</span><span class="ival" id="t-erp"></span></div>
+        <div class="irow"><span class="ilbl">Précisions:</span><span class="ival" id="t-precision"></span></div>
+        <div class="irow"><span class="ilbl">Consigne:</span><span class="ival" id="t-consigne"></span></div>
+        <div class="irow"><span class="ilbl">Contact:</span><span class="ival" id="t-contact"></span></div>
+        <div class="irow"><span class="ilbl">N° Contre-appel:</span><span class="ival" id="t-nca"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBSERVATIONS -->
+  <div class="section">
+    <div class="s-title">OBSERVATIONS</div>
+    <div class="s-body">
+      <div class="obs-body" id="t-obs">-</div>
+    </div>
+  </div>
+
+  <!-- ARMEMENT -->
+  <div class="section">
+    <div class="s-title">ARMEMENT DES VÉHICULES</div>
+    <div class="s-body">
+      <table class="arm-table">
+        <thead><tr><th>Engin</th><th>GFO</th><th>POSTE</th><th>GRADE</th><th>NOM</th></tr></thead>
+        <tbody id="t-armement"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BAS -->
+  <div class="two-col">
+    <div class="section" style="margin-bottom:0;">
+      <div class="s-title">AUTRES MOYENS ALERTÉS</div>
+      <div class="s-body" style="padding:2.5mm 4mm;">
+        <table class="btable">
+          <thead><tr><th>CENTRE</th><th>GFO</th><th>ENGIN</th></tr></thead>
+          <tbody id="t-autres"><tr><td colspan="3" class="empty-row">-</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section" style="margin-bottom:0;">
+      <div class="s-title">MOYENS DÉJÀ ENGAGÉS</div>
+      <div class="s-body" style="padding:2.5mm 4mm;">
+        <table class="btable">
+          <thead><tr><th>CENTRE</th><th>ENGIN</th><th>DATE/HEURE</th></tr></thead>
+          <tbody id="t-engages"><tr><td colspan="3" class="empty-row">-</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script src="js/sounds.js"></script>
+<script src="js/data.js"></script>
 <script>
-const params = new URLSearchParams(window.location.search);
-const motif = params.get('motif') || 'INTERVENTION';
-const engin = params.get('engin') || '---';
-const inter = params.get('inter') || '---';
-const adresse = params.get('adresse') || '---';
-const dateStr = params.get('date') || new Date().toISOString();
-const d = new Date(dateStr);
-const heure = d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
-const dateAff = d.toLocaleDateString('fr-FR');
+function ld(k){try{const v=localStorage.getItem('systel_'+k);return v?JSON.parse(v):null;}catch(e){return null;}}
+const cfg=ld('config');if(cfg)Object.assign(CONFIG,cfg);
+const cas=ld('casernes');if(cas)CASERNES=cas;
+const eng=ld('engins');if(eng)ENGINS=eng;
+const usr=ld('users');if(usr)USERS=usr;
+const ivs=ld('interventions');if(ivs)INTERVENTIONS=ivs;
 
-document.getElementById('t-motif').textContent = motif;
-document.getElementById('t-engin').textContent = engin;
-document.getElementById('t-inter').textContent = inter;
-document.getElementById('t-adresse').textContent = adresse || 'Non renseignée';
-document.getElementById('t-heure').textContent = heure + ' — ' + dateAff;
-document.getElementById('ts').textContent = 'Émis le ' + dateAff + ' à ' + heure;
+function p2(n){return String(n).padStart(2,'0');}
+function fdt(d){return p2(d.getDate())+'-'+p2(d.getMonth()+1)+'-'+d.getFullYear()+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());}
+function getCentre(sectionId){for(const c of CASERNES){for(const s of c.sections){if(s.id===sectionId)return c.nom;}}return CONFIG?.centre||'--';}
 
-// Charger les postes depuis localStorage (systel_engins)
-try {
-  const enginsData = localStorage.getItem('systel_engins');
-  if (enginsData) {
-    const engins = JSON.parse(enginsData);
-    const enginObj = engins.find(e => e.nom === engin);
-    if (enginObj && enginObj.postes && enginObj.postes.length > 0) {
-      const sec = document.getElementById('postes-section');
-      const list = document.getElementById('postes-list');
-      sec.style.display = 'block';
-      list.innerHTML = enginObj.postes.map((p, i) => `
-        <div class="poste-row">
-          <span class="poste-num">${i+1}</span>
-          <span class="poste-abrev">${p.abrev}</span>
-          <span class="poste-label">${p.label}</span>
-          <span class="poste-agent">${i === 0 ? '← Vous' : ''}</span>
-        </div>
-      `).join('');
-    }
+const params=new URLSearchParams(window.location.search);
+const interId=params.get('inter');
+const enginId=params.get('engin');
+const now=new Date();
+
+const inter=INTERVENTIONS.find(i=>i.id===interId)||{};
+const engin=ENGINS.find(e=>e.id===enginId)||{};
+const interDate=inter.date?new Date(inter.date):now;
+
+// Header
+document.getElementById('h-type').textContent=inter.type||'INTERVENTION';
+document.getElementById('h-datetime').textContent=fdt(interDate);
+document.getElementById('h-centre').textContent=CONFIG?.centre||'PTR';
+document.getElementById('h-engin').textContent=engin.nom||enginId||'--';
+document.getElementById('h-num').textContent='N° '+(inter.numero||inter.id||'--');
+document.getElementById('t-sinistre').textContent=(inter.type||'INTERVENTION').toUpperCase();
+
+// Localisation
+document.getElementById('t-commune').textContent=inter.commune||'--';
+document.getElementById('t-numero').textContent=inter.numero||'';
+document.getElementById('t-voie').textContent=inter.voie||'--';
+document.getElementById('t-erp').textContent=inter.etablissement||'-';
+document.getElementById('t-precision').textContent=inter.precision||'-';
+document.getElementById('t-consigne').textContent=inter.consigne||'ERP fermé.';
+document.getElementById('t-contact').textContent=inter.contact||'-';
+document.getElementById('t-nca').textContent=inter.nca||'-';
+document.getElementById('t-obs').textContent=inter.observations||'-';
+
+// Armement
+const membres=inter.equipes?.[enginId]?.membres||[];
+const armTbody=document.getElementById('t-armement');
+if(membres.length>0){
+  armTbody.innerHTML=membres.map(m=>{
+    const u=USERS.find(x=>x.id===m.userId);
+    return `<tr>
+      <td>${engin.nom||'--'}</td>
+      <td>${CONFIG?.centre||'PTR'}</td>
+      <td>${m.abrev||m.posteLabel||'--'}</td>
+      <td>${u?.grade||'--'}</td>
+      <td><strong>${u?(u.lastname+' '+u.firstname).trim():'--'}</strong></td>
+    </tr>`;
+  }).join('');
+}else{
+  // Fallback depuis données BIP si disponible
+  const bipRaw=localStorage.getItem('systel_bip_ticket_'+interId+'_'+enginId);
+  if(bipRaw){
+    const bipD=JSON.parse(bipRaw);
+    armTbody.innerHTML=`<tr><td>${engin.nom||'--'}</td><td>${CONFIG?.centre||'PTR'}</td><td>C/A</td><td>--</td><td><strong>${bipD.chefNom||'--'}</strong></td></tr>`;
+  }else{
+    armTbody.innerHTML=`<tr><td>${engin.nom||'--'}</td><td>${CONFIG?.centre||'PTR'}</td><td>C/A</td><td>--</td><td>--</td></tr>`;
   }
-} catch(e) {}
+}
+
+// Moyens déjà engagés (autres engins de la même inter)
+const autresEngins=(inter.engins||[]).filter(id=>id!==enginId);
+if(autresEngins.length>0){
+  document.getElementById('t-engages').innerHTML=autresEngins.map(id=>{
+    const e=ENGINS.find(x=>x.id===id);
+    return `<tr><td>${getCentre(e?.section)}</td><td>${e?.nom||id}</td><td>${fdt(interDate)}</td></tr>`;
+  }).join('');
+}
+
+document.title='TICKET DÉPART — '+(engin.nom||'')+'—'+(inter.numero||'');
 </script>
 </body>
 </html>

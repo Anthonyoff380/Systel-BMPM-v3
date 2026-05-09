@@ -75,6 +75,7 @@ function handleLogin(e) {
   const user = USERS.find(u => u.id === id && u.pwd === pwd);
   if (user) {
     currentUser = user;
+  localStorage.setItem('systel_current_user_id', user.id);
     sessionStorage.setItem('systel_user', JSON.stringify(user));
     synchroniserTout();
     initApp();
@@ -95,8 +96,12 @@ function initApp() {
   const badge = document.getElementById('user-role-badge');
   const rolesDisplay = (currentUser.roles || [currentUser.role]).join(' | ');
   badge.textContent = rolesDisplay;
-  badge.className = 'badge ' + (userIsAdmin(currentUser) ? 'badge-danger' : userIsSOG(currentUser) ? 'badge-warning' : 'badge-info');
+  badge.className = 'badge ' + (userIsAdmin(currentUser) ? 'badge-danger' : userIsSOG(currentUser) ? 'badge-warning' : userHasCOSSIM(currentUser) ? 'badge-primary' : 'badge-info');
   document.getElementById('nav-admin').style.display = userIsAdmin(currentUser) ? 'flex' : 'none';
+  const navCossim = document.getElementById('nav-cossim');
+  if (navCossim) navCossim.style.display = userHasCOSSIM(currentUser) ? 'flex' : 'none';
+  const btnCossim = document.getElementById('btn-ouvrir-cossim');
+  if (btnCossim) btnCossim.style.display = userHasCOSSIM(currentUser) ? 'inline-block' : 'none';
   initDate();
   showSection('synoptique');
   // Appliquer thème sauvegardé
@@ -174,6 +179,7 @@ function renderAdminIntranet() {
 
 // ===== ADMIN COSSIM CONFIG =====
 function renderAdminCossim() {
+  chargerDonnees();
   const c = document.getElementById('admin-tab-cossim');
   if (!c) return;
   c.innerHTML = `
@@ -545,24 +551,15 @@ function afficherBipAlerte(bip) {
   document.getElementById('bip-screen-place').textContent = 'Place: ' + (bip.place || '?');
   document.getElementById('bip-screen-num').textContent = bip.interNum || '';
   overlay.style.display = 'flex';
-  // Lecture son bip en boucle
-  try {
-    bipAudio = new Audio('sounds/bip.mp3');
-    bipAudio.loop = true;
-    bipAudio.volume = 1.0;
-    bipAudio.play().catch(() => {});
-  } catch(e) {}
+  // Lecture son bip en boucle (embarqué base64)
+  if (typeof playBip === 'function') playBip(true);
+  else { try { bipAudio = new Audio('sounds/bip.mp3'); bipAudio.loop=true; bipAudio.play().catch(()=>{}); } catch(e){} }
 }
 
 function acquitterBip() {
-  // Arrêter le son bip
-  if (bipAudio) { bipAudio.pause(); bipAudio.currentTime = 0; bipAudio = null; }
-  // Jouer son acquittement
-  try {
-    const acq = new Audio('sounds/acquittement.mp3');
-    acq.volume = 1.0;
-    acq.play().catch(() => {});
-  } catch(e) {}
+  // Arrêter le son bip + jouer acquittement
+  if (typeof stopBip === 'function') stopBip(); else if (bipAudio) { bipAudio.pause(); bipAudio.currentTime=0; bipAudio=null; }
+  if (typeof playAck === 'function') playAck(); else { try { new Audio('sounds/acquittement.mp3').play().catch(()=>{}); } catch(e){} }
   // Marquer acquitté
   const bipData = localStorage.getItem('systel_bip_' + currentUser.id);
   if (bipData) {

@@ -55,25 +55,26 @@ function updateSynoptique() {
 function onEnginClick(id) {
   const engin = ENGINS.find(e => e.id === id);
   if (!engin) return;
-  
-  // Si en intervention et chef d'agrès: ouvrir BER
-  if (engin.statut === 'intervention' && engin.chefAgres === currentUser?.id) {
-    ouvrirBER(id);
+  // Dans la synoptique : toggle dispo/indispo uniquement
+  // (les engins en intervention sont cliquables uniquement depuis le panel Interventions)
+  if (engin.statut === 'intervention') {
+    showToast(engin.nom + ' est en intervention — utilisez le panel Interventions pour le BER', 'info');
     return;
   }
-  // Sinon cycle classique
   toggleEnginStatut(id);
 }
 
 function toggleEnginStatut(id) {
   const engin = ENGINS.find(e => e.id === id);
   if (!engin) return;
-  const cycle = ['disponible', 'intervention', 'indisponible'];
+  const cycle = ['disponible', 'indisponible'];
   const idx = cycle.indexOf(engin.statut);
   engin.statut = cycle[(idx + 1) % cycle.length];
-  if (engin.statut !== 'intervention') engin.berStatut = null;
+  if (engin.statut !== 'intervention') { engin.berStatut = null; engin.chefAgres = null; }
   sauvegarderDonnees();
   updateSynoptique();
+  if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
+  showToast(engin.nom + " : " + engin.statut);
 }
 
 function renderPersonnelsSynoptique() {

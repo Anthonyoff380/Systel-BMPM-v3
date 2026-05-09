@@ -38,7 +38,7 @@ let ENGINS = [
   }
 ];
 
-const ROLES_DISPONIBLES = ["BMPM", "ADMIN", "SOG/CDG"];
+const ROLES_DISPONIBLES = ["BMPM", "ADMIN", "SOG/CDG", "COSSIM"];
 
 let USERS = [
   { id: "admin", name: "ADMINISTRATEUR", lastname: "ADMIN", firstname: "Système", pwd: "123", roles: ["ADMIN"], role: "ADMIN", grade: "Officier", tel: "06 00 00 00 00", email: "admin@ptr.fr", photo: null },
@@ -127,6 +127,7 @@ function getGardeClass(g) {
 function getGardeShort(g) {
   if (g === 'G1') return 'G1'; if (g === 'G2') return 'G2'; if (g === 'AST') return 'AST'; return '';
 }
+function userHasCOSSIM(user) { return userHasRole(user, 'COSSIM') || userIsAdmin(user); }
 function userHasRole(user, role) {
   if (!user) return false;
   if (user.roles && Array.isArray(user.roles)) return user.roles.includes(role);
