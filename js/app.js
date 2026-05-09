@@ -438,19 +438,28 @@ function renderAdminCasernes() {
 function renderAdminEngins() {
   const tbody = document.getElementById('adm-engins-list');
   const allS = []; CASERNES.forEach(c => c.sections.forEach(s => allS.push({id:s.id,nom:`${c.nom} > ${s.nom}`})));
-  // Grouper par section pour affichage synoptique
   const bySec = {};
   CASERNES.forEach(c => c.sections.forEach(s => { bySec[s.id] = { caserne: c.nom, section: s.nom, engins: [] }; }));
   ENGINS.forEach((e,idx) => { if (bySec[e.section]) bySec[e.section].engins.push({e,idx}); });
 
   let html = '';
   Object.entries(bySec).forEach(([secId, data]) => {
-    html += `<tr style="background:#1a202c;color:white;"><td colspan="3" style="padding:8px 12px;font-weight:800;font-size:12px;">${data.caserne} › ${data.section}</td></tr>`;
+    html += `<tr style="background:#1a202c;color:white;"><td colspan="4" style="padding:8px 12px;font-weight:800;font-size:12px;">${data.caserne} › ${data.section}</td></tr>`;
     if (data.engins.length === 0) {
-      html += `<tr><td colspan="3" style="padding:6px 20px;color:#718096;font-size:12px;font-style:italic;">Aucun engin</td></tr>`;
+      html += `<tr><td colspan="4" style="padding:6px 20px;color:#718096;font-size:12px;font-style:italic;">Aucun engin</td></tr>`;
     }
     data.engins.forEach(({e,idx}) => {
       const statCls = e.statut === 'disponible' ? '#38a169' : e.statut === 'intervention' ? '#f97316' : '#718096';
+      const postes = (e.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'}]);
+      const postesHTML = postes.map((p,pi) => `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span style="font-size:11px;color:#a0aec0;min-width:20px;">${pi+1}.</span>
+          <input type="text" value="${p.abrev}" placeholder="Abrev" style="width:60px;font-size:11px;padding:3px 6px;"
+            onchange="ENGINS[${idx}].postes[${pi}].abrev=this.value;sauvegarderDonnees();">
+          <input type="text" value="${p.label}" placeholder="Label complet" style="flex:1;font-size:11px;padding:3px 6px;"
+            onchange="ENGINS[${idx}].postes[${pi}].label=this.value;sauvegarderDonnees();">
+          ${pi > 0 ? `<button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:10px;" onclick="supprimerPoste(${idx},${pi})">✕</button>` : '<span style="font-size:10px;color:#f97316;font-weight:800;">C/A</span>'}
+        </div>`).join('');
       html += `<tr>
         <td style="padding-left:20px;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -463,15 +472,36 @@ function renderAdminEngins() {
             ${allS.map(s => `<option value="${s.id}" ${e.section===s.id?'selected':''}>${s.nom}</option>`).join('')}
           </select>
         </td>
+        <td style="min-width:260px;">
+          <div style="font-size:11px;color:#e53e3e;font-weight:700;margin-bottom:4px;">Postes (1er = toujours C/A)</div>
+          ${postesHTML}
+          <button class="btn btn-success btn-sm" style="margin-top:4px;font-size:10px;padding:3px 8px;" onclick="ajouterPoste(${idx})">+ Poste</button>
+        </td>
         <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1);sauvegarderDonnees();renderAdminEngins();">✕</button></td>
       </tr>`;
     });
   });
   tbody.innerHTML = html;
+  // Mettre à jour le thead
+  const thead = tbody.closest('table').querySelector('thead tr');
+  if (thead && thead.children.length < 4) thead.innerHTML = '<th>Nom</th><th>Section</th><th>Postes</th><th>Actions</th>';
+}
+function ajouterPoste(idx) {
+  if (!ENGINS[idx].postes) ENGINS[idx].postes = [{id:'ca',label:"Chef d'agrès",abrev:'C/A'}];
+  const n = ENGINS[idx].postes.length + 1;
+  ENGINS[idx].postes.push({id:'p'+n, label:'Équipier '+n, abrev:'EQ'+n});
+  sauvegarderDonnees(); renderAdminEngins();
+}
+function supprimerPoste(enginIdx, posteIdx) {
+  if (posteIdx === 0) return showToast("Le C/A ne peut pas être supprimé !","error");
+  ENGINS[enginIdx].postes.splice(posteIdx, 1);
+  sauvegarderDonnees(); renderAdminEngins();
 }
 function ajouterEnginAdmin() {
   if (!CASERNES[0]||CASERNES[0].sections.length===0) return showToast("Créez une section !","error");
-  ENGINS.push({id:"E"+Date.now(),nom:"NOUVEAU",section:CASERNES[0].sections[0].id,statut:"disponible",berStatut:null,chefAgres:null});
+  ENGINS.push({id:"E"+Date.now(),nom:"NOUVEAU",section:CASERNES[0].sections[0].id,statut:"disponible",berStatut:null,chefAgres:null,
+    postes:[{id:'ca',label:"Chef d'agrès",abrev:'C/A'},{id:'eq1',label:'Équipier 1',abrev:'EQ1'},{id:'eq2',label:'Équipier 2',abrev:'EQ2'}]
+  });
   renderAdminEngins(); sauvegarderDonnees();
 }
 function sauvegarderToutAdmin() {
@@ -503,15 +533,23 @@ function checkBipAlertes() {
 function afficherBipAlerte(bip) {
   const overlay = document.getElementById('bip-overlay');
   if (!overlay) return;
+  // Infos au dessus
   document.getElementById('bip-motif').textContent = bip.motif || 'INTERVENTION';
   document.getElementById('bip-engin').textContent = bip.enginNom || '';
-  document.getElementById('bip-place').textContent = bip.place || 'En attente';
   document.getElementById('bip-inter-num').textContent = bip.interNum || '';
+  document.getElementById('bip-place').textContent = bip.place || 'En attente';
+  // Écran vert — infos bien lisibles
+  const motifCourt = (bip.motif || 'INTERVENTION').substring(0, 40);
+  document.getElementById('bip-screen-motif').textContent = motifCourt;
+  document.getElementById('bip-screen-engin').textContent = bip.enginNom || '';
+  document.getElementById('bip-screen-place').textContent = 'Place: ' + (bip.place || '?');
+  document.getElementById('bip-screen-num').textContent = bip.interNum || '';
   overlay.style.display = 'flex';
   // Lecture son bip en boucle
   try {
     bipAudio = new Audio('sounds/bip.mp3');
     bipAudio.loop = true;
+    bipAudio.volume = 1.0;
     bipAudio.play().catch(() => {});
   } catch(e) {}
 }
@@ -520,16 +558,31 @@ function acquitterBip() {
   // Arrêter le son bip
   if (bipAudio) { bipAudio.pause(); bipAudio.currentTime = 0; bipAudio = null; }
   // Jouer son acquittement
-  try { new Audio('sounds/acquittement.mp3').play().catch(()=>{}); } catch(e) {}
+  try {
+    const acq = new Audio('sounds/acquittement.mp3');
+    acq.volume = 1.0;
+    acq.play().catch(() => {});
+  } catch(e) {}
   // Marquer acquitté
   const bipData = localStorage.getItem('systel_bip_' + currentUser.id);
   if (bipData) {
     const bip = JSON.parse(bipData);
     bip.acquitte = true;
     localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify(bip));
-    // Ouvrir BER si chef d'agrès
-    if (bip.isChefAgres && bip.enginId) {
-      setTimeout(() => ouvrirBER(bip.enginId, bip.interventionId), 800);
+    // Ouvrir ticket départ si chef d'agrès (poste C/A = index 0)
+    if (bip.isChefAgres) {
+      const params = new URLSearchParams({
+        motif: bip.motif || '',
+        engin: bip.enginNom || '',
+        inter: bip.interNum || '',
+        adresse: bip.adresse || '',
+        date: new Date().toISOString()
+      });
+      window.open('ticket_depart.html?' + params.toString(), '_blank');
+    }
+    // Ouvrir BER si défini
+    if (bip.enginId) {
+      setTimeout(() => ouvrirBER(bip.enginId), 1200);
     }
   }
   document.getElementById('bip-overlay').style.display = 'none';

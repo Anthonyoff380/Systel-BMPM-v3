@@ -37,57 +37,72 @@
     /* ===== BIP OVERLAY ===== */
     #bip-overlay {
       display:none; position:fixed; inset:0; z-index:9999;
-      background: rgba(0,0,0,0.92);
+      background: rgba(0,0,0,0.93);
       flex-direction:column; align-items:center; justify-content:center;
+      gap: 0;
+    }
+    .bip-title-bar {
+      color: #fbd38d; font-size: 22px; font-weight: 900;
+      text-align: center; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .bip-sub-top {
+      color: #a0aec0; font-size: 13px; text-align: center; margin-bottom: 18px;
     }
     .bip-swissphone-wrap {
       position: relative;
-      width: 260px;
-      margin-bottom: 25px;
+      width: 240px;
       user-select: none;
     }
     .bip-swissphone-wrap img.bip-phone-img {
       width: 100%;
-      filter: drop-shadow(0 0 30px rgba(229,62,62,0.5));
       animation: bipGlow 1s infinite alternate;
     }
     @keyframes bipGlow {
-      from { filter: drop-shadow(0 0 15px rgba(229,62,62,0.4)); }
-      to   { filter: drop-shadow(0 0 40px rgba(229,62,62,0.9)); }
+      from { filter: drop-shadow(0 0 18px rgba(229,62,62,0.5)); }
+      to   { filter: drop-shadow(0 0 45px rgba(229,62,62,1)); }
     }
-    /* Écran sur l'image Swissphone — calé approximativement sur l'écran */
+    /* Écran vert calé sur l'image — BIP.png 353x541 */
+    /* l'écran vert est à ~top:9% left:14% w:72% h:28% */
     .bip-screen-overlay {
       position: absolute;
-      top: 8%;
+      top: 9%;
       left: 14%;
       width: 72%;
-      height: 30%;
-      background: #c8d8a0;
+      height: 28%;
+      background: #7ab84a;
       border-radius: 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 4px;
+      padding: 6px 6px;
       overflow: hidden;
+      gap: 2px;
     }
     .bip-screen-motif {
-      font-size: 10px; font-weight: 900; color: #1a2e00;
+      font-size: 11px; font-weight: 900; color: #0d2200;
       text-align: center; line-height: 1.2;
       max-width: 100%; word-break: break-word;
+      font-family: 'Courier New', monospace;
     }
     .bip-screen-engin {
-      font-size: 9px; font-weight: 700; color: #2d4a00; margin-top: 2px;
+      font-size: 10px; font-weight: 800; color: #1a3a00;
+      font-family: 'Courier New', monospace;
     }
     .bip-screen-place {
-      font-size: 8px; color: #3a5a00; margin-top: 1px;
+      font-size: 9px; color: #2a5000; font-weight: 700;
+      font-family: 'Courier New', monospace;
     }
-    /* Bouton jaune — superposé sur le bouton jaune de l'image */
+    .bip-screen-num {
+      font-size: 8px; color: #3a6000; font-family: 'Courier New', monospace;
+    }
+    /* Bouton jaune transparent sur l'image */
     .bip-btn-jaune {
       position: absolute;
-      bottom: 24%;
-      left: 16%;
-      width: 30%;
+      bottom: 22%;
+      left: 14%;
+      width: 32%;
       aspect-ratio: 1;
       border-radius: 50%;
       background: transparent;
@@ -95,18 +110,26 @@
       cursor: pointer;
       z-index: 10;
     }
-    .bip-btn-jaune:hover { background: rgba(255,255,0,0.15); }
-    /* Texte infos sous la photo */
-    .bip-info-bar {
-      color: white; text-align: center; margin-bottom: 8px;
+    .bip-btn-jaune:hover { background: rgba(255,220,0,0.18); }
+    .bip-btn-jaune:active { background: rgba(255,220,0,0.35); }
+    .bip-sub-bottom {
+      color: #a0aec0; font-size: 12px; text-align: center; margin-top: 12px;
     }
-    .bip-info-bar .bip-motif-main {
-      font-size: 20px; font-weight: 900; color: #fbd38d; margin-bottom: 4px;
+    .bip-hint { font-size: 11px; color: #4a5568; margin-top: 4px; text-align:center; }
+
+    /* ===== BER MODAL IMAGE ===== */
+    .ber-img-btn {
+      position: absolute;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.1s;
+      z-index: 5;
     }
-    .bip-info-bar .bip-sub-line {
-      font-size: 13px; color: #a0aec0; margin-bottom: 3px;
-    }
-    .bip-hint { font-size: 11px; color: #4a5568; margin-top: 8px; }
+    .ber-img-btn:hover { background: rgba(255,200,0,0.18); }
+    .ber-img-btn:active { background: rgba(255,200,0,0.4); }
+    .ber-img-btn.ber-active-btn { background: rgba(255,200,0,0.25); outline: 2px solid #ffd700; }
 
     /* ===== BER MODAL ===== */
     .ber-statut-btn {
@@ -190,27 +213,24 @@
 
 <!-- ===== BIP OVERLAY ===== -->
 <div id="bip-overlay">
-  <div class="bip-info-bar">
-    <div class="bip-motif-main" id="bip-motif">INTERVENTION</div>
-    <div class="bip-sub-line">Engin : <strong id="bip-engin"></strong> &mdash; <span id="bip-inter-num"></span></div>
-  </div>
+  <div class="bip-title-bar" id="bip-motif">INTERVENTION</div>
+  <div class="bip-sub-top">Engin : <strong id="bip-engin"></strong> &mdash; <span id="bip-inter-num"></span></div>
 
   <div class="bip-swissphone-wrap">
     <img src="images/BIP.png" alt="Swissphone" class="bip-phone-img">
-    <!-- Écran superposé -->
+    <!-- Écran vert superposé avec infos -->
     <div class="bip-screen-overlay">
       <div class="bip-screen-motif" id="bip-screen-motif">---</div>
       <div class="bip-screen-engin" id="bip-screen-engin"></div>
       <div class="bip-screen-place" id="bip-screen-place"></div>
+      <div class="bip-screen-num" id="bip-screen-num"></div>
     </div>
     <!-- Bouton jaune transparent cliquable -->
     <button class="bip-btn-jaune" onclick="acquitterBip()" title="Acquitter"></button>
   </div>
 
-  <div class="bip-info-bar">
-    <div class="bip-sub-line">Place : <strong id="bip-place"></strong></div>
-    <div class="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
-  </div>
+  <div class="bip-sub-bottom">Place : <strong id="bip-place"></strong></div>
+  <div class="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
 </div>
 
 <!-- ===== PORTAIL CONNEXION ===== -->
@@ -472,16 +492,47 @@
 </div>
 
 <!-- MODAL BER -->
-<div id="modal-ber" class="modal" style="width:500px;max-height:85vh;overflow-y:auto;">
-  <div class="modal-header" style="background:#1a202c;color:white;position:sticky;top:0;z-index:1;">
-    📻 BER — <span id="ber-engin-nom"></span>
+<div id="modal-ber" class="modal" style="width:680px;max-height:90vh;overflow:hidden;padding:0;">
+  <div style="background:#1a202c;color:white;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;">
+    <span style="font-weight:800;font-size:15px;">📻 BER — <span id="ber-engin-nom"></span></span>
+    <button class="btn btn-secondary btn-sm" onclick="fermerModal()">FERMER</button>
   </div>
-  <div class="modal-body">
-    <p style="font-size:12px;color:#718096;margin-bottom:12px;">Sélectionnez le statut BER :</p>
-    <div id="ber-statuts-container"></div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-secondary" onclick="fermerModal()">FERMER</button>
+  <!-- Image BER.png avec boutons superposés -->
+  <div style="position:relative;width:100%;background:#111;">
+    <img src="images/BER.png" alt="Radio BER" style="width:100%;display:block;" id="ber-img">
+    <!-- Les 9 boutons sont superposés via position:absolute en % -->
+    <!-- BER.png est 4879x1504 — les touches 1-9 occupent la moitié droite -->
+    <!-- Rangée 1: boutons 1,2,3 -->
+    <button class="ber-img-btn" onclick="changerStatutBER(1)" id="ber-btn-1" title="PARTIS"
+      style="top:5%;right:35%;width:9%;height:38%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(2)" id="ber-btn-2" title="SSL"
+      style="top:5%;right:24%;width:9%;height:38%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(3)" id="ber-btn-3" title="DEM RADIO"
+      style="top:5%;right:13%;width:9%;height:38%;"></button>
+    <!-- Bouton urgence rouge -->
+    <button class="ber-img-btn" onclick="alert('Alerte urgence')" title="URGENCE"
+      style="top:5%;right:2%;width:8%;height:38%;border-radius:50%;"></button>
+    <!-- Rangée 2: boutons 4,5,6 -->
+    <button class="ber-img-btn" onclick="changerStatutBER(4)" id="ber-btn-4" title="URG RADIO"
+      style="top:46%;right:35%;width:9%;height:22%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(5)" id="ber-btn-5" title="TRANSP CHU"
+      style="top:46%;right:24%;width:9%;height:22%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(6)" id="ber-btn-6" title="ARRIV CHU"
+      style="top:46%;right:13%;width:9%;height:22%;"></button>
+    <!-- Rangée 3: boutons 7,8,9 -->
+    <button class="ber-img-btn" onclick="changerStatutBER(7)" id="ber-btn-7" title="RET DISPO"
+      style="top:72%;right:35%;width:9%;height:22%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(8)" id="ber-btn-8" title="RET INDISPO"
+      style="top:72%;right:24%;width:9%;height:22%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(9)" id="ber-btn-9" title="DISPO CAS"
+      style="top:72%;right:13%;width:9%;height:22%;"></button>
+    <!-- Indicateur statut actif -->
+    <div id="ber-active-label" style="
+      position:absolute;bottom:4%;left:2%;
+      background:rgba(0,0,0,0.75);color:#7fff50;
+      font-size:11px;font-weight:800;padding:4px 10px;border-radius:4px;
+      font-family:'Courier New',monospace;display:none;
+    "></div>
   </div>
 </div>
 

@@ -29,7 +29,13 @@ let CASERNES = [
 ];
 
 let ENGINS = [
-  { id: "VSAV01-PTR", nom: "VSAV 01", section: "6-PTR", statut: "disponible", berStatut: null, chefAgres: null }
+  { id: "VSAV01-PTR", nom: "VSAV 01", section: "6-PTR", statut: "disponible", berStatut: null, chefAgres: null,
+    postes: [
+      { id: "ca", label: "Chef d'agrès", abrev: "C/A" },
+      { id: "eq1", label: "Équipier 1", abrev: "EQ1" },
+      { id: "eq2", label: "Équipier 2", abrev: "EQ2" }
+    ]
+  }
 ];
 
 const ROLES_DISPONIBLES = ["BMPM", "ADMIN", "SOG/CDG"];

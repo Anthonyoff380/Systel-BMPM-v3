@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TICKET DE DÉPART — Chef d'agrès</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      background: #0d1117;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 30px 16px;
+    }
+    .ticket-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .ticket-header h1 {
+      font-size: 22px;
+      font-weight: 900;
+      color: #fc8181;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .ticket-header .subtitle {
+      font-size: 13px;
+      color: #718096;
+      margin-top: 4px;
+    }
+    .ticket-card {
+      background: #161b22;
+      border: 2px solid #e53e3e;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #21262d;
+      gap: 12px;
+    }
+    .ticket-row:last-child { border-bottom: none; }
+    .ticket-label {
+      font-size: 11px;
+      color: #718096;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      min-width: 110px;
+    }
+    .ticket-value {
+      font-size: 14px;
+      font-weight: 900;
+      color: #fbd38d;
+      text-align: right;
+      flex: 1;
+    }
+    .ticket-motif {
+      font-size: 18px;
+      font-weight: 900;
+      color: #fc8181;
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 14px;
+      background: rgba(229,62,62,0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(229,62,62,0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .badge-ca {
+      display: inline-block;
+      background: #e53e3e;
+      color: white;
+      font-size: 12px;
+      font-weight: 900;
+      padding: 4px 14px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    .postes-section {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .postes-section h3 {
+      font-size: 12px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+    .poste-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #21262d;
+    }
+    .poste-row:last-child { border-bottom: none; }
+    .poste-num {
+      font-size: 12px;
+      color: #4a5568;
+      min-width: 20px;
+    }
+    .poste-abrev {
+      background: #e53e3e;
+      color: white;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 10px;
+      border-radius: 4px;
+      min-width: 50px;
+      text-align: center;
+    }
+    .poste-label {
+      font-size: 13px;
+      color: #a0aec0;
+      flex: 1;
+    }
+    .poste-agent {
+      font-size: 13px;
+      font-weight: 700;
+      color: #7fff50;
+    }
+    .timestamp {
+      font-size: 11px;
+      color: #4a5568;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .btn-print {
+      background: #e53e3e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 30px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .btn-print:hover { background: #c53030; }
+    .btn-close {
+      background: transparent;
+      color: #718096;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-close:hover { color: #a0aec0; }
+    .btns { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; max-width:480px; }
+    @media print {
+      body { background: white; color: black; padding: 10px; }
+      .ticket-card, .postes-section { border-color: #333; background: white; }
+      .ticket-value { color: #333; }
+      .ticket-label { color: #666; }
+      .btn-print, .btn-close { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ticket-header">
+  <div class="badge-ca">CHEF D'AGRÈS — C/A</div>
+  <h1>🚒 Ticket de départ</h1>
+  <div class="subtitle" id="ts">Chargement...</div>
+</div>
+
+<div class="ticket-card">
+  <div class="ticket-motif" id="t-motif">---</div>
+  <div class="ticket-row">
+    <span class="ticket-label">Engin</span>
+    <span class="ticket-value" id="t-engin">---</span>
+  </div>
+  <div class="ticket-row">
+    <span class="ticket-label">N° Intervention</span>
+    <span class="ticket-value" id="t-inter">---</span>
+  </div>
+  <div class="ticket-row">
+    <span class="ticket-label">Adresse</span>
+    <span class="ticket-value" id="t-adresse">---</span>
+  </div>
+  <div class="ticket-row">
+    <span class="ticket-label">Heure départ</span>
+    <span class="ticket-value" id="t-heure">---</span>
+  </div>
+</div>
+
+<div class="postes-section" id="postes-section" style="display:none;">
+  <h3>Composition de l'équipage</h3>
+  <div id="postes-list"></div>
+</div>
+
+<div class="btns">
+  <button class="btn-print" onclick="window.print()">🖨️ IMPRIMER</button>
+  <button class="btn-close" onclick="window.close()">Fermer</button>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const motif = params.get('motif') || 'INTERVENTION';
+const engin = params.get('engin') || '---';
+const inter = params.get('inter') || '---';
+const adresse = params.get('adresse') || '---';
+const dateStr = params.get('date') || new Date().toISOString();
+const d = new Date(dateStr);
+const heure = d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+const dateAff = d.toLocaleDateString('fr-FR');
+
+document.getElementById('t-motif').textContent = motif;
+document.getElementById('t-engin').textContent = engin;
+document.getElementById('t-inter').textContent = inter;
+document.getElementById('t-adresse').textContent = adresse || 'Non renseignée';
+document.getElementById('t-heure').textContent = heure + ' — ' + dateAff;
+document.getElementById('ts').textContent = 'Émis le ' + dateAff + ' à ' + heure;
+
+// Charger les postes depuis localStorage (systel_engins)
+try {
+  const enginsData = localStorage.getItem('systel_engins');
+  if (enginsData) {
+    const engins = JSON.parse(enginsData);
+    const enginObj = engins.find(e => e.nom === engin);
+    if (enginObj && enginObj.postes && enginObj.postes.length > 0) {
+      const sec = document.getElementById('postes-section');
+      const list = document.getElementById('postes-list');
+      sec.style.display = 'block';
+      list.innerHTML = enginObj.postes.map((p, i) => `
+        <div class="poste-row">
+          <span class="poste-num">${i+1}</span>
+          <span class="poste-abrev">${p.abrev}</span>
+          <span class="poste-label">${p.label}</span>
+          <span class="poste-agent">${i === 0 ? '← Vous' : ''}</span>
+        </div>
+      `).join('');
+    }
+  }
+} catch(e) {}
+</script>
+</body>
+</html>

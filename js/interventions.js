@@ -83,34 +83,33 @@ function infoIntervention(id) {
   if (i) alert(`Intervention #${i.id}\nType: ${i.type}\nAdresse: ${i.adresse}\nEngins: ${(i.engins||[]).join(', ')}`);
 }
 
-// ===== BER MODAL =====
+// ===== BER MODAL IMAGE =====
 let berEnginActif = null;
 function ouvrirBER(enginId) {
   const engin = ENGINS.find(e => e.id === enginId);
   if (!engin) return;
   berEnginActif = enginId;
   document.getElementById('ber-engin-nom').textContent = engin.nom;
-  renderBERStatuts(engin.berStatut);
+  // Reset tous les boutons
+  for (let i = 1; i <= 9; i++) {
+    const btn = document.getElementById('ber-btn-' + i);
+    if (btn) btn.classList.remove('ber-active-btn');
+  }
+  // Activer le statut en cours
+  if (engin.berStatut) {
+    const activeBtn = document.getElementById('ber-btn-' + engin.berStatut);
+    if (activeBtn) activeBtn.classList.add('ber-active-btn');
+    const ber = BER_STATUTS.find(b => b.code === engin.berStatut);
+    const lbl = document.getElementById('ber-active-label');
+    if (lbl && ber) { lbl.textContent = '✓ ' + ber.code + ' – ' + ber.label; lbl.style.display = 'block'; }
+  } else {
+    const lbl = document.getElementById('ber-active-label');
+    if (lbl) lbl.style.display = 'none';
+  }
   ouvrirModal('modal-ber');
 }
 
-function renderBERStatuts(actuelCode) {
-  const container = document.getElementById('ber-statuts-container');
-  container.innerHTML = BER_STATUTS.map(b => {
-    const isActive = actuelCode === b.code;
-    return `
-      <button class="ber-statut-btn ${isActive?'ber-active':''}"
-        style="background:${b.bg};color:${b.textColor};border-color:${b.couleur||'#ccc'};"
-        onclick="changerStatutBER(${b.code})">
-        <img src="${b.image}" class="ber-statut-img" onerror="this.style.display='none'">
-        <div style="flex:1;text-align:left;">
-          <div class="ber-num-label">${b.code}</div>
-          <div class="ber-label">${b.label}</div>
-        </div>
-        ${isActive ? '<span style="font-size:18px;">✓</span>' : ''}
-      </button>`;
-  }).join('');
-}
+function renderBERStatuts(actuelCode) {} // conservé pour compatibilité
 
 function changerStatutBER(code) {
   const engin = ENGINS.find(e => e.id === berEnginActif);
@@ -123,9 +122,18 @@ function changerStatutBER(code) {
     engin.statut = 'intervention';
   }
   sauvegarderDonnees();
-  renderBERStatuts(engin.berStatut);
+  // Mettre à jour visuel des boutons
+  for (let i = 1; i <= 9; i++) {
+    const btn = document.getElementById('ber-btn-' + i);
+    if (btn) btn.classList.remove('ber-active-btn');
+  }
+  const activeBtn = document.getElementById('ber-btn-' + code);
+  if (activeBtn) activeBtn.classList.add('ber-active-btn');
+  const ber = BER_STATUTS.find(b => b.code === code);
+  const lbl = document.getElementById('ber-active-label');
+  if (lbl && ber) { lbl.textContent = '✓ ' + ber.code + ' – ' + ber.label; lbl.style.display = 'block'; }
   renderInterventionsSynoptique();
   updateSynoptique();
-  const ber = BER_STATUTS.find(b => b.code === code);
-  showToast(`${engin.nom} → ${ber.label}`);
+  const berInfo = BER_STATUTS.find(b => b.code === code);
+  showToast(`${engin.nom} → ${berInfo ? berInfo.label : code}`);
 }
