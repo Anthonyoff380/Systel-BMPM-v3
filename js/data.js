@@ -1,5 +1,5 @@
 /* ============================================================
-   SYSTEL POMPIERS - DONNÉES (PTR VERSION v17 - EXTENDED)
+   SYSTEL POMPIERS - DONNÉES (PTR VERSION v18)
    ============================================================ */
 
 let CONFIG = {
@@ -47,18 +47,64 @@ let currentUser = null;
 let FEUILLES_GARDE = {};
 let CARTE_BLIPS = [];
 
+// ===== CONFIG COSSIM (éditable depuis admin) =====
+let COSSIM_CONFIG = {
+  communes: ["Marseille", "Aubagne", "La Ciotat", "Cassis", "Allauch", "Plan-de-Cuques", "Septèmes-les-Vallons"],
+  erp: ["Hôpital Nord", "Hôpital Timone", "CHU Conception", "Stade Vélodrome", "Aéroport MRS"],
+  categories_sinistres: [
+    {
+      id: "avp", nom: "ACCIDENT / AVP", sinistres: [
+        "ACCIDENT DE CIRCULATION",
+        "ACCIDENT DE CIRCULATION DÉSINCARCÉRATION",
+        "ACCIDENT PIÉTON",
+        "ACCIDENT 2 ROUES"
+      ]
+    },
+    {
+      id: "inc", nom: "INCENDIE", sinistres: [
+        "INCENDIE DE VÉHICULE",
+        "INCENDIE D'HABITATION",
+        "INCENDIE DE FORÊT / DFCI",
+        "INCENDIE LOCAL COMMERCIAL",
+        "FEU DE POUBELLES"
+      ]
+    },
+    {
+      id: "sap", nom: "SECOURS À PERSONNE", sinistres: [
+        "MALAISE / DÉTRESSE",
+        "ARRÊT CARDIAQUE",
+        "NOYADE",
+        "CHUTE",
+        "DIVERSES AIDES À PERSONNES"
+      ]
+    },
+    {
+      id: "tech", nom: "OPÉRATIONS DIVERSES", sinistres: [
+        "EXPLOSION",
+        "FUITE DE GAZ",
+        "INONDATION",
+        "OUVERTURE DE PORTE",
+        "DÉGÂT DES EAUX"
+      ]
+    }
+  ],
+  services: ["CORD","COZ","DGAC","DIR","ENEDIS","GENDARMERIE","GRDF","OFFICIER CODIS","POLICE NATIONALE","SDIS 13","SAMU 13","CHEF DE SALLE CTA/CODIS","MERLIN (CDC)","ARAMIS Marseille (PREFET)","HERCALES AUB (MCS)","DRAGON 131","MEDECIN LEGAL","COMMUNICATION SDIS 13"]
+};
+
+// ===== BER STATUTS =====
 const BER_STATUTS = [
-  { code: 1, label: "PARTIS",                     couleur: "#f97316", bg: "#fff7ed", textColor: "#9a3412" },
-  { code: 2, label: "SSL",                         couleur: "#ef4444", bg: "#fef2f2", textColor: "#991b1b" },
-  { code: 3, label: "DEMANDE PARLER RADIO",         couleur: null,      bg: "#f1f5f9", textColor: "#475569" },
-  { code: 4, label: "DEMANDE PARLER RADIO URGENT",  couleur: null,      bg: "#fef9c3", textColor: "#713f12" },
-  { code: 5, label: "TRANSPORT CHU",                couleur: "#1e3a8a", bg: "#eff6ff", textColor: "#1e3a8a" },
-  { code: 6, label: "ARRIVÉE CHU",                  couleur: "#38bdf8", bg: "#f0f9ff", textColor: "#0c4a6e" },
-  { code: 7, label: "RETOUR DISPO RADIO",           couleur: "#166534", bg: "#f0fdf4", textColor: "#166534" },
-  { code: 8, label: "RETOUR INDISPO RADIO",         couleur: "#7f1d1d", bg: "#fff1f2", textColor: "#7f1d1d" },
-  { code: 9, label: "DISPO CASERNEMENT",            couleur: "#16a34a", bg: "#dcfce7", textColor: "#14532d" }
+  { code: 1, label: "PARTIS",                     couleur: "#f97316", bg: "#fff7ed", textColor: "#9a3412", image: "images/PA.png" },
+  { code: 2, label: "SSL",                         couleur: "#ef4444", bg: "#fef2f2", textColor: "#991b1b", image: "images/SL.png" },
+  { code: 3, label: "DEMANDE PARLER RADIO",         couleur: null,      bg: "#f1f5f9", textColor: "#475569", image: "images/DM.png" },
+  { code: 4, label: "DEMANDE PARLER RADIO URGENT",  couleur: null,      bg: "#fef9c3", textColor: "#713f12", image: "images/DM.png" },
+  { code: 5, label: "TRANSPORT CHU",                couleur: "#1e3a8a", bg: "#eff6ff", textColor: "#1e3a8a", image: "images/TH.png" },
+  { code: 6, label: "ARRIVÉE CHU",                  couleur: "#38bdf8", bg: "#f0f9ff", textColor: "#0c4a6e", image: "images/AH.png" },
+  { code: 7, label: "RETOUR DISPO RADIO",           couleur: "#166534", bg: "#f0fdf4", textColor: "#166534", image: "images/RD.png" },
+  { code: 8, label: "RETOUR INDISPO RADIO",         couleur: "#7f1d1d", bg: "#fff1f2", textColor: "#7f1d1d", image: "images/RI.png" },
+  { code: 9, label: "DISPO CASERNEMENT",            couleur: "#16a34a", bg: "#dcfce7", textColor: "#14532d", image: "images/COM(3).png" }
 ];
 
+// ===== UTILS =====
 function formatDate(iso) {
   if (!iso) return '--';
   const d = new Date(iso);
