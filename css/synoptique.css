@@ -134,3 +134,20 @@
 
 .intervention-mini-type { font-weight: 800; color: #c53030; font-size: 13px; }
 .intervention-mini-addr { font-size: 11px; color: #742a2a; }
+
+/* ============================================================
+   SYNOPTIQUE v17 - EXTENSIONS
+   ============================================================ */
+
+/* ENGIN BER active box */
+.ber-active-box {
+  position: relative;
+}
+
+/* BER statuts dans synoptique */
+.engin-box[style*="background:#f97316"] { color: white !important; }
+.engin-box[style*="background:#ef4444"] { color: white !important; }
+.engin-box[style*="background:#1e3a8a"] { color: white !important; }
+
+/* Engin BER-9 = vert classique (même que disponible) */
+.engin-box.ber-fin { background: #ffedd5; border-color: #fb923c; }

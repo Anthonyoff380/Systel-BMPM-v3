@@ -16,7 +16,7 @@ let INTRANET_CONFIG = {
   subtitle: "Centre de Secours PTR - Marseille",
   items: [
     { id: "systel", title: "SYSTEL", desc: "Gestion opérationnelle et effectifs.", img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400&h=400&fit=crop", url: "index.html" },
-    { id: "cossim", title: "COSSIM", desc: "Centre Opérationnel des Services de Secours et d'Incendie de Marseille.", img: "https://images.unsplash.com/photo-1516533076085-50370d2d5c21?w=400&h=400&fit=crop", url: "cossim.html" }
+    { id: "cossim", title: "COSSIM", desc: "Centre de commandement PTR.", img: "https://images.unsplash.com/photo-1516533076085-50370d2d5c21?w=400&h=400&fit=crop", url: "cossim.html" }
   ]
 };
 
