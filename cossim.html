@@ -355,6 +355,7 @@
       try { if (d('cossim_config')) COSSIM_CONFIG = Object.assign({}, COSSIM_CONFIG, JSON.parse(d('cossim_config'))); } catch(e) {}
     }
     function sauvegarderDonnees() {
+      localStorage.setItem('systel_save_ts', Date.now().toString());
       const s = (key, val) => localStorage.setItem('systel_' + key, JSON.stringify(val));
       s('config', CONFIG); s('casernes', CASERNES); s('engins', ENGINS); s('users', USERS);
       s('interventions', INTERVENTIONS); s('feuilles_garde', FEUILLES_GARDE); s('cossim_config', COSSIM_CONFIG);
@@ -444,7 +445,8 @@
         const dotCls = e.statut === 'intervention' ? 'inter' : e.statut === 'indisponible' ? 'indispo' : '';
         const fg = FEUILLES_GARDE?.[e.id]?.[today];
         const armé = fg ? `<span style="font-size:9px;background:#38a169;color:white;padding:1px 5px;border-radius:3px;margin-left:4px;">Armé (${fg.equipe?.length||0})</span>` : '';
-        return `<div class="synop-engin-cossim ${sel?'selected':''}" onclick="toggleEnginEngagement('${e.id}')" title="${e.nom}">
+        const disabled = e.statut === 'indisponible' ? 'opacity:0.4;cursor:not-allowed;' : '';
+        return `<div class="synop-engin-cossim ${sel?'selected':''}" onclick="${e.statut!=='indisponible'?`toggleEnginEngagement('${e.id}')`:'void 0'}" title="${e.nom} — ${e.statut}" style="${disabled}">
           <span class="statut-dot ${dotCls}"></span>
           ${e.nom}${armé}
           ${sel ? '<span style="font-size:10px;margin-left:2px;">✓</span>' : ''}
@@ -498,41 +500,30 @@
       return sectionId;
     }
 
-    // ===== MINI CARTE GTA =====
+    // ===== MINI CARTE GÉOLOC (OpenStreetMap flat) =====
     function initCossimMiniMap() {
       const el = document.getElementById('cossim-mini-map');
       if (!el) return;
-      // Détruire la carte existante si l'élément a été recréé
-      if (cossimMap) {
-        try { cossimMap.remove(); } catch(e){}
-        cossimMap = null;
-      }
+      if (cossimMap) { try { cossimMap.remove(); } catch(e){} cossimMap = null; }
       try {
-        const blips = JSON.parse(localStorage.getItem('systel_carte_blips') || '[]');
         el.style.height = '200px';
+        const blips = JSON.parse(localStorage.getItem('systel_carte_blips') || '[]');
+        // Centre par défaut sur Marseille (config centre)
+        const lat0 = CONFIG?.lat || 43.2965, lng0 = CONFIG?.lng || 5.3698, zoom0 = CONFIG?.zoom || 13;
         cossimMap = L.map('cossim-mini-map', { zoomControl:true, attributionControl:false });
-        const gtaBounds = [[0,0],[1000,1000]];
-        // Essayer d'abord la carte GTA V
-        const mapImg = document.createElement('img');
-        mapImg.src = 'images/gta5map.png';
-        mapImg.onload = () => {
-          L.imageOverlay('images/gta5map.png', gtaBounds).addTo(cossimMap);
-          cossimMap.fitBounds(gtaBounds);
-        };
-        mapImg.onerror = () => {
-          // Fallback : OpenStreetMap
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(cossimMap);
-          cossimMap.setView([43.3, 5.4], 12);
-        };
-        // Markers des blips Systel
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom:19, attribution:''
+        }).addTo(cossimMap);
+        cossimMap.setView([lat0, lng0], zoom0);
+        // Blips depuis la carto Systel
         blips.forEach(b => {
           if (b.lat != null && b.lng != null) {
             L.marker([b.lat, b.lng]).addTo(cossimMap)
-             .bindPopup('<strong>' + (b.label || '') + '</strong><br>' + (b.type || ''));
+             .bindPopup('<strong>'+(b.label||'')+'</strong><br>'+(b.type||''));
           }
         });
       } catch(e) {
-        el.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:12px;flex-direction:column;gap:8px;"><span style="font-size:24px;">🗺️</span>Carte (configurez la carto dans Systel)</div>';
+        el.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:12px;text-align:center;padding:12px;"><div>🗺️<br>Carte (Leaflet requis)</div></div>';
       }
     }
 
@@ -692,17 +683,18 @@
 
     function terminerInterCossim(id) {
       if (!confirm('Terminer cette intervention ?')) return;
-      const i = INTERVENTIONS.find(x => x.id === id);
-      if (!i) return;
-      i.statut = 'Terminée';
-      i.dateFin = new Date().toISOString();
-      (i.engins || []).forEach(eId => {
+      const idx = INTERVENTIONS.findIndex(x => x.id === id);
+      if (idx === -1) return;
+      const inter = INTERVENTIONS[idx];
+      inter.statut = 'Terminée';
+      inter.dateFin = new Date().toISOString();
+      (inter.engins || []).forEach(eId => {
         const engin = ENGINS.find(e => e.id === eId);
         if (engin) { engin.statut = 'disponible'; engin.berStatut = null; engin.chefAgres = null; }
       });
       sauvegarderDonnees();
       renderSynoptiqueCossim();
-      showCossimToast('Intervention ' + id + ' terminée !');
+      showCossimToast('✅ Intervention ' + id + ' terminée !');
     }
 
     // ===== THEME =====

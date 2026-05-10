@@ -7,8 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
   synchroniserTout();
   checkAuth();
   startClock();
+  // Hash pour détecter les modifs externes (autre onglet)
+  let _lastSaveKey = '';
   setInterval(() => {
-    chargerDonnees();
+    // Ne recharger depuis localStorage QUE si une autre instance a sauvegardé
+    const currentKey = localStorage.getItem('systel_save_ts') || '';
+    if (currentKey !== _lastSaveKey) {
+      chargerDonnees();
+      _lastSaveKey = currentKey;
+    }
     const section = document.querySelector('.section.active-section');
     if (section) {
       const id = section.id.replace('section-', '');
@@ -419,6 +426,7 @@ function chargerDonnees() {
 }
 function sauvegarderDonnees() {
   const s = (k, v) => localStorage.setItem('systel_' + k, JSON.stringify(v));
+  localStorage.setItem('systel_save_ts', Date.now().toString());
   s('config',CONFIG); s('intranet',INTRANET_CONFIG); s('casernes',CASERNES); s('engins',ENGINS);
   s('users',USERS); s('planning',PLANNING); s('interventions',INTERVENTIONS);
   s('feuilles_garde',FEUILLES_GARDE); s('carte_blips',CARTE_BLIPS); s('cossim_config',COSSIM_CONFIG);
