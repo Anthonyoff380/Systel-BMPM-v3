@@ -39,13 +39,6 @@
       display:none; position:fixed; inset:0; z-index:9999;
       background: transparent;
       flex-direction:column; align-items:center; justify-content:center; gap:0;
-      backdrop-filter: blur(0px);
-    }
-    /* Fond semi-transparent derrière le téléphone seulement */
-    #bip-overlay::before {
-      content:''; position:fixed; inset:0;
-      background: radial-gradient(ellipse at center, rgba(20,0,0,0.92) 0%, rgba(0,0,0,0.88) 100%);
-      z-index:-1;
     }
     .bip-title-bar {
       color: #fff; font-size: 28px; font-weight: 900;
@@ -212,12 +205,15 @@
 
 <!-- ===== BIP OVERLAY ===== -->
 <div id="bip-overlay">
-  <div class="bip-title-bar" id="bip-motif">INTERVENTION</div>
-  <div class="bip-sub-top" id="bip-sub-top">Engin : <strong id="bip-engin"></strong> — <span id="bip-inter-num"></span></div>
+  <!-- IDs pour compatibilité JS (invisibles) -->
+  <span id="bip-motif" style="display:none;"></span>
+  <span id="bip-engin" style="display:none;"></span>
+  <span id="bip-inter-num" style="display:none;"></span>
+  <span id="bip-place" style="display:none;"></span>
 
   <div class="bip-swissphone-wrap">
     <img src="images/BIP.png" alt="Swissphone" class="bip-phone-img">
-    <!-- Tout dans le cadre vert -->
+    <!-- UNIQUEMENT dans le cadre vert -->
     <div class="bip-screen-overlay">
       <div class="bip-screen-motif" id="bip-screen-motif">---</div>
       <div class="bip-screen-engin" id="bip-screen-engin"></div>
@@ -226,9 +222,7 @@
     </div>
     <button class="bip-btn-jaune" onclick="acquitterBip()" title="Acquitter"></button>
   </div>
-  <div class="bip-hint" id="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
-  <!-- ids cachés pour compatibilité -->
-  <span id="bip-place" style="display:none;"></span>
+  <div class="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
 </div>
 
 <!-- ===== PORTAIL CONNEXION ===== -->
@@ -490,15 +484,15 @@
 </div>
 
 <!-- MODAL BER — plein écran, sans header -->
-<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.96);flex-direction:column;align-items:center;justify-content:center;">
+<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:transparent;flex-direction:column;align-items:center;justify-content:center;">
   <button onclick="fermerModal()" style="position:absolute;top:14px;right:18px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:white;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:800;font-size:12px;">✕ FERMER</button>
   <div style="color:#718096;font-size:12px;margin-bottom:10px;letter-spacing:1px;font-weight:700;">BER — <span id="ber-engin-nom" style="color:white;font-size:14px;"></span></div>
   <!-- Radio EADS SVG réaliste -->
   <div style="position:relative;width:min(96vw,780px);">
-  <svg id="ber-svg" viewBox="0 0 780 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
+  <svg id="ber-svg" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
     <!-- Corps de la radio -->
-    <rect x="0" y="0" width="780" height="240" rx="10" fill="#111"/>
-    <rect x="2" y="2" width="776" height="236" rx="9" fill="url(#bodyGrad)"/>
+    <rect x="0" y="0" width="650" height="240" rx="10" fill="#111"/>
+    <rect x="2" y="2" width="646" height="236" rx="9" fill="url(#bodyGrad)"/>
     <defs>
       <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#2a2a2a"/>
@@ -599,25 +593,25 @@
     <rect x="120" y="196" width="90" height="14" rx="7" fill="#1a1a1a" stroke="#d08000" stroke-width="1.2"/>
     <rect x="220" y="196" width="50" height="14" rx="7" fill="#1a1a1a" stroke="#d08000" stroke-width="1.2"/>
     <!-- Volume haut-parleur droite -->
-    <text x="748" y="125" font-size="18" fill="#e08000">🔊</text>
+    <text x="622" y="125" font-size="18" fill="#e08000">🔊</text>
     <!-- Bords esthétiques -->
-    <rect x="0" y="0" width="780" height="240" rx="10" fill="none" stroke="#2a2a2a" stroke-width="2"/>
+    <rect x="0" y="0" width="650" height="240" rx="10" fill="none" stroke="#2a2a2a" stroke-width="2"/>
     <!-- ZONES CLIQUABLES INVISIBLES (par-dessus le SVG) -->
   </svg>
-  <!-- Boutons cliquables superposés sur le SVG -->
+  <!-- Boutons cliquables sur le SVG (calés sur viewBox 650x240) -->
   <div style="position:absolute;inset:0;">
-    <!-- Rangée 1 -->
-    <button class="ber-svg-btn" id="ber-btn-1" onclick="changerStatutBER(1)" title="1 – PARTIS"      style="left:46.2%;top:3.3%;width:7.7%;height:27.5%;"></button>
-    <button class="ber-svg-btn" id="ber-btn-2" onclick="changerStatutBER(2)" title="2 – SSL"         style="left:55.1%;top:3.3%;width:7.7%;height:27.5%;"></button>
-    <button class="ber-svg-btn" id="ber-btn-3" onclick="changerStatutBER(3)" title="3 – DEM RADIO"   style="left:64.1%;top:3.3%;width:7.7%;height:27.5%;"></button>
-    <!-- Rangée 2 -->
-    <button class="ber-svg-btn" id="ber-btn-4" onclick="changerStatutBER(4)" title="4 – URG RADIO"  style="left:46.2%;top:35%;width:7.7%;height:27.5%;"></button>
-    <button class="ber-svg-btn" id="ber-btn-5" onclick="changerStatutBER(5)" title="5 – TRANSP CHU" style="left:55.1%;top:35%;width:7.7%;height:27.5%;"></button>
-    <button class="ber-svg-btn" id="ber-btn-6" onclick="changerStatutBER(6)" title="6 – ARRIV CHU"  style="left:64.1%;top:35%;width:7.7%;height:27.5%;"></button>
-    <!-- Rangée 3 -->
-    <button class="ber-svg-btn" id="ber-btn-7" onclick="changerStatutBER(7)" title="7 – RET DISPO"  style="left:46.2%;top:66.7%;width:7.7%;height:27.5%;"></button>
-    <button class="ber-svg-btn" id="ber-btn-8" onclick="changerStatutBER(8)" title="8 – RET INDISPO"style="left:55.1%;top:66.7%;width:7.7%;height:27.5%;"></button>
-    <button class="ber-svg-btn" id="ber-btn-9" onclick="changerStatutBER(9)" title="9 – DISPO CAS"  style="left:64.1%;top:66.7%;width:7.7%;height:27.5%;"></button>
+    <!-- Rangée 1: x=360,430,500 y=8 w=60 h=66 dans viewBox 650x240 -->
+    <button class="ber-svg-btn" id="ber-btn-1" onclick="changerStatutBER(1)" title="1 – PARTIS"      style="left:55.4%;top:3.3%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-2" onclick="changerStatutBER(2)" title="2 – SSL"         style="left:66.2%;top:3.3%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-3" onclick="changerStatutBER(3)" title="3 – DEM RADIO"   style="left:76.9%;top:3.3%;width:9.2%;height:27.5%;"></button>
+    <!-- Rangée 2: y=84 -->
+    <button class="ber-svg-btn" id="ber-btn-4" onclick="changerStatutBER(4)" title="4 – URG RADIO"  style="left:55.4%;top:35%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-5" onclick="changerStatutBER(5)" title="5 – TRANSP CHU" style="left:66.2%;top:35%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-6" onclick="changerStatutBER(6)" title="6 – ARRIV CHU"  style="left:76.9%;top:35%;width:9.2%;height:27.5%;"></button>
+    <!-- Rangée 3: y=160 -->
+    <button class="ber-svg-btn" id="ber-btn-7" onclick="changerStatutBER(7)" title="7 – RET DISPO"  style="left:55.4%;top:66.7%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-8" onclick="changerStatutBER(8)" title="8 – RET INDISPO"style="left:66.2%;top:66.7%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-9" onclick="changerStatutBER(9)" title="9 – DISPO CAS"  style="left:76.9%;top:66.7%;width:9.2%;height:27.5%;"></button>
   </div>
   </div>
 </div>
@@ -653,5 +647,36 @@
 <script src="js/feuille_garde.js"></script>
 <script src="js/cartographie.js"></script>
   <button id="global-theme-btn" onclick="toggleTheme()" style="position:fixed;bottom:24px;right:24px;z-index:9998;width:44px;height:44px;border-radius:50%;border:none;background:var(--card-bg,#2d3748);color:var(--text-color,white);font-size:20px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);" title="Thème jour/nuit">☀️</button>
+
+<script>
+// ===== SERVICE WORKER — BIP MULTIPAGE =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('SW enregistré');
+  }).catch(e => console.log('SW erreur', e));
+
+  // Recevoir les bips diffusés par le SW
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'BIP_ALERTE') {
+      const bip = event.data.bip;
+      // Trouver l'user courant depuis localStorage
+      const uid = localStorage.getItem('systel_current_user_id');
+      if (!uid || bip.userId !== uid) return; // pas pour moi
+      // Si on est sur index.html avec currentUser, laisser checkBipAlertes gérer
+      if (typeof afficherBipAlerte === 'function') return;
+      // Sinon : jouer le son + notification visuelle
+      if (typeof playBip === 'function') playBip(true);
+    }
+  });
+}
+
+// ===== Demander permission notifications =====
+document.addEventListener('DOMContentLoaded', () => {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+});
+</script>
+
 </body>
 </html>

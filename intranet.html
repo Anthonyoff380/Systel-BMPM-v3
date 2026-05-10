@@ -55,5 +55,20 @@
       </a>
     `).join('');
   </script>
+
+<script src="js/sounds.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'BIP_ALERTE') {
+      const uid = localStorage.getItem('systel_current_user_id');
+      if (uid && event.data.bip?.userId === uid) {
+        if (typeof playBip === 'function') playBip(true);
+      }
+    }
+  });
+}
+</script>
 </body>
 </html>

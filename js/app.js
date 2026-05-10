@@ -554,6 +554,10 @@ function checkBipAlertes() {
     if (!bip.acquitte) {
       bipAlerteVisible = true;
       afficherBipAlerte(bip);
+      // Broadcaster aux autres pages via Service Worker
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'BIP_ALERTE', bip });
+      }
     }
   }
 }
@@ -587,12 +591,14 @@ function acquitterBip() {
     const bip = JSON.parse(bipData);
     bip.acquitte = true;
     localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify(bip));
-    // Ouvrir ticket départ si chef d'agrès (poste C/A = index 0)
-    if (bip.isChefAgres) {
+    // Ouvrir ticket départ si chef d'agrès — UNE SEULE fois
+    if (bip.isChefAgres && !bip.ticketOuvert) {
+      bip.ticketOuvert = true;
+      localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify(bip));
       const params = new URLSearchParams({
+        inter: bip.interventionId || bip.interNum || '',
+        engin: bip.enginId || '',
         motif: bip.motif || '',
-        engin: bip.enginNom || '',
-        inter: bip.interNum || '',
         adresse: bip.adresse || '',
         date: new Date().toISOString()
       });

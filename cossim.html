@@ -500,7 +500,7 @@
       return sectionId;
     }
 
-    // ===== MINI CARTE GÉOLOC (OpenStreetMap flat) =====
+    // ===== MINI CARTE GTA (depuis carto Systel) =====
     function initCossimMiniMap() {
       const el = document.getElementById('cossim-mini-map');
       if (!el) return;
@@ -508,22 +508,23 @@
       try {
         el.style.height = '200px';
         const blips = JSON.parse(localStorage.getItem('systel_carte_blips') || '[]');
-        // Centre par défaut sur Marseille (config centre)
-        const lat0 = CONFIG?.lat || 43.2965, lng0 = CONFIG?.lng || 5.3698, zoom0 = CONFIG?.zoom || 13;
-        cossimMap = L.map('cossim-mini-map', { zoomControl:true, attributionControl:false });
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom:19, attribution:''
-        }).addTo(cossimMap);
-        cossimMap.setView([lat0, lng0], zoom0);
+        cossimMap = L.map('cossim-mini-map', { zoomControl:true, attributionControl:false, crs: L.CRS.Simple });
+        const bounds = [[0,0],[1000,1000]];
+        L.imageOverlay('images/gta5map.png', bounds).addTo(cossimMap);
+        cossimMap.fitBounds(bounds);
         // Blips depuis la carto Systel
         blips.forEach(b => {
           if (b.lat != null && b.lng != null) {
-            L.marker([b.lat, b.lng]).addTo(cossimMap)
-             .bindPopup('<strong>'+(b.label||'')+'</strong><br>'+(b.type||''));
+            const icon = L.divIcon({
+              html: `<div style="background:${b.color||'#e53e3e'};width:10px;height:10px;border-radius:50%;border:2px solid white;"></div>`,
+              className:'', iconSize:[10,10]
+            });
+            L.marker([b.lat, b.lng], {icon}).addTo(cossimMap)
+             .bindPopup('<strong>'+(b.label||b.type||'')+'</strong>');
           }
         });
       } catch(e) {
-        el.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:12px;text-align:center;padding:12px;"><div>🗺️<br>Carte (Leaflet requis)</div></div>';
+        el.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:12px;text-align:center;padding:12px;"><div>🗺️<br>Carte GTA (configurez la carto dans Systel)</div></div>';
       }
     }
 
@@ -720,5 +721,19 @@
       setTimeout(() => t.className = 'cossim-toast', 3500);
     }
   </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'BIP_ALERTE') {
+      const uid = localStorage.getItem('systel_current_user_id');
+      if (uid && event.data.bip?.userId === uid && typeof playBip === 'function') {
+        playBip(true);
+      }
+    }
+  });
+}
+</script>
 </body>
 </html>
