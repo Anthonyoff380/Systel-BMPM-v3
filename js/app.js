@@ -426,8 +426,22 @@ function sauvegarderDonnees() {
 function startClock() { setInterval(() => { const c = document.getElementById('current-clock'); if (c) c.textContent = new Date().toLocaleTimeString('fr-FR'); }, 1000); }
 function initDate() { const el = document.getElementById('center-title'); if (el) el.textContent = `CENTRE ${CONFIG.centre} - ${new Date().toLocaleDateString('fr-FR')} (WEB1)`; }
 function showToast(msg, type='') { const t = document.getElementById('toast'); if (t) { t.textContent = msg; t.className = 'toast show '+type; setTimeout(() => t.className='toast', 3000); } }
-function ouvrirModal(id) { document.getElementById('modal-overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
-function fermerModal() { document.getElementById('modal-overlay').classList.remove('open'); document.querySelectorAll('.modal').forEach(m => m.classList.remove('open')); }
+function ouvrirModal(id) {
+  if (id === 'modal-ber') {
+    document.getElementById('modal-ber').style.display = 'flex';
+    return;
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById(id).classList.add('open');
+}
+function fermerModal() {
+  // Fermer BER (div fixe)
+  const berModal = document.getElementById('modal-ber');
+  if (berModal) berModal.style.display = 'none';
+  // Fermer modaux classiques
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+}
 function resetSystem() { if (confirm("⚠️ RÉINITIALISER TOUT ?")) { localStorage.clear(); location.reload(); } }
 
 function renderAdminCasernes() {
@@ -539,21 +553,20 @@ function checkBipAlertes() {
 function afficherBipAlerte(bip) {
   const overlay = document.getElementById('bip-overlay');
   if (!overlay) return;
-  // Infos au dessus
-  document.getElementById('bip-motif').textContent = bip.motif || 'INTERVENTION';
-  document.getElementById('bip-engin').textContent = bip.enginNom || '';
-  document.getElementById('bip-inter-num').textContent = bip.interNum || '';
-  document.getElementById('bip-place').textContent = bip.place || 'En attente';
-  // Écran vert — infos bien lisibles
-  const motifCourt = (bip.motif || 'INTERVENTION').substring(0, 40);
-  document.getElementById('bip-screen-motif').textContent = motifCourt;
-  document.getElementById('bip-screen-engin').textContent = bip.enginNom || '';
-  document.getElementById('bip-screen-place').textContent = 'Place: ' + (bip.place || '?');
-  document.getElementById('bip-screen-num').textContent = bip.interNum || '';
+  // Titre et sous-titre extérieurs (au-dessus du téléphone)
+  const el = (id) => document.getElementById(id);
+  if(el('bip-motif')) el('bip-motif').textContent = (bip.motif || 'INTERVENTION').toUpperCase();
+  if(el('bip-engin')) el('bip-engin').textContent = bip.enginNom || '';
+  if(el('bip-inter-num')) el('bip-inter-num').textContent = bip.interNum || '';
+  // Cadre vert — toutes les infos utiles
+  const motif = (bip.motif || 'INTERVENTION').toUpperCase();
+  if(el('bip-screen-motif')) el('bip-screen-motif').textContent = motif;
+  if(el('bip-screen-engin')) el('bip-screen-engin').textContent = bip.enginNom || '';
+  if(el('bip-screen-place')) el('bip-screen-place').textContent = 'Place: ' + (bip.place || '?');
+  if(el('bip-screen-num')) el('bip-screen-num').textContent = bip.interNum || '';
   overlay.style.display = 'flex';
-  // Lecture son bip en boucle (embarqué base64)
-  if (typeof playBip === 'function') playBip(true);
-  else { try { bipAudio = new Audio('sounds/bip.mp3'); bipAudio.loop=true; bipAudio.play().catch(()=>{}); } catch(e){} }
+  // Son embarqué base64 — zéro 404
+  if (typeof playBip === 'function') { playBip(true); }
 }
 
 function acquitterBip() {

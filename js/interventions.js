@@ -1,3 +1,5 @@
+function userPeutTerminer() { return typeof currentUser !== "undefined" && userHasCOSSIM(currentUser); }
+
 /* ============================================================
    SYSTEL POMPIERS - MODULE INTERVENTIONS SYNOPTIQUE (v18)
    ============================================================ */
@@ -45,7 +47,7 @@ function renderInterventionCard(inter) {
         ${servicesHTML ? `<div class="synop-services-row">${servicesHTML}</div>` : ''}
         <div class="synop-engins-row">${enginsHTML||'<span style="color:#999;font-size:12px;">Aucun engin engagé</span>'}</div>
         <div class="synop-inter-actions">
-          ${(typeof currentUser !== "undefined" && userHasCOSSIM(currentUser)) ? `<button class="synop-action-btn" onclick="terminerIntervention('${inter.id}')" title="Terminer">🔴</button>` : ""}
+          ${userPeutTerminer() ? '<button class="synop-action-btn" onclick="terminerIntervention(\''+inter.id+'\')" title="Terminer">🔴</button>' : ''}
           <button class="synop-action-btn" onclick="relancerCOSSIM('${inter.id}')" title="Ouvrir COSSIM">🟢</button>
           <button class="synop-action-btn" onclick="infoIntervention('${inter.id}')" title="Info">ℹ️</button>
         </div>

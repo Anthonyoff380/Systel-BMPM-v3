@@ -429,39 +429,57 @@
     }
 
     // ===== ENGINS STYLE SYNOPTIQUE =====
+    function getFeuilleGardeAujourdhui(enginId) {
+      const today = new Date().toISOString().slice(0,10);
+      return FEUILLES_GARDE?.[enginId]?.[today] || null;
+    }
+
     function renderEnginsEngagement() {
       const list = document.getElementById('engins-engagement-list');
       const equipes = document.getElementById('equipes-par-engin');
       if (!list) return;
+      const today = new Date().toISOString().slice(0,10);
       list.innerHTML = ENGINS.map(e => {
         const sel = !!selectedEngins[e.id];
         const dotCls = e.statut === 'intervention' ? 'inter' : e.statut === 'indisponible' ? 'indispo' : '';
-        return `<div class="synop-engin-cossim ${sel ? 'selected' : ''}" onclick="toggleEnginEngagement('${e.id}')" title="${e.nom}">
+        const fg = FEUILLES_GARDE?.[e.id]?.[today];
+        const armé = fg ? `<span style="font-size:9px;background:#38a169;color:white;padding:1px 5px;border-radius:3px;margin-left:4px;">Armé (${fg.equipe?.length||0})</span>` : '';
+        return `<div class="synop-engin-cossim ${sel?'selected':''}" onclick="toggleEnginEngagement('${e.id}')" title="${e.nom}">
           <span class="statut-dot ${dotCls}"></span>
-          ${e.nom}
+          ${e.nom}${armé}
           ${sel ? '<span style="font-size:10px;margin-left:2px;">✓</span>' : ''}
         </div>`;
       }).join('');
 
-      // Équipes
       if (!equipes) return;
       const enginsSelIds = Object.keys(selectedEngins);
       if (enginsSelIds.length === 0) { equipes.innerHTML = ''; return; }
       const personnelsOptions = PERSONNELS.map(p => `<option value="${p.id}">${p.nom} ${p.prenom} (${p.grade})</option>`).join('');
+
       equipes.innerHTML = enginsSelIds.map(enginId => {
         const engin = ENGINS.find(e => e.id === enginId);
         if (!engin) return '';
         const postes = engin.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'},{id:'eq1',label:'Équipier 1',abrev:'EQ1'}];
+        // Feuille de garde du jour pour pré-remplir
+        const fg = FEUILLES_GARDE?.[enginId]?.[today];
+        const fgEquipe = fg?.equipe || [];
+        const fgBadge = fg
+          ? `<span style="font-size:10px;background:#38a169;color:white;padding:1px 8px;border-radius:3px;">✓ Feuille de garde du jour</span>`
+          : `<span style="font-size:10px;color:#a0aec0;font-style:italic;">Aucune feuille de garde pour aujourd'hui</span>`;
         return `<div class="equipe-panel">
-          <div class="equipe-panel-title">🚒 ${engin.nom} — Équipage</div>
-          ${postes.map((p, pi) => `
-            <div class="equipe-row">
+          <div class="equipe-panel-title">🚒 ${engin.nom} — Équipage ${fgBadge}</div>
+          ${postes.map((p, pi) => {
+            // Pré-remplir depuis feuille de garde : chercher le membre avec cette fonction
+            const fgMembre = fgEquipe.find(m => m.fonction === p.label) || fgEquipe[pi];
+            const preselect = fgMembre?.id || '';
+            return `<div class="equipe-row">
               <span class="equipe-row-label">${p.abrev}</span>
               <select class="cossim-input" id="poste-${enginId}-${pi}" style="padding:5px 10px;font-size:12px;flex:1;">
                 <option value="">-- ${p.label} --</option>
-                ${personnelsOptions}
+                ${PERSONNELS.map(pers => `<option value="${pers.id}" ${preselect===pers.id?'selected':''}>${pers.nom} ${pers.prenom} (${pers.grade})</option>`).join('')}
               </select>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         </div>`;
       }).join('');
     }
@@ -483,17 +501,39 @@
     // ===== MINI CARTE GTA =====
     function initCossimMiniMap() {
       const el = document.getElementById('cossim-mini-map');
-      if (!el || cossimMap) return;
+      if (!el) return;
+      // Détruire la carte existante si l'élément a été recréé
+      if (cossimMap) {
+        try { cossimMap.remove(); } catch(e){}
+        cossimMap = null;
+      }
       try {
         const blips = JSON.parse(localStorage.getItem('systel_carte_blips') || '[]');
+        el.style.height = '200px';
         cossimMap = L.map('cossim-mini-map', { zoomControl:true, attributionControl:false });
         const gtaBounds = [[0,0],[1000,1000]];
-        L.imageOverlay('images/gta5map.png', gtaBounds).addTo(cossimMap);
-        cossimMap.fitBounds(gtaBounds);
+        // Essayer d'abord la carte GTA V
+        const mapImg = document.createElement('img');
+        mapImg.src = 'images/gta5map.png';
+        mapImg.onload = () => {
+          L.imageOverlay('images/gta5map.png', gtaBounds).addTo(cossimMap);
+          cossimMap.fitBounds(gtaBounds);
+        };
+        mapImg.onerror = () => {
+          // Fallback : OpenStreetMap
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(cossimMap);
+          cossimMap.setView([43.3, 5.4], 12);
+        };
+        // Markers des blips Systel
         blips.forEach(b => {
-          if (b.lat && b.lng) L.marker([b.lat, b.lng]).addTo(cossimMap).bindPopup(b.label || b.type || '');
+          if (b.lat != null && b.lng != null) {
+            L.marker([b.lat, b.lng]).addTo(cossimMap)
+             .bindPopup('<strong>' + (b.label || '') + '</strong><br>' + (b.type || ''));
+          }
         });
-      } catch(e) { el.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:12px;">Carte GTA V (configurez la carto dans Systel)</div>'; }
+      } catch(e) {
+        el.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:12px;flex-direction:column;gap:8px;"><span style="font-size:24px;">🗺️</span>Carte (configurez la carto dans Systel)</div>';
+      }
     }
 
     // ===== COLLECTE FORMULAIRE =====

@@ -37,85 +37,70 @@
     /* ===== BIP OVERLAY ===== */
     #bip-overlay {
       display:none; position:fixed; inset:0; z-index:9999;
-      background: rgba(0,0,0,0.93);
-      flex-direction:column; align-items:center; justify-content:center;
-      gap: 0;
+      background: radial-gradient(ellipse at center, rgba(60,0,0,0.97) 0%, rgba(0,0,0,0.99) 100%);
+      flex-direction:column; align-items:center; justify-content:center; gap:0;
     }
+    /* Titre au-dessus — dans la page, pas dans le cadre */
     .bip-title-bar {
-      color: #fbd38d; font-size: 22px; font-weight: 900;
-      text-align: center; letter-spacing: 1px;
-      text-transform: uppercase; margin-bottom: 6px;
+      color: #fff; font-size: 26px; font-weight: 900;
+      text-align: center; letter-spacing: 2px;
+      text-transform: uppercase; margin-bottom: 4px;
+      text-shadow: 0 0 30px rgba(229,62,62,0.8);
     }
     .bip-sub-top {
-      color: #a0aec0; font-size: 13px; text-align: center; margin-bottom: 18px;
+      color: #a0aec0; font-size: 13px; text-align: center; margin-bottom: 16px;
     }
     .bip-swissphone-wrap {
       position: relative;
-      width: 240px;
+      width: 320px;
       user-select: none;
+      flex-shrink: 0;
     }
     .bip-swissphone-wrap img.bip-phone-img {
       width: 100%;
-      animation: bipGlow 1s infinite alternate;
+      animation: bipGlow 0.8s infinite alternate;
     }
     @keyframes bipGlow {
-      from { filter: drop-shadow(0 0 18px rgba(229,62,62,0.5)); }
-      to   { filter: drop-shadow(0 0 45px rgba(229,62,62,1)); }
+      from { filter: drop-shadow(0 0 20px rgba(229,62,62,0.6)); }
+      to   { filter: drop-shadow(0 0 50px rgba(229,62,62,1)); }
     }
-    /* Écran vert calé sur l'image — BIP.png 353x541 */
-    /* l'écran vert est à ~top:9% left:14% w:72% h:28% */
+    /* Écran vert — BIP.png 353x541 — écran à top:9% left:14% w:72% h:28% */
     .bip-screen-overlay {
       position: absolute;
-      top: 9%;
-      left: 14%;
-      width: 72%;
-      height: 28%;
-      background: #7ab84a;
-      border-radius: 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 6px;
-      overflow: hidden;
-      gap: 2px;
+      top: 9%; left: 14%; width: 72%; height: 28%;
+      background: #7ec850;
+      border-radius: 3px;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: center;
+      padding: 4px 8px; overflow: hidden; gap: 1px;
     }
+    /* Tout le texte est dans le cadre vert */
     .bip-screen-motif {
-      font-size: 11px; font-weight: 900; color: #0d2200;
-      text-align: center; line-height: 1.2;
-      max-width: 100%; word-break: break-word;
-      font-family: 'Courier New', monospace;
+      font-size: clamp(9px, 2.8vw, 14px); font-weight: 900; color: #0d2200;
+      line-height: 1.2; max-width: 100%; word-break: break-word;
+      font-family: 'Courier New', monospace; width: 100%;
     }
     .bip-screen-engin {
-      font-size: 10px; font-weight: 800; color: #1a3a00;
+      font-size: clamp(8px, 2.2vw, 12px); font-weight: 800; color: #1a3a00;
       font-family: 'Courier New', monospace;
     }
     .bip-screen-place {
-      font-size: 9px; color: #2a5000; font-weight: 700;
+      font-size: clamp(7px, 2vw, 11px); color: #2a5000; font-weight: 700;
       font-family: 'Courier New', monospace;
     }
     .bip-screen-num {
-      font-size: 8px; color: #3a6000; font-family: 'Courier New', monospace;
+      font-size: clamp(7px, 1.8vw, 10px); color: #3a6000;
+      font-family: 'Courier New', monospace;
     }
-    /* Bouton jaune transparent sur l'image */
+    /* Bouton jaune transparent */
     .bip-btn-jaune {
-      position: absolute;
-      bottom: 22%;
-      left: 14%;
-      width: 32%;
-      aspect-ratio: 1;
-      border-radius: 50%;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      z-index: 10;
+      position: absolute; bottom: 22%; left: 14%;
+      width: 32%; aspect-ratio: 1; border-radius: 50%;
+      background: transparent; border: none; cursor: pointer; z-index: 10;
     }
-    .bip-btn-jaune:hover { background: rgba(255,220,0,0.18); }
-    .bip-btn-jaune:active { background: rgba(255,220,0,0.35); }
-    .bip-sub-bottom {
-      color: #a0aec0; font-size: 12px; text-align: center; margin-top: 12px;
-    }
-    .bip-hint { font-size: 11px; color: #4a5568; margin-top: 4px; text-align:center; }
+    .bip-btn-jaune:hover { background: rgba(255,220,0,0.2); }
+    .bip-btn-jaune:active { background: rgba(255,220,0,0.4); }
+    .bip-hint { font-size: 11px; color: #555; margin-top: 10px; text-align:center; font-style:italic; }
 
     /* ===== BER MODAL IMAGE ===== */
     .ber-img-btn {
@@ -207,6 +192,43 @@
     /* ===== THEME TOGGLE BTN ===== */
     .theme-btn { background:none; border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:white; font-size:18px; cursor:pointer; padding:4px 8px; transition:background 0.15s; }
     .theme-btn:hover { background:rgba(255,255,255,0.1); }
+
+    /* ===== FEUILLE DE GARDE ===== */
+    .fg-page { display:flex; flex-direction:column; gap:0; height:100%; }
+    .fg-toolbar { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; background:var(--card-bg); border-bottom:1px solid var(--border-color); }
+    .fg-toolbar-left { display:flex; gap:16px; align-items:center; }
+    .fg-toolbar-right { display:flex; gap:8px; }
+    .fg-select-group { display:flex; flex-direction:column; gap:4px; }
+    .fg-select-group label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+    .fg-select-group select, .fg-select-group input[type=date] { padding:7px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-main); color:var(--text-color); font-size:13px; }
+    .fg-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center; }
+    .fg-card { margin:16px 20px; background:var(--card-bg); border-radius:10px; border:1px solid var(--border-color); overflow:hidden; }
+    .fg-doc-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:var(--bg-main); border-bottom:2px solid var(--border-color); }
+    .fg-doc-title { font-size:16px; font-weight:900; letter-spacing:0.5px; }
+    .fg-doc-meta { font-size:12px; color:var(--text-muted); margin-top:4px; }
+    .fg-section { border-bottom:1px solid var(--border-color); }
+    .fg-section:last-child { border-bottom:none; }
+    .fg-section-title { padding:10px 20px; font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; background:var(--bg-main); border-bottom:1px solid var(--border-color); }
+    .fg-section-body { padding:16px 20px; }
+    .fg-textarea { width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-main); color:var(--text-color); font-size:13px; resize:vertical; font-family:inherit; }
+    .fg-desc-view { font-size:13px; color:var(--text-color); line-height:1.6; min-height:40px; }
+    /* Postes spéciaux */
+    .fg-postes-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:10px; }
+    .fg-poste-item { background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; padding:12px 14px; display:flex; flex-direction:column; gap:5px; }
+    .fg-poste-abrev { font-size:11px; font-weight:900; color:var(--accent); text-transform:uppercase; letter-spacing:1px; }
+    .fg-poste-label { font-size:12px; font-weight:700; color:var(--text-color); }
+    .fg-poste-select { padding:5px 8px; border:1px solid var(--border-color); border-radius:5px; background:var(--card-bg); color:var(--text-color); font-size:12px; width:100%; margin-top:2px; }
+    .fg-poste-assigned { font-size:12px; color:var(--text-muted); font-style:italic; margin-top:2px; }
+    /* Table équipage */
+    .fg-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .fg-table th { padding:8px 12px; font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid var(--border-color); text-align:left; }
+    .fg-table td { padding:9px 12px; border-bottom:1px solid var(--border-color); }
+    .fg-table tr:last-child td { border-bottom:none; }
+    .fg-table tr:hover td { background:rgba(255,255,255,0.02); }
+    .fg-td-num { font-weight:700; color:var(--text-muted); width:32px; }
+    .fg-grade-badge { background:rgba(66,153,225,0.15); color:#63b3ed; font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; }
+    .fg-add-row { display:flex; gap:8px; align-items:center; margin-top:14px; flex-wrap:wrap; }
+    .fg-actions { display:flex; gap:10px; padding:14px 20px; border-top:1px solid var(--border-color); background:var(--bg-main); }
   </style>
 </head>
 <body class="login-page" data-theme="night">
@@ -214,23 +236,22 @@
 <!-- ===== BIP OVERLAY ===== -->
 <div id="bip-overlay">
   <div class="bip-title-bar" id="bip-motif">INTERVENTION</div>
-  <div class="bip-sub-top">Engin : <strong id="bip-engin"></strong> &mdash; <span id="bip-inter-num"></span></div>
+  <div class="bip-sub-top" id="bip-sub-top">Engin : <strong id="bip-engin"></strong> — <span id="bip-inter-num"></span></div>
 
   <div class="bip-swissphone-wrap">
     <img src="images/BIP.png" alt="Swissphone" class="bip-phone-img">
-    <!-- Écran vert superposé avec infos -->
+    <!-- Tout dans le cadre vert -->
     <div class="bip-screen-overlay">
       <div class="bip-screen-motif" id="bip-screen-motif">---</div>
       <div class="bip-screen-engin" id="bip-screen-engin"></div>
       <div class="bip-screen-place" id="bip-screen-place"></div>
       <div class="bip-screen-num" id="bip-screen-num"></div>
     </div>
-    <!-- Bouton jaune transparent cliquable -->
     <button class="bip-btn-jaune" onclick="acquitterBip()" title="Acquitter"></button>
   </div>
-
-  <div class="bip-sub-bottom">Place : <strong id="bip-place"></strong></div>
-  <div class="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
+  <div class="bip-hint" id="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
+  <!-- ids cachés pour compatibilité -->
+  <span id="bip-place" style="display:none;"></span>
 </div>
 
 <!-- ===== PORTAIL CONNEXION ===== -->
@@ -285,7 +306,6 @@
       <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">📊 Synoptique</div>
       <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">🔍 Interventions</div>
       <div class="nav-item" data-section="feuille-garde" onclick="showSection('feuille-garde')">📋 Feuille de garde</div>
-      <a href="cossim.html" id="nav-cossim" class="nav-item" style="display:none;text-decoration:none;color:inherit;">🚨 COSSIM</a>
       <div class="nav-group-label">Gestion</div>
       <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
       <div class="nav-group-label">Outils</div>
@@ -492,45 +512,57 @@
   </div>
 </div>
 
-<!-- MODAL BER -->
-<div id="modal-ber" class="modal" style="width:680px;max-height:90vh;overflow:hidden;padding:0;">
-  <div style="background:#1a202c;color:white;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;">
-    <span style="font-weight:800;font-size:15px;">📻 BER — <span id="ber-engin-nom"></span></span>
-    <button class="btn btn-secondary btn-sm" onclick="fermerModal()">FERMER</button>
+<!-- MODAL BER — plein écran, sans header -->
+<div id="modal-ber" style="
+  display:none; position:fixed; inset:0; z-index:8000;
+  background:rgba(0,0,0,0.97);
+  flex-direction:column; align-items:center; justify-content:center;
+">
+  <!-- Bouton fermer flottant -->
+  <button onclick="fermerModal()" style="
+    position:absolute; top:16px; right:20px;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    color:white; padding:7px 18px; border-radius:6px; cursor:pointer;
+    font-weight:800; font-size:13px; letter-spacing:0.5px;
+  ">✕ FERMER</button>
+  <!-- Nom engin au dessus -->
+  <div style="color:#a0aec0;font-size:13px;font-weight:700;margin-bottom:8px;letter-spacing:1px;">
+    BER — <span id="ber-engin-nom" style="color:white;"></span>
   </div>
-  <!-- Image BER.png avec boutons superposés aux vraies positions des touches -->
-  <div style="position:relative;width:100%;background:#111;overflow:hidden;">
+  <!-- Image BER pleine largeur -->
+  <div style="position:relative;width:min(95vw,860px);background:#111;border-radius:8px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.8);">
     <img src="images/BER.png" alt="Radio BER" style="width:100%;display:block;" id="ber-img">
 
-    <!-- ÉCRAN LCD de la radio (zone grise/bleue en haut à gauche) -->
-    <!-- BER.png 4879x1504 : écran ~x240-1640, y100-1050 = left:4.9% top:6.6% w:29% h:63% -->
+    <!-- ÉCRAN LCD — calé sur la zone gris/bleu de la radio EADS -->
+    <!-- BER.png 4879x1504 : écran LCD ≈ left:5% top:7% width:28% height:62% -->
     <div id="ber-lcd" style="
-      position:absolute; left:4.9%; top:6.6%; width:29%; height:63%;
-      background:rgba(200,220,180,0.92);
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      padding:6% 4%; gap:4%; pointer-events:none;
+      position:absolute; left:5%; top:7%; width:28%; height:62%;
+      background:rgba(185,210,230,0.95);
+      display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+      padding:4% 5%; gap:6%; pointer-events:none;
+      border-radius:2px;
     ">
-      <div id="ber-lcd-statut" style="font-family:'Courier New',monospace;font-size:clamp(8px,1.8vw,18px);font-weight:900;color:#0d2200;text-align:center;line-height:1.2;">--</div>
-      <div id="ber-lcd-engin" style="font-family:'Courier New',monospace;font-size:clamp(7px,1.4vw,14px);font-weight:700;color:#1a3a00;text-align:center;"></div>
-      <div id="ber-lcd-code" style="font-family:'Courier New',monospace;font-size:clamp(10px,2.2vw,22px);font-weight:900;color:#0a2a10;text-align:center;"></div>
+      <div id="ber-lcd-code" style="font-family:'Courier New',monospace;font-size:clamp(12px,2.5vw,26px);font-weight:900;color:#0a2a40;line-height:1;">--</div>
+      <div id="ber-lcd-statut" style="font-family:'Courier New',monospace;font-size:clamp(8px,1.6vw,16px);font-weight:800;color:#0d2200;line-height:1.3;">En attente</div>
+      <div id="ber-lcd-engin" style="font-family:'Courier New',monospace;font-size:clamp(7px,1.4vw,13px);font-weight:700;color:#1a3a00;"></div>
     </div>
 
-    <!-- Rangée 1: 1, 2ABC, 3DEF -->
-    <button class="ber-img-btn" onclick="changerStatutBER(1)" id="ber-btn-1" title="1 – PARTIS"       style="top:4.7%;left:62%;width:7%;height:25%;"></button>
-    <button class="ber-img-btn" onclick="changerStatutBER(2)" id="ber-btn-2" title="2 – SSL"          style="top:4.7%;left:70%;width:7%;height:25%;"></button>
-    <button class="ber-img-btn" onclick="changerStatutBER(3)" id="ber-btn-3" title="3 – DEM RADIO"    style="top:4.7%;left:78%;width:7%;height:25%;"></button>
-    <!-- Bouton rouge urgence (haut droite) -->
-    <button class="ber-img-btn" title="URGENCE" style="top:4.7%;left:87%;width:8%;height:25%;border-radius:50%;border:2px solid rgba(255,0,0,0.3);"></button>
+    <!-- Rangée 1 : touches 1, 2, 3 -->
+    <button class="ber-img-btn" onclick="changerStatutBER(1)" id="ber-btn-1" title="1 – PARTIS"      style="top:5%;left:62%;width:7.5%;height:26%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(2)" id="ber-btn-2" title="2 – SSL"         style="top:5%;left:70.5%;width:7.5%;height:26%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(3)" id="ber-btn-3" title="3 – DEM RADIO"   style="top:5%;left:79%;width:7.5%;height:26%;"></button>
+    <!-- Urgence -->
+    <button class="ber-img-btn" title="URGENCE" style="top:5%;left:88%;width:8%;height:26%;border-radius:50%;"></button>
 
-    <!-- Rangée 2: 4GHI, 5JKL, 6MNO -->
-    <button class="ber-img-btn" onclick="changerStatutBER(4)" id="ber-btn-4" title="4 – URG RADIO"   style="top:39.2%;left:62%;width:7%;height:25%;"></button>
-    <button class="ber-img-btn" onclick="changerStatutBER(5)" id="ber-btn-5" title="5 – TRANSP CHU"  style="top:39.2%;left:70%;width:7%;height:25%;"></button>
-    <button class="ber-img-btn" onclick="changerStatutBER(6)" id="ber-btn-6" title="6 – ARRIV CHU"   style="top:39.2%;left:78%;width:7%;height:25%;"></button>
+    <!-- Rangée 2 : touches 4, 5, 6 -->
+    <button class="ber-img-btn" onclick="changerStatutBER(4)" id="ber-btn-4" title="4 – URG RADIO"  style="top:38%;left:62%;width:7.5%;height:26%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(5)" id="ber-btn-5" title="5 – TRANSP CHU" style="top:38%;left:70.5%;width:7.5%;height:26%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(6)" id="ber-btn-6" title="6 – ARRIV CHU"  style="top:38%;left:79%;width:7.5%;height:26%;"></button>
 
-    <!-- Rangée 3: 7PQ, 8TUV, 9WX -->
-    <button class="ber-img-btn" onclick="changerStatutBER(7)" id="ber-btn-7" title="7 – RET DISPO"   style="top:73.1%;left:62%;width:7%;height:25%;"></button>
-    <button class="ber-img-btn" onclick="changerStatutBER(8)" id="ber-btn-8" title="8 – RET INDISPO" style="top:73.1%;left:70%;width:7%;height:25%;"></button>
-    <button class="ber-img-btn" onclick="changerStatutBER(9)" id="ber-btn-9" title="9 – DISPO CAS"   style="top:73.1%;left:78%;width:7%;height:25%;"></button>
+    <!-- Rangée 3 : touches 7, 8, 9 -->
+    <button class="ber-img-btn" onclick="changerStatutBER(7)" id="ber-btn-7" title="7 – RET DISPO"  style="top:71%;left:62%;width:7.5%;height:26%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(8)" id="ber-btn-8" title="8 – RET INDISPO"style="top:71%;left:70.5%;width:7.5%;height:26%;"></button>
+    <button class="ber-img-btn" onclick="changerStatutBER(9)" id="ber-btn-9" title="9 – DISPO CAS"  style="top:71%;left:79%;width:7.5%;height:26%;"></button>
   </div>
 </div>
 
