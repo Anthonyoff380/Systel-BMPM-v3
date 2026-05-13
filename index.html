@@ -484,11 +484,12 @@
 </div>
 
 <!-- MODAL BER — plein écran, sans header -->
-<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:transparent;flex-direction:column;align-items:center;justify-content:center;">
-  <button onclick="fermerModal()" style="position:absolute;top:14px;right:18px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:white;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:800;font-size:12px;">✕ FERMER</button>
+<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.88);flex-direction:column;align-items:center;justify-content:center;">
+
   <div style="color:#718096;font-size:12px;margin-bottom:10px;letter-spacing:1px;font-weight:700;">BER — <span id="ber-engin-nom" style="color:white;font-size:14px;"></span></div>
   <!-- Radio EADS SVG réaliste -->
-  <div style="position:relative;width:min(96vw,780px);">
+  <div style="position:relative;width:min(96vw,700px);">
+    <button onclick="fermerModal()" style="position:absolute;top:-36px;right:0;background:#e53e3e;border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-weight:900;font-size:16px;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
   <svg id="ber-svg" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
     <!-- Corps de la radio -->
     <rect x="0" y="0" width="650" height="240" rx="10" fill="#111"/>

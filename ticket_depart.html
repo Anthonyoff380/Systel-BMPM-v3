@@ -36,15 +36,15 @@
     .ival{border-bottom:1px solid #bbb;flex:1;min-height:5.5mm;padding-left:2px;font-size:9.5pt;line-height:1.4;}
 
     /* OBS */
-    .obs-body{font-size:9.5pt;line-height:1.9;min-height:24mm;white-space:pre-wrap;}
+    .obs-body{font-size:9.5pt;line-height:1.9;min-height:22mm;white-space:pre-wrap;}
 
-    /* TABLE ARMEMENT */
+    /* ARMEMENT */
     .arm-table{width:100%;border-collapse:collapse;font-size:9.5pt;}
-    .arm-table th{font-weight:700;padding:1.5px 5px;border-bottom:1.5px solid #000;font-size:9pt;text-align:left;}
+    .arm-table th{font-weight:700;padding:2px 5px;border-bottom:1.5px solid #000;font-size:9pt;text-align:left;}
     .arm-table td{padding:2.5px 5px;border-bottom:1px solid #ddd;}
     .arm-table tr:last-child td{border-bottom:none;}
 
-    /* BAS 2 COLONNES */
+    /* BAS 2 COL */
     .two-col{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm;margin-top:3.5mm;}
     .btable{width:100%;border-collapse:collapse;font-size:9pt;}
     .btable th{font-weight:700;padding:1.5px 4px;border-bottom:1.5px solid #000;text-align:left;}
@@ -60,18 +60,15 @@
   </style>
 </head>
 <body>
-
 <div class="print-bar">
   <button class="btn-print" onclick="window.print()">🖨️ IMPRIMER</button>
   <button class="btn-close-pg" onclick="window.close()">✕ Fermer</button>
 </div>
 
 <div class="page">
-
-  <!-- EN-TÊTE -->
   <div class="doc-top">
     <div class="doc-top-left">
-      <div id="h-type" style="font-weight:700;">RENFORT STANDARD</div>
+      <div id="h-type" style="font-weight:700;">DÉPART STANDARD</div>
       <div id="h-datetime" style="font-size:9pt;color:#444;"></div>
     </div>
     <div class="doc-top-mid" id="h-centre">PTR</div>
@@ -81,12 +78,8 @@
     </div>
   </div>
 
-  <!-- TITRE INTERVENTION -->
-  <div class="sinistre-box">
-    <div id="t-sinistre">INTERVENTION</div>
-  </div>
+  <div class="sinistre-box"><div id="t-sinistre">INTERVENTION</div></div>
 
-  <!-- LOCALISATION -->
   <div class="section">
     <div class="s-title">LOCALISATION DU SINISTRE</div>
     <div class="s-body">
@@ -103,15 +96,11 @@
     </div>
   </div>
 
-  <!-- OBSERVATIONS -->
   <div class="section">
     <div class="s-title">OBSERVATIONS</div>
-    <div class="s-body">
-      <div class="obs-body" id="t-obs">-</div>
-    </div>
+    <div class="s-body"><div class="obs-body" id="t-obs">-</div></div>
   </div>
 
-  <!-- ARMEMENT -->
   <div class="section">
     <div class="s-title">ARMEMENT DES VÉHICULES</div>
     <div class="s-body">
@@ -122,7 +111,6 @@
     </div>
   </div>
 
-  <!-- BAS -->
   <div class="two-col">
     <div class="section" style="margin-bottom:0;">
       <div class="s-title">AUTRES MOYENS ALERTÉS</div>
@@ -143,22 +131,26 @@
       </div>
     </div>
   </div>
-
-</div><!-- /page -->
+</div>
 
 <script src="js/sounds.js"></script>
 <script src="js/data.js"></script>
 <script>
+// Charger toutes les données
 function ld(k){try{const v=localStorage.getItem('systel_'+k);return v?JSON.parse(v):null;}catch(e){return null;}}
-const cfg=ld('config');if(cfg)Object.assign(CONFIG,cfg);
-const cas=ld('casernes');if(cas)CASERNES=cas;
-const eng=ld('engins');if(eng)ENGINS=eng;
-const usr=ld('users');if(usr)USERS=usr;
-const ivs=ld('interventions');if(ivs)INTERVENTIONS=ivs;
+const cfg=ld('config'); if(cfg) Object.assign(CONFIG,cfg);
+const cas=ld('casernes'); if(cas) CASERNES=cas;
+const eng=ld('engins'); if(eng) ENGINS=eng;
+const usr=ld('users'); if(usr) USERS=usr;
+const ivs=ld('interventions'); if(ivs) INTERVENTIONS=ivs;
+const ccfg=ld('cossim_config'); if(ccfg) Object.assign(COSSIM_CONFIG,ccfg);
 
 function p2(n){return String(n).padStart(2,'0');}
 function fdt(d){return p2(d.getDate())+'-'+p2(d.getMonth()+1)+'-'+d.getFullYear()+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());}
-function getCentre(sectionId){for(const c of CASERNES){for(const s of c.sections){if(s.id===sectionId)return c.nom;}}return CONFIG?.centre||'--';}
+function getCentre(sectionId){
+  for(const c of CASERNES){for(const s of c.sections){if(s.id===sectionId)return c.nom;}}
+  return CONFIG?.centre||'--';
+}
 
 const params=new URLSearchParams(window.location.search);
 const interId=params.get('inter');
@@ -169,60 +161,72 @@ const inter=INTERVENTIONS.find(i=>i.id===interId)||{};
 const engin=ENGINS.find(e=>e.id===enginId)||{};
 const interDate=inter.date?new Date(inter.date):now;
 
-// Header
-document.getElementById('h-type').textContent=inter.type||'INTERVENTION';
-document.getElementById('h-datetime').textContent=fdt(interDate);
-document.getElementById('h-centre').textContent=CONFIG?.centre||'PTR';
-document.getElementById('h-engin').textContent=engin.nom||enginId||'--';
-document.getElementById('h-num').textContent='N° '+(inter.numero||inter.id||'--');
-document.getElementById('t-sinistre').textContent=(inter.type||'INTERVENTION').toUpperCase();
+// En-tête
+document.getElementById('h-type').textContent = inter.renfortDe ? 'RENFORT' : 'DÉPART STANDARD';
+document.getElementById('h-datetime').textContent = fdt(interDate);
+// Centre = abréviation configurée
+const centreNom = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
+document.getElementById('h-centre').textContent = centreNom;
+document.getElementById('h-engin').textContent = engin.nom || enginId || '--';
+// N° = numéro d'intervention
+document.getElementById('h-num').textContent = 'N° ' + (inter.numero || inter.id || '--');
+
+// Sinistre
+document.getElementById('t-sinistre').textContent = (inter.type||'INTERVENTION').toUpperCase();
 
 // Localisation
-document.getElementById('t-commune').textContent=inter.commune||'--';
-document.getElementById('t-numero').textContent=inter.numero||'';
-document.getElementById('t-voie').textContent=inter.voie||'--';
-document.getElementById('t-erp').textContent=inter.etablissement||'-';
-document.getElementById('t-precision').textContent=inter.precision||'-';
-document.getElementById('t-consigne').textContent=inter.consigne||'ERP fermé.';
-document.getElementById('t-contact').textContent=inter.contact||'-';
-document.getElementById('t-nca').textContent=inter.nca||'-';
-document.getElementById('t-obs').textContent=inter.observations||'-';
+document.getElementById('t-commune').textContent = inter.commune||'--';
+document.getElementById('t-numero').textContent = inter.numero||'';
+document.getElementById('t-voie').textContent = inter.voie||'--';
+document.getElementById('t-erp').textContent = inter.etablissement||'-';
+document.getElementById('t-precision').textContent = inter.precision||'-';
+// Consigne = depuis config ERP si disponible
+const consigneERP = COSSIM_CONFIG?.erp_consignes?.[inter.etablissement] || inter.consigne || 'ERP fermé.';
+document.getElementById('t-consigne').textContent = consigneERP;
+document.getElementById('t-contact').textContent = inter.contact||'-';
+document.getElementById('t-nca').textContent = inter.nca||'-';
+document.getElementById('t-obs').textContent = inter.observations||'-';
 
-// Armement
-const membres=inter.equipes?.[enginId]?.membres||[];
-const armTbody=document.getElementById('t-armement');
-if(membres.length>0){
-  armTbody.innerHTML=membres.map(m=>{
-    const u=USERS.find(x=>x.id===m.userId);
+// Armement — GFO depuis equipes + membres
+const armTbody = document.getElementById('t-armement');
+const equipeData = inter.equipes?.[enginId] || {};
+const membres = equipeData.membres || [];
+const gfo = inter.enginsGFO?.[enginId] || equipeData.gfo || '--';
+
+if(membres.length > 0){
+  armTbody.innerHTML = membres.map(m => {
+    const u = USERS.find(x=>x.id===m.userId);
     return `<tr>
       <td>${engin.nom||'--'}</td>
-      <td>${CONFIG?.centre||'PTR'}</td>
+      <td><strong>${gfo}</strong></td>
       <td>${m.abrev||m.posteLabel||'--'}</td>
       <td>${u?.grade||'--'}</td>
       <td><strong>${u?(u.lastname+' '+u.firstname).trim():'--'}</strong></td>
     </tr>`;
   }).join('');
-}else{
-  // Fallback depuis données BIP si disponible
-  const bipRaw=localStorage.getItem('systel_bip_ticket_'+interId+'_'+enginId);
-  if(bipRaw){
-    const bipD=JSON.parse(bipRaw);
-    armTbody.innerHTML=`<tr><td>${engin.nom||'--'}</td><td>${CONFIG?.centre||'PTR'}</td><td>C/A</td><td>--</td><td><strong>${bipD.chefNom||'--'}</strong></td></tr>`;
-  }else{
-    armTbody.innerHTML=`<tr><td>${engin.nom||'--'}</td><td>${CONFIG?.centre||'PTR'}</td><td>C/A</td><td>--</td><td>--</td></tr>`;
-  }
+} else {
+  armTbody.innerHTML = `<tr><td>${engin.nom||'--'}</td><td>${gfo}</td><td>C/A</td><td>--</td><td>--</td></tr>`;
 }
 
-// Moyens déjà engagés (autres engins de la même inter)
-const autresEngins=(inter.engins||[]).filter(id=>id!==enginId);
-if(autresEngins.length>0){
-  document.getElementById('t-engages').innerHTML=autresEngins.map(id=>{
-    const e=ENGINS.find(x=>x.id===id);
+// Autres moyens alertés (renforts demandés)
+const autresMoyens = inter.autresMoyensAlertes || [];
+if(autresMoyens.length > 0){
+  document.getElementById('t-autres').innerHTML = autresMoyens.map(m => {
+    const e = ENGINS.find(x=>x.id===m.enginId);
+    return `<tr><td>${getCentre(e?.section)}</td><td>${m.gfo||'--'}</td><td>${m.enginNom||e?.nom||m.enginId}</td></tr>`;
+  }).join('');
+}
+
+// Moyens déjà engagés (autres engins de la même inter, en cours)
+const autresEngins = (inter.engins||[]).filter(id=>id!==enginId);
+if(autresEngins.length > 0){
+  document.getElementById('t-engages').innerHTML = autresEngins.map(id => {
+    const e = ENGINS.find(x=>x.id===id);
     return `<tr><td>${getCentre(e?.section)}</td><td>${e?.nom||id}</td><td>${fdt(interDate)}</td></tr>`;
   }).join('');
 }
 
-document.title='TICKET DÉPART — '+(engin.nom||'')+'—'+(inter.numero||'');
+document.title = 'TICKET DÉPART — '+(engin.nom||'')+' — '+(inter.numero||'');
 </script>
 </body>
 </html>

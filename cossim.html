@@ -195,7 +195,7 @@
           <div class="cossim-card">
             <div class="cossim-card-header">🏢 Établissement (ERP)</div>
             <div class="cossim-card-body">
-              <select class="cossim-input" id="c-etablissement">
+              <select class="cossim-input" id="c-etablissement" onchange="majConsigneDepuisERP(this.value)">
                 <option value="">-- Aucun ERP --</option>
               </select>
             </div>
@@ -371,6 +371,13 @@
       if (name === 'creation') { renderEnginsEngagement(); setTimeout(initCossimMiniMap, 300); }
     }
 
+    // ===== CONSIGNE AUTO DEPUIS ERP =====
+    function majConsigneDepuisERP(erpNom) {
+      const consigne = COSSIM_CONFIG.erp_consignes?.[erpNom] || '';
+      const obs = document.getElementById('c-observations');
+      if (obs && consigne && !obs.value) obs.value = consigne;
+    }
+
     // ===== COMMUNES (select dynamique) =====
     function initCommunesSelect() {
       const sel = document.getElementById('c-commune');
@@ -468,10 +475,17 @@
         const fgBadge = fg
           ? `<span style="font-size:10px;background:#38a169;color:white;padding:1px 8px;border-radius:3px;">✓ Feuille de garde du jour</span>`
           : `<span style="font-size:10px;color:#a0aec0;font-style:italic;">Aucune feuille de garde pour aujourd'hui</span>`;
+        const gfoOpts = (COSSIM_CONFIG.gfo_types||['G-SAP','G-SSO','PROMPT_SAP','G-INC']).map(g=>`<option value="${g}">${g}</option>`).join('');
         return `<div class="equipe-panel">
           <div class="equipe-panel-title">🚒 ${engin.nom} — Équipage ${fgBadge}</div>
+          <div class="equipe-row" style="margin-bottom:6px;">
+            <span class="equipe-row-label" style="color:#a0aec0;font-size:10px;">GFO</span>
+            <select class="cossim-input" id="gfo-${enginId}" style="padding:5px 10px;font-size:12px;flex:1;">
+              <option value="">-- Type de départ --</option>
+              ${gfoOpts}
+            </select>
+          </div>
           ${postes.map((p, pi) => {
-            // Pré-remplir depuis feuille de garde : chercher le membre avec cette fonction
             const fgMembre = fgEquipe.find(m => m.fonction === p.label) || fgEquipe[pi];
             const preselect = fgMembre?.id || '';
             return `<div class="equipe-row">
@@ -559,7 +573,9 @@
           const sel = document.getElementById('poste-' + enginId + '-' + pi);
           return sel?.value ? { posteId: p.id, posteLabel: p.label, abrev: p.abrev, userId: sel.value } : null;
         }).filter(Boolean);
-        equipes[enginId] = { chefAgres: membres[0]?.userId || null, membres };
+        const gfoSel = document.getElementById('gfo-' + enginId);
+        const gfo = gfoSel?.value || '';
+        equipes[enginId] = { chefAgres: membres[0]?.userId || null, membres, gfo };
       });
       return equipes;
     }
@@ -588,6 +604,23 @@
       const equipes = collecterEquipes();
       const interNum = genNumeroIntervention();
       const now = new Date().toISOString();
+      // Récupérer le GFO de chaque engin
+      const enginsGFO = {};
+      data.engins.forEach(eId => { enginsGFO[eId] = equipes[eId]?.gfo || ''; });
+      // Lien renfort si applicable
+      const renfortDe = window._renfortDeInterId || null;
+      if (renfortDe) {
+        // Ajouter cet engin comme "moyen alerté" dans l'inter d'origine
+        const interOrigine = INTERVENTIONS.find(i => i.id === renfortDe);
+        if (interOrigine) {
+          if (!interOrigine.autresMoyensAlertes) interOrigine.autresMoyensAlertes = [];
+          data.engins.forEach(eId => {
+            const e = ENGINS.find(x=>x.id===eId);
+            interOrigine.autresMoyensAlertes.push({ enginId: eId, enginNom: e?.nom||eId, gfo: enginsGFO[eId], date: now });
+          });
+        }
+        window._renfortDeInterId = null;
+      }
       const intervention = {
         id: interNum, numero: interNum, date: now,
         type: data.sinistre, categorie: data.categorie,
@@ -595,7 +628,7 @@
         quartier: data.quartier, precision: data.precision,
         etablissement: data.etablissement, nca: data.nca, contact: data.contact,
         observations: data.observations, services: data.services,
-        engins: data.engins, equipes, statut: 'En cours'
+        engins: data.engins, equipes, enginsGFO, renfortDe, statut: 'En cours'
       };
       INTERVENTIONS.push(intervention);
       // Mettre les engins en intervention
@@ -636,6 +669,41 @@
     }
 
     // ===== SYNOPTIQUE COSSIM =====
+    function ouvrirRenfort(interId) {
+      const inter = INTERVENTIONS.find(i => i.id === interId);
+      if (!inter) return;
+      // Basculer sur la page création
+      showCossimPage('creation', document.querySelector('[data-page=creation]'));
+      // Pré-remplir depuis l'intervention existante
+      setTimeout(() => {
+        if(document.getElementById('c-commune')) document.getElementById('c-commune').value = inter.commune||'';
+        if(document.getElementById('c-voie')) document.getElementById('c-voie').value = inter.voie||'';
+        if(document.getElementById('c-numero')) document.getElementById('c-numero').value = inter.numero||'';
+        if(document.getElementById('c-quartier')) document.getElementById('c-quartier').value = inter.quartier||'';
+        if(document.getElementById('c-precision')) document.getElementById('c-precision').value = inter.precision||'';
+        if(document.getElementById('c-etablissement')) { document.getElementById('c-etablissement').value = inter.etablissement||''; }
+        if(document.getElementById('c-nca')) document.getElementById('c-nca').value = inter.nca||'';
+        if(document.getElementById('c-contact')) document.getElementById('c-contact').value = inter.contact||'';
+        if(document.getElementById('c-observations')) document.getElementById('c-observations').value = '[RENFORT #'+interId+'] ' + (inter.observations||'');
+        // Catégorie + sinistre
+        initCategories();
+        if(document.getElementById('c-categorie')) {
+          document.getElementById('c-categorie').value = inter.categorie||'';
+          updateSinistresOptions();
+          setTimeout(() => { if(document.getElementById('c-sinistre')) document.getElementById('c-sinistre').value = inter.type||''; }, 100);
+        }
+        // Services
+        (inter.services||[]).forEach(s => {
+          const cb = document.querySelector(`#services-grid input[value="${s}"]`);
+          if (cb) { cb.checked = true; if(!selectedServices.includes(s)) selectedServices.push(s); }
+        });
+        document.getElementById('services-count').textContent = selectedServices.length;
+        // Stocker l'id de renfort pour lier les moyens
+        window._renfortDeInterId = interId;
+        showCossimToast('Formulaire pré-rempli depuis #'+interId+' — modifiez l'engin et les observations');
+      }, 300);
+    }
+
     function renderSynoptiqueCossim() {
       chargerDonnees();
       const enCours = INTERVENTIONS.filter(i => i.statut === 'En cours');
@@ -670,7 +738,7 @@
             <div class="synop-actions2">
               <button class="synop-btn2 danger" onclick="terminerInterCossim('${inter.id}')">🔴 Terminer</button>
               <button class="synop-btn2" onclick="window.open('ticket_depart.html?inter=${inter.id}&engin=${(inter.engins||[])[0]||''}','_blank')">🖨️ Ticket</button>
-              <button class="synop-btn2" onclick="showCossimPage('creation',document.querySelector('[data-page=creation]'))">+ Renfort</button>
+              <button class="synop-btn2" onclick="ouvrirRenfort('${inter.id}')">+ Renfort</button>
             </div>
           </div>
         </div>`;

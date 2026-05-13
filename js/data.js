@@ -3,6 +3,7 @@
    ============================================================ */
 
 let CONFIG = {
+  centreAbrev: 'PTR',
   nom: "Centre PTR",
   centre: "PTR",
   ville: "Marseille",
@@ -57,6 +58,14 @@ let CARTE_BLIPS = [];
 let COSSIM_CONFIG = {
   communes: ["Marseille", "Aubagne", "La Ciotat", "Cassis", "Allauch", "Plan-de-Cuques", "Septèmes-les-Vallons"],
   erp: ["Hôpital Nord", "Hôpital Timone", "CHU Conception", "Stade Vélodrome", "Aéroport MRS"],
+  erp_consignes: {
+    "Hôpital Nord": "Accès pompiers par portail nord. PCC au niveau -1.",
+    "Hôpital Timone": "Entrée secours : rue Saint-Pierre. Réferent sécurité en attente.",
+    "CHU Conception": "Parking pompiers dédié. Contact sécurité : 04 91 00 00 00.",
+    "Stade Vélodrome": "Accès par passerelle Ganay. ERP fermé hors match.",
+    "Aéroport MRS": "Zone côté piste : accreditation requise. Contact tour de contrôle."
+  },
+  gfo_types: ["G-SAP", "G-SSO", "PROMPT_SAP", "G-INC", "PROMPT_INC", "G-DIV", "G-OUV"],
   categories_sinistres: [
     {
       id: "avp", nom: "ACCIDENT / AVP", sinistres: [

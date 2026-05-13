@@ -226,6 +226,14 @@ function renderAdminCossim() {
           <button class="btn btn-primary btn-sm" onclick="addCossimCategorie()">+ Catégorie</button>
         </div>
       </div></div>
+      <!-- GFO Types -->
+      <div class="card" style="grid-column:1/-1;"><div class="card-header">🚒 Types de départ (GFO)</div><div class="card-body">
+        <div id="adm-gfo-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="adm-new-gfo" placeholder="Ex: PROMPT_SAP, G-INC..." style="flex:1;">
+          <button class="btn btn-success btn-sm" onclick="addCossimGFO()">+</button>
+        </div>
+      </div></div>
     </div>
   `;
   refreshAdminCossimLists();
@@ -238,17 +246,35 @@ function refreshAdminCossimLists() {
     <div class="adm-list-item"><span>${v}</span>
     <button class="btn btn-danger btn-sm" onclick="removeCossimItem('communes',${i})">✕</button></div>`).join('');
 
-  // ERP
+  // ERP avec consignes
   const el = document.getElementById('adm-erp-list');
-  if (el) el.innerHTML = COSSIM_CONFIG.erp.map((v,i) => `
-    <div class="adm-list-item"><span>${v}</span>
-    <button class="btn btn-danger btn-sm" onclick="removeCossimItem('erp',${i})">✕</button></div>`).join('');
+  if (el) el.innerHTML = COSSIM_CONFIG.erp.map((v,i) => {
+    const consigne = COSSIM_CONFIG.erp_consignes?.[v] || '';
+    return `<div style="margin-bottom:8px;border:1px solid var(--border-color);border-radius:6px;overflow:hidden;">
+      <div class="adm-list-item" style="border-bottom:${consigne?'1px solid var(--border-color)':'none'};">
+        <strong style="font-size:13px;">${v}</strong>
+        <button class="btn btn-danger btn-sm" onclick="removeCossimItem('erp',${i})">✕</button>
+      </div>
+      <div style="padding:4px 10px;display:flex;gap:6px;align-items:center;">
+        <input type="text" value="${consigne.replace(/"/g,'&quot;')}" placeholder="Consigne pour cet ERP..."
+          style="flex:1;font-size:11px;padding:3px 6px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-color);"
+          onchange="majConsigneERP('${v.replace(/'/g,"\\'")}', this.value)">
+      </div>
+    </div>`;
+  }).join('');
 
   // Services
   const sl = document.getElementById('adm-services-list');
   if (sl) sl.innerHTML = COSSIM_CONFIG.services.map((v,i) => `
     <div class="adm-list-item"><span>${v}</span>
     <button class="btn btn-danger btn-sm" onclick="removeCossimItem('services',${i})">✕</button></div>`).join('');
+
+  // GFO Types
+  const gfol = document.getElementById('adm-gfo-list');
+  if (gfol) gfol.innerHTML = (COSSIM_CONFIG.gfo_types||[]).map((v,i) => `
+    <span style="display:flex;align-items:center;gap:4px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:5px;padding:3px 8px;font-size:12px;font-weight:700;">
+      ${v}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:11px;padding:0 2px;" onclick="removeCossimGFO(${i})">✕</button>
+    </span>`).join('');
 
   // Sinistres par catégorie
   const sinl = document.getElementById('adm-sinistres-list');
@@ -279,10 +305,27 @@ function addCossimItem(key, inputId) {
   sauvegarderDonnees();
   refreshAdminCossimLists();
 }
+function majConsigneERP(erpNom, consigne) {
+  if (!COSSIM_CONFIG.erp_consignes) COSSIM_CONFIG.erp_consignes = {};
+  COSSIM_CONFIG.erp_consignes[erpNom] = consigne;
+  sauvegarderDonnees();
+}
 function removeCossimItem(key, idx) {
   COSSIM_CONFIG[key].splice(idx, 1);
   sauvegarderDonnees();
   refreshAdminCossimLists();
+}
+function addCossimGFO() {
+  const val = document.getElementById('adm-new-gfo')?.value.trim().toUpperCase();
+  if (!val) return;
+  if (!COSSIM_CONFIG.gfo_types) COSSIM_CONFIG.gfo_types = [];
+  COSSIM_CONFIG.gfo_types.push(val);
+  document.getElementById('adm-new-gfo').value = '';
+  sauvegarderDonnees(); refreshAdminCossimLists();
+}
+function removeCossimGFO(idx) {
+  COSSIM_CONFIG.gfo_types.splice(idx, 1);
+  sauvegarderDonnees(); refreshAdminCossimLists();
 }
 function addCossimCategorie() {
   const nom = document.getElementById('adm-new-cat')?.value.trim();
