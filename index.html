@@ -373,7 +373,7 @@
           </div>
           <div style="max-height:150px;overflow-y:auto;" id="blips-liste"></div>
         </div>
-        <div id="carto-map"></div>
+        <div id="carto-map" style="width:100%;height:calc(100vh - 200px);min-height:450px;border-radius:8px;"></div>
       </div>
 
       <!-- ADMIN -->
@@ -637,8 +637,7 @@
 <div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
 <div id="toast" class="toast"></div>
 
-<script src="js/sounds.js"></script>
-  <script src="js/data.js"></script>
+<script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/synoptique.js"></script>
 <script src="js/interventions.js"></script>
@@ -649,6 +648,15 @@
 <script src="js/cartographie.js"></script>
   <button id="global-theme-btn" onclick="toggleTheme()" style="position:fixed;bottom:24px;right:24px;z-index:9998;width:44px;height:44px;border-radius:50%;border:none;background:var(--card-bg,#2d3748);color:var(--text-color,white);font-size:20px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);" title="Thème jour/nuit">☀️</button>
 
+<script>
+// Charger sounds.js de façon asynchrone pour ne pas bloquer la page
+(function() {
+  var s = document.createElement('script');
+  s.src = 'js/sounds.js';
+  s.async = true;
+  document.head.appendChild(s);
+})();
+</script>
 <script>
 // ===== SERVICE WORKER — BIP MULTIPAGE =====
 if ('serviceWorker' in navigator) {

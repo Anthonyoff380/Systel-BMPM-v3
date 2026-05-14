@@ -19,22 +19,33 @@ const BLIP_TYPES = [
 ];
 
 function initCartographie() {
-  // Toujours refresh les blips même si déjà initialisée
+  const mapEl = document.getElementById('carto-map');
+  if (!mapEl) return;
+
+  // Forcer une hauteur si pas déjà définie
+  if (!mapEl.style.height || mapEl.offsetHeight < 100) {
+    mapEl.style.height = 'calc(100vh - 200px)';
+    mapEl.style.minHeight = '450px';
+  }
+
+  // Si déjà initialisée, juste refresher
   if (carteInitialisee && carteLeaflet) {
-    refreshBlips();
-    // Afficher/masquer outils admin
-    const adminTools = document.getElementById('carto-admin-tools');
-    if (adminTools) adminTools.style.display = userIsAdmin(currentUser) ? 'block' : 'none';
-    renderListeBlips();
-    return;
+    try {
+      carteLeaflet.invalidateSize();
+      refreshBlips();
+      const adminTools = document.getElementById('carto-admin-tools');
+      if (adminTools) adminTools.style.display = userIsAdmin(currentUser) ? 'block' : 'none';
+      renderListeBlips();
+      return;
+    } catch(e) {
+      carteInitialisee = false;
+      carteLeaflet = null;
+    }
   }
   carteInitialisee = true;
 
   const adminTools = document.getElementById('carto-admin-tools');
   if (adminTools) adminTools.style.display = userIsAdmin(currentUser) ? 'block' : 'none';
-
-  const mapEl = document.getElementById('carto-map');
-  if (!mapEl) return;
 
   // Dimensions image GTA5 : on utilise CRS.Simple
   // L'image fait environ 877x1310 pixels

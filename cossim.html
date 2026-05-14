@@ -290,7 +290,6 @@
 
   <div id="cossim-toast" class="cossim-toast"></div>
 
-  <script src="js/sounds.js"></script>
   <script src="js/data.js"></script>
   <script>
 
@@ -320,14 +319,23 @@
     document.addEventListener('DOMContentLoaded', () => {
       chargerDonnees();
       synchroniserTout();
-      initCommunesSelect();
-      initERPSelect();
-      initCategories();
-      renderServicesGrid();
-      renderEnginsEngagement();
-      initCossimMiniMap();
+      // Attendre que le DOM soit prêt pour les selects
+      setTimeout(() => {
+        initCommunesSelect();
+        initERPSelect();
+        initCategories();
+        renderServicesGrid();
+        renderEnginsEngagement();
+        setTimeout(initCossimMiniMap, 500);
+      }, 100);
       setInterval(updateDatetime, 1000);
       updateDatetime();
+      // Refresh synoptique toutes les 5s depuis localStorage
+      setInterval(() => {
+        chargerDonnees();
+        const page = document.querySelector('.cossim-page.active');
+        if (page && page.id === 'cossim-page-synoptique') renderSynoptiqueCossim();
+      }, 5000);
     });
 
     function updateDatetime() {
@@ -365,10 +373,19 @@
     function showCossimPage(name, btn) {
       document.querySelectorAll('.cossim-page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.cossim-nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('cossim-page-' + name).classList.add('active');
+      const page = document.getElementById('cossim-page-' + name);
+      if (page) page.classList.add('active');
       if (btn && btn.classList) btn.classList.add('active');
+      chargerDonnees(); // Toujours recharger depuis localStorage
       if (name === 'synoptique') renderSynoptiqueCossim();
-      if (name === 'creation') { renderEnginsEngagement(); setTimeout(initCossimMiniMap, 300); }
+      if (name === 'creation') {
+        initCommunesSelect();
+        initERPSelect();
+        initCategories();
+        renderServicesGrid();
+        renderEnginsEngagement();
+        setTimeout(initCossimMiniMap, 400);
+      }
     }
 
     // ===== CONSIGNE AUTO DEPUIS ERP =====
@@ -521,9 +538,10 @@
       if (cossimMap) { try { cossimMap.remove(); } catch(e){} cossimMap = null; }
       try {
         el.style.height = '200px';
+        el.style.minHeight = '200px';
         const blips = JSON.parse(localStorage.getItem('systel_carte_blips') || '[]');
         cossimMap = L.map('cossim-mini-map', { zoomControl:true, attributionControl:false, crs: L.CRS.Simple });
-        const bounds = [[0,0],[1000,1000]];
+        const bounds = [[0,0],[1310,877]];
         L.imageOverlay('images/gta5map.png', bounds).addTo(cossimMap);
         cossimMap.fitBounds(bounds);
         // Blips depuis la carto Systel
@@ -700,7 +718,7 @@
         document.getElementById('services-count').textContent = selectedServices.length;
         // Stocker l'id de renfort pour lier les moyens
         window._renfortDeInterId = interId;
-        showCossimToast('Formulaire pré-rempli depuis #'+interId+' — modifiez l'engin et les observations');
+        showCossimToast('Formulaire pré-rempli depuis #'+interId+' — modifiez l\'engin et les observations');
       }, 300);
     }
 
@@ -803,5 +821,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script>(function(){var s=document.createElement("script");s.src="js/sounds.js";s.async=true;document.head.appendChild(s);})();</script>
 </body>
 </html>
