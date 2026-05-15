@@ -37,7 +37,7 @@
     /* ===== BIP OVERLAY ===== */
     #bip-overlay {
       display:none; position:fixed; inset:0; z-index:9999;
-      background: transparent;
+      background: transparent !important;
       flex-direction:column; align-items:center; justify-content:center; gap:0;
     }
     .bip-title-bar {
@@ -403,6 +403,7 @@
           <button class="admin-tab-btn"         data-tab="engins"   onclick="showAdminTab('engins',event)">Engins</button>
           <button class="admin-tab-btn"         data-tab="users"    onclick="showAdminTab('users',event)">Comptes</button>
           <button class="admin-tab-btn"         data-tab="cossim"   onclick="showAdminTab('cossim',event)">Config COSSIM</button>
+          <button class="admin-tab-btn" data-tab="grades"   onclick="showAdminTab('grades',event)">🎖️ Grades</button>
           <button class="admin-tab-btn" data-tab="webhooks" onclick="showAdminTab('webhooks',event)">🔔 Webhooks</button>
           <button class="admin-tab-btn"         data-tab="intranet" onclick="showAdminTab('intranet',event)">Config Intranet</button>
         </div>
@@ -442,6 +443,8 @@
         </div>
 
         <div id="admin-tab-cossim" class="admin-tab-content" style="display:none;"></div>
+
+        <div id="admin-tab-grades" class="admin-tab-content" style="display:none;"></div>
 
         <div id="admin-tab-webhooks" class="admin-tab-content" style="display:none;">
           <div style="max-width:700px;display:flex;flex-direction:column;gap:20px;padding:4px 0;">
@@ -515,7 +518,7 @@
         <div class="form-group"><label>NOM</label><input type="text" id="mu-lastname"></div>
         <div class="form-group"><label>PRÉNOM</label><input type="text" id="mu-firstname"></div>
         <div class="form-group"><label>Mot de passe</label><input type="password" id="mu-pwd"></div>
-        <div class="form-group"><label>Grade</label><input type="text" id="mu-grade"></div>
+        <div class="form-group"><label>Grade</label><select id="mu-grade" style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;"></select></div>
         <div class="form-group"><label>Téléphone</label><input type="text" id="mu-tel"></div>
         <div class="form-group"><label>Email</label><input type="text" id="mu-email"></div>
         <div class="form-group">

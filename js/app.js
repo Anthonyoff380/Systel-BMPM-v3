@@ -78,22 +78,24 @@ function checkAuth() {
 
 function handleLogin(e) {
   e.preventDefault();
-  const id = document.getElementById('login-id').value;
-  const pwd = document.getElementById('login-pwd').value;
-  // Chercher par id exact OU par prénom/nom formaté
-  const user = USERS.find(u => u.pwd === pwd && (
-    u.id === id ||
-    u.id.toLowerCase() === id.toLowerCase() ||
-    (u.firstname && u.lastname && (
-      `${u.firstname.toLowerCase()}.${u.lastname.toLowerCase()}` === id.toLowerCase() ||
-      `${u.lastname.toLowerCase()}.${u.firstname.toLowerCase()}` === id.toLowerCase() ||
-      u.firstname.toLowerCase() === id.toLowerCase() ||
-      u.lastname.toLowerCase() === id.toLowerCase()
-    ))
-  ));
+  const id = (document.getElementById('login-id').value || '').trim();
+  const pwd = (document.getElementById('login-pwd').value || '').trim();
+  // Recharger les users depuis localStorage avant de chercher
+  const storedUsers = localStorage.getItem('systel_users');
+  if (storedUsers) { try { USERS = JSON.parse(storedUsers); } catch(ex) {} }
+  const idLow = id.toLowerCase();
+  const user = USERS.find(u => {
+    if (u.pwd !== pwd) return false;
+    if (u.id === id || u.id.toLowerCase() === idLow) return true;
+    const fn = (u.firstname||'').toLowerCase();
+    const ln = (u.lastname||u.name||'').toLowerCase().split(' ')[0];
+    return fn === idLow || ln === idLow ||
+           `${fn}.${ln}` === idLow || `${ln}.${fn}` === idLow ||
+           `${fn}${ln}` === idLow;
+  });
   if (user) {
     currentUser = user;
-  localStorage.setItem('systel_current_user_id', user.id);
+    localStorage.setItem('systel_current_user_id', user.id);
     sessionStorage.setItem('systel_user', JSON.stringify(user));
     synchroniserTout();
     initApp();
@@ -391,7 +393,8 @@ function ajouterUserAdmin() {
   document.getElementById('mu-lastname').value = "";
   document.getElementById('mu-firstname').value = "";
   document.getElementById('mu-pwd').value = "";
-  document.getElementById('mu-grade').value = "Sapeur";
+  refreshGradeSelect();
+  document.getElementById('mu-grade').value = (CONFIG.grades_custom||['Sapeur'])[0] || "Sapeur";
   document.getElementById('mu-tel').value = "06 XX XX XX XX";
   document.getElementById('mu-email').value = "@ptr.fr";
   document.getElementById('mu-photo-preview').src = 'https://www.w3schools.com/howto/img_avatar.png';
@@ -405,6 +408,7 @@ function editUserAdmin(idx) {
   document.getElementById('mu-lastname').value = u.lastname || u.name;
   document.getElementById('mu-firstname').value = u.firstname || "";
   document.getElementById('mu-pwd').value = u.pwd;
+  refreshGradeSelect();
   document.getElementById('mu-grade').value = u.grade;
   document.getElementById('mu-tel').value = u.tel;
   document.getElementById('mu-email').value = u.email;
@@ -423,6 +427,48 @@ function renderRolesCheckboxes(selectedRoles) {
 function getSelectedRoles() {
   return Array.from(document.querySelectorAll('#mu-roles-container input:checked')).map(cb => cb.value);
 }
+// ===== GRADES ADMIN =====
+function renderAdminGrades() {
+  const container = document.getElementById('admin-tab-grades');
+  if (!container) return;
+  const grades = CONFIG.grades_custom || [];
+  container.innerHTML = `
+    <div style="max-width:600px;">
+      <div class="card" style="margin-bottom:16px;"><div class="card-header">🎖️ Grades disponibles</div><div class="card-body">
+        <div id="adm-grades-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+          ${grades.map((g,i) => `<span style="display:flex;align-items:center;gap:4px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:5px;padding:4px 10px;font-size:12px;font-weight:700;">
+            ${g}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;" onclick="supprimerGrade(${i})">✕</button>
+          </span>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-grade-input" placeholder="Nouveau grade (ex: LTN, ADJ...)" style="flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);">
+          <button class="btn btn-success btn-sm" onclick="ajouterGrade()">+ Ajouter</button>
+        </div>
+      </div></div>
+    </div>`;
+}
+function ajouterGrade() {
+  const val = (document.getElementById('new-grade-input')?.value||'').trim();
+  if (!val) return;
+  if (!CONFIG.grades_custom) CONFIG.grades_custom = [];
+  CONFIG.grades_custom.push(val);
+  document.getElementById('new-grade-input').value = '';
+  sauvegarderDonnees();
+  renderAdminGrades();
+  refreshGradeSelect();
+}
+function supprimerGrade(idx) {
+  CONFIG.grades_custom.splice(idx, 1);
+  sauvegarderDonnees();
+  renderAdminGrades();
+  refreshGradeSelect();
+}
+function refreshGradeSelect() {
+  const sel = document.getElementById('mu-grade');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = (CONFIG.grades_custom||[]).map(g=>`<option value="${g}" ${g===cur?'selected':''}>${g}</option>`).join('');
+}
 function deleteUserAdmin(idx) {
   if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
   if (confirm("Supprimer ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
@@ -437,7 +483,7 @@ function sauvegarderUserAdmin() {
     name: `${document.getElementById('mu-lastname').value} ${document.getElementById('mu-firstname').value}`.trim(),
     pwd: document.getElementById('mu-pwd').value,
     roles: selectedRoles, role: selectedRoles[0],
-    grade: document.getElementById('mu-grade').value,
+    grade: document.getElementById('mu-grade').value || document.getElementById('mu-grade-text')?.value || 'Sapeur',
     tel: document.getElementById('mu-tel').value,
     email: document.getElementById('mu-email').value,
     photo: document.getElementById('mu-photo-preview').src.startsWith('data:') ? document.getElementById('mu-photo-preview').src : USERS[currentEditIdx]?.photo
@@ -575,7 +621,7 @@ function renderAdminEngins() {
             <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 6px;" onclick="ajouterGFOEngin(${idx})">+</button>
           </div>
         </td>
-        <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1);sauvegarderDonnees();renderAdminEngins();">✕</button></td>
+        <td><button class="btn btn-danger btn-sm" onclick="supprimerEnginAdmin(${idx});">✕</button></td>
       </tr>`;
     });
   });
@@ -583,6 +629,17 @@ function renderAdminEngins() {
   // Mettre à jour le thead
   const thead = tbody.closest('table').querySelector('thead tr');
   if (thead) thead.innerHTML = '<th>Nom</th><th>Section</th><th>Postes</th><th>GFO Défaut</th><th>Actions</th>';
+}
+function supprimerEnginAdmin(idx) {
+  if (!confirm("Supprimer cet engin ?")) return;
+  ENGINS.splice(idx, 1);
+  // Forcer la sauvegarde ET mettre à jour save_ts
+  localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
+  localStorage.setItem('systel_save_ts', Date.now().toString());
+  sauvegarderDonnees();
+  renderAdminEngins();
+  updateSynoptique();
+  showToast("Engin supprimé !");
 }
 function ajouterGFOEngin(idx) {
   const sel = document.getElementById('gfo-preset-sel-' + idx);
@@ -811,7 +868,10 @@ function renderHistorique() {
           </tr></thead>
           <tbody>${eventsRows}</tbody>
         </table>
-        ${userHasCOSSIM(currentUser) ? `<div style="padding:10px 18px;border-top:1px solid var(--border-color);"><button class="btn btn-secondary btn-sm" onclick="window.open('ticket_depart.html?inter=${inter.id}&engin=${(inter.engins||[])[0]||''}','_blank')">🖨️ Ticket</button></div>` : ''}
+        <div style="padding:10px 18px;border-top:1px solid var(--border-color);display:flex;gap:8px;">
+          ${userHasCOSSIM(currentUser) ? `<button class="btn btn-secondary btn-sm" onclick="window.open('ticket_depart.html?inter=${inter.id}&engin=${(inter.engins||[])[0]||''}','_blank')">\u{1F5A8}\uFE0F Ticket</button>` : ''}
+          ${userIsAdmin(currentUser) ? `<button class="btn btn-danger btn-sm" onclick="supprimerInterHistorique('${inter.id}')">\u{1F5D1}\uFE0F Supprimer</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -856,28 +916,44 @@ async function sendDiscordWebhook(url, embed) {
 async function webhookNouvelleIntervention(inter, equipes, enginsGFO) {
   const url = CONFIG?.webhooks?.intervention;
   if (!url) return;
+  const centre = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
+  const interDate = inter.date ? new Date(inter.date) : new Date();
+  const dateStr = interDate.toLocaleDateString('fr-FR') + ' ' + interDate.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
   const enginsList = (inter.engins||[]).map(eId => {
     const e = ENGINS.find(x=>x.id===eId);
     const gfo = enginsGFO?.[eId] || '--';
-    const membres = equipes?.[eId]?.membres || [];
-    const equipe = membres.map(m => {
+    const mbrs = equipes?.[eId]?.membres || [];
+    const equipe = mbrs.map(m => {
       const u = USERS.find(x=>x.id===m.userId);
-      return u ? `${m.abrev}: ${u.lastname} ${u.firstname}` : m.abrev;
+      return u ? `  \`${(m.abrev||'').padEnd(6)}\` ${(u.grade||'').padEnd(10)} **${(u.lastname||'').toUpperCase()} ${u.firstname||''}**` : `  \`${m.abrev||'--'}\``;
     }).join('\n');
-    return `**${e?.nom||eId}** — GFO: ${gfo}\n${equipe}`;
-  }).join('\n\n');
+    return `**${e?.nom||eId}** — GFO: \`${gfo}\`\n${equipe||'  *Non armé*'}`;
+  }).join('\n\n') || '*Aucun engin*';
+
+  const consigne = COSSIM_CONFIG?.erp_consignes?.[inter.etablissement] || '';
   const embed = {
-    title: '🚨 ' + (inter.type||'INTERVENTION').toUpperCase(),
+    title: `🚨 ENGAGEMENT — ${(inter.type||'INTERVENTION').toUpperCase()}`,
     color: 0xe53e3e,
     fields: [
-      { name: 'N° Intervention', value: inter.numero||inter.id, inline: true },
-      { name: 'Commune', value: inter.commune||'--', inline: true },
-      { name: 'Adresse', value: inter.adresse||'--', inline: false },
-      { name: 'Engins engagés', value: enginsList||'--', inline: false },
-      { name: 'Observations', value: inter.observations||'-', inline: false },
+      { name: '🔢 N° Intervention', value: `\`${inter.numero||inter.id}\``, inline: true },
+      { name: '⏰ Heure', value: dateStr, inline: true },
+      { name: '🏛️ Centre', value: centre, inline: true },
+      { name: '📍 Localisation', value: [
+        inter.commune ? `**Commune:** ${inter.commune}` : null,
+        inter.voie ? `**Voie:** ${inter.voie}` : null,
+        inter.precision ? `**Précision:** ${inter.precision}` : null,
+        inter.etablissement ? `**ETARE:** ${inter.etablissement}` : null,
+        consigne ? `**Consigne:** ${consigne}` : null,
+        inter.contact ? `**Contact:** ${inter.contact}` : null,
+        inter.nca ? `**N° contre-appel:** ${inter.nca}` : null,
+      ].filter(Boolean).join('\n') || '--', inline: false },
+      { name: '🚒 Engins engagés', value: enginsList, inline: false },
+      { name: '👥 Services concernés', value: (inter.services||[]).join(', ')||'-', inline: false },
+      { name: '📝 Observations', value: inter.observations||'-', inline: false },
     ],
     timestamp: new Date().toISOString(),
-    footer: { text: 'SYSTEL — ' + (CONFIG?.centre||'PTR') }
+    footer: { text: `SYSTEL — ${centre}` }
   };
   await sendDiscordWebhook(url, embed);
 }
@@ -887,41 +963,118 @@ async function webhookTicketDepart(inter, enginId) {
   if (!url) return;
   const engin = ENGINS.find(e=>e.id===enginId);
   const eq = inter.equipes?.[enginId];
-  const membres = (eq?.membres||[]).map(m => {
+  const gfo = inter.enginsGFO?.[enginId] || '--';
+  const centre = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
+  const interDate = inter.date ? new Date(inter.date) : new Date();
+  const dateStr = interDate.toLocaleDateString('fr-FR') + ' ' + interDate.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  // Armement — style ticket officiel
+  const armRows = (eq?.membres||[]).map(m => {
     const u = USERS.find(x=>x.id===m.userId);
-    return u ? `${m.abrev}: **${u.lastname} ${u.firstname}** (${u.grade})` : m.abrev;
-  }).join('\n');
+    return u ? `\`${(m.abrev||'--').padEnd(8)}\` \`${(u.grade||'--').padEnd(12)}\` **${(u.lastname||'').toUpperCase()} ${u.firstname||''}**` : `\`${m.abrev||'--'}\``;
+  }).join('\n') || '*Équipage non renseigné*';
+
+  // Autres moyens alertés
+  const autresMoyens = (inter.autresMoyensAlertes||[]).map(m =>
+    `${getCentreNom(ENGINS.find(e=>e.id===m.enginId)?.section)} — ${m.gfo||'--'} — **${m.enginNom||m.enginId}**`
+  ).join('\n') || '*Aucun*';
+
+  // Moyens déjà engagés
+  const moyensEngages = (inter.engins||[]).filter(id=>id!==enginId).map(id => {
+    const e = ENGINS.find(x=>x.id===id);
+    return `${getCentreNom(e?.section)} — **${e?.nom||id}** — ${dateStr}`;
+  }).join('\n') || '*Aucun*';
+
+  const consigne = COSSIM_CONFIG?.erp_consignes?.[inter.etablissement] || 'ERP fermé.';
+
   const embed = {
-    title: '🖨️ Ticket de départ — ' + (engin?.nom||enginId),
-    color: 0x2b6cb0,
+    title: `🚒 TICKET DE DÉPART — ${engin?.nom||enginId}`,
+    color: 0x1a202c,
+    description: `**${inter.type||'INTERVENTION'}**`,
     fields: [
-      { name: 'Intervention', value: inter.numero||inter.id, inline: true },
-      { name: 'Type', value: inter.type||'--', inline: true },
-      { name: 'GFO', value: inter.enginsGFO?.[enginId]||'--', inline: true },
-      { name: 'Adresse', value: inter.adresse||'--', inline: false },
-      { name: 'Équipage', value: membres||'--', inline: false },
+      { name: '📋 DÉPART', value: `\`${inter.renfortDe ? 'RENFORT' : 'DÉPART STANDARD'}\``, inline: true },
+      { name: '🏛️ CENTRE', value: `\`${centre}\``, inline: true },
+      { name: '🔢 N° INTERVENTION', value: `\`${inter.numero||inter.id}\``, inline: true },
+      { name: '⏰ Date/Heure', value: dateStr, inline: true },
+      { name: '🚒 Engin', value: `**${engin?.nom||enginId}**`, inline: true },
+      { name: '📡 GFO', value: `\`${gfo}\``, inline: true },
+      { name: '📍 LOCALISATION', value: [
+        inter.commune ? `**Commune:** ${inter.commune}` : null,
+        inter.voie ? `**Voie:** ${inter.voie}` : null,
+        inter.numero ? `**N°:** ${inter.numero}` : null,
+        inter.precision ? `**Précision:** ${inter.precision}` : null,
+        inter.etablissement ? `**ETARE:** ${inter.etablissement}` : null,
+        `**Consigne:** ${consigne}`,
+        inter.contact ? `**Contact:** ${inter.contact}` : null,
+        inter.nca ? `**Contre-appel:** ${inter.nca}` : null,
+      ].filter(Boolean).join('\n') || '--', inline: false },
+      { name: '📝 OBSERVATIONS', value: inter.observations || '-', inline: false },
+      { name: '👥 ARMEMENT DES VÉHICULES', value: armRows || '*Non renseigné*', inline: false },
+      { name: '🚨 AUTRES MOYENS ALERTÉS', value: autresMoyens, inline: true },
+      { name: '✅ MOYENS DÉJÀ ENGAGÉS', value: moyensEngages, inline: true },
     ],
     timestamp: new Date().toISOString(),
-    footer: { text: 'SYSTEL — ' + (CONFIG?.centre||'PTR') }
+    footer: { text: `SYSTEL — ${centre} — ${CONFIG?.typeGarde||''}` }
   };
   await sendDiscordWebhook(url, embed);
+}
+
+function getCentreNom(sectionId) {
+  if (!sectionId) return CONFIG?.centre||'--';
+  for (const cas of CASERNES) {
+    for (const s of cas.sections) {
+      if (s.id === sectionId) return cas.nom;
+    }
+  }
+  return CONFIG?.centre||'--';
 }
 
 async function webhookSynoptique() {
   const url = CONFIG?.webhooks?.synoptique;
   if (!url) return;
   const enCours = INTERVENTIONS.filter(i=>i.statut==='En cours');
-  if (enCours.length === 0) return;
-  const lines = enCours.map(i => {
-    const engins = (i.engins||[]).map(eId=>ENGINS.find(e=>e.id===eId)?.nom||eId).join(', ');
-    return `**#${i.numero||i.id}** — ${i.type||'?'} — ${i.adresse||'--'} — Engins: ${engins}`;
-  }).join('\n');
+  const centre = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
+  const now = new Date();
+  const heureStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+
+  if (enCours.length === 0) {
+    const embed = {
+      title: `📊 SYNOPTIQUE — ${centre}`,
+      description: '✅ **Aucune intervention en cours**',
+      color: 0x38a169,
+      timestamp: now.toISOString(),
+      footer: { text: `SYSTEL — ${centre} — Mis à jour à ${heureStr}` }
+    };
+    await sendDiscordWebhook(url, embed);
+    return;
+  }
+
+  const fields = enCours.map(i => {
+    const engins = (i.engins||[]).map(eId => {
+      const e = ENGINS.find(x=>x.id===eId);
+      const ber = e?.berStatut ? BER_STATUTS?.find(b=>b.code===e.berStatut) : null;
+      const gfo = i.enginsGFO?.[eId] || '';
+      const eq = i.equipes?.[eId];
+      const ca = eq?.membres?.[0];
+      const caUser = ca ? USERS.find(u=>u.id===ca.userId) : null;
+      return `  🚒 **${e?.nom||eId}** ${gfo?`\`${gfo}\``:''}${ber?` → ${ber.label}`:''}${caUser?` — C/A: ${caUser.lastname} ${caUser.firstname}`:''}`;
+    }).join('\n');
+    const d = i.date ? new Date(i.date) : now;
+    const dStr = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    return {
+      name: `🚨 #${i.numero||i.id} — ${i.type||'?'} (${dStr})`,
+      value: `📍 ${i.adresse||'--'}\n${engins||'*Aucun engin*'}`,
+      inline: false
+    };
+  });
+
   const embed = {
-    title: '📊 Synoptique Interventions en cours',
-    description: lines,
+    title: `📊 SYNOPTIQUE EN DIRECT — ${centre}`,
+    description: `**${enCours.length} intervention(s) en cours** — Mis à jour à ${heureStr}`,
     color: 0xf97316,
-    timestamp: new Date().toISOString(),
-    footer: { text: 'SYSTEL — ' + (CONFIG?.centre||'PTR') + ' — ' + enCours.length + ' intervention(s)' }
+    fields,
+    timestamp: now.toISOString(),
+    footer: { text: `SYSTEL — ${centre}` }
   };
   await sendDiscordWebhook(url, embed);
 }
@@ -943,4 +1096,15 @@ function testWebhookIntervention() {
   };
   webhookNouvelleIntervention(fakeInter, {}, {});
   showToast('Test webhook envoyé !');
+}
+
+function supprimerInterHistorique(interId) {
+  if (!confirm('Supprimer définitivement cette intervention de l\'historique ?')) return;
+  const idx = INTERVENTIONS.findIndex(i => i.id === interId);
+  if (idx !== -1) {
+    INTERVENTIONS.splice(idx, 1);
+    sauvegarderDonnees();
+    renderHistorique();
+    showToast('Intervention supprimée de l\'historique');
+  }
 }

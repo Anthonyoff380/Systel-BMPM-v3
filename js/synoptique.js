@@ -24,7 +24,18 @@ function updateSynoptique() {
               <div class="section-row">
                 <div class="section-label ${hasEngins ? 'green' : 'red'}">
                   <div class="section-name">${section.nom}</div>
-                  <div class="section-stats">(${enginsSection.length}/0/0)</div>
+                  <div class="section-stats">(${(() => {
+    const pers = PERSONNELS.filter(p => {
+      // Chercher si ce personnel est dans un engin de cette section et disponible
+      return enginsSection.some(e => e.chefAgres === p.id || 
+        (e.statut === 'disponible' && FEUILLES_GARDE?.[e.id]?.[new Date().toISOString().slice(0,10)]?.equipe?.some(eq => eq.id === p.id)));
+    });
+    const off = pers.filter(p => { const g=(p.grade||'').toUpperCase(); return g.includes('OFF') || ['LTN','CPT','CDT','LCL','COL','GBR','ADL','GAL','MED','ACH','IPC'].some(x=>g.includes(x)); }).length;
+    const soff = pers.filter(p => { const g=(p.grade||'').toUpperCase(); return !g.includes('OFF') && ['ADC','ADJ','BCH','MDC','SGT','CPL','CAP','MEN','QMC'].some(x=>g.includes(x)); }).length;
+    const hr = pers.length - off - soff;
+    return `${enginsSection.length}/${off}/${soff}/${hr}`;
+  })()
+}</div>
                 </div>
                 <div class="section-engins">
                   ${enginsSection.map(e => {

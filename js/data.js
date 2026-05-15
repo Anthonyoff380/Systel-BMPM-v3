@@ -9,6 +9,7 @@ let CONFIG = {
     intervention: '',
     synoptique: ''
   },
+  grades_custom: ['Sapeur','SA1 Cls','SA2 Cls','Caporal','Caporal-Chef','Sergent','Sergent-Chef','Adjudant','Adjudant-Chef','Major','BCH','MDC','Lieutenant','Capitaine','Commandant','Lieutenant-Colonel','Colonel','Médecin','Pharmacien'],
   nom: "Centre PTR",
   centre: "PTR",
   ville: "Marseille",
