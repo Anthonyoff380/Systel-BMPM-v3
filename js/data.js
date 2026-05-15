@@ -4,6 +4,11 @@
 
 let CONFIG = {
   centreAbrev: 'PTR',
+  webhooks: {
+    ticket: '',
+    intervention: '',
+    synoptique: ''
+  },
   nom: "Centre PTR",
   centre: "PTR",
   ville: "Marseille",

@@ -388,7 +388,7 @@
           </div>
           <div style="max-height:150px;overflow-y:auto;" id="blips-liste"></div>
         </div>
-        <div id="carto-map" style="width:100%;height:calc(100vh - 200px);min-height:450px;border-radius:8px;"></div>
+        <div id="carto-map" style="width:100%;height:calc(100vh - 160px);min-height:500px;border-radius:8px;"></div>
       </div>
 
       <!-- ADMIN -->
@@ -403,6 +403,7 @@
           <button class="admin-tab-btn"         data-tab="engins"   onclick="showAdminTab('engins',event)">Engins</button>
           <button class="admin-tab-btn"         data-tab="users"    onclick="showAdminTab('users',event)">Comptes</button>
           <button class="admin-tab-btn"         data-tab="cossim"   onclick="showAdminTab('cossim',event)">Config COSSIM</button>
+          <button class="admin-tab-btn" data-tab="webhooks" onclick="showAdminTab('webhooks',event)">🔔 Webhooks</button>
           <button class="admin-tab-btn"         data-tab="intranet" onclick="showAdminTab('intranet',event)">Config Intranet</button>
         </div>
 
@@ -441,6 +442,38 @@
         </div>
 
         <div id="admin-tab-cossim" class="admin-tab-content" style="display:none;"></div>
+
+        <div id="admin-tab-webhooks" class="admin-tab-content" style="display:none;">
+          <div style="max-width:700px;display:flex;flex-direction:column;gap:20px;padding:4px 0;">
+            <div style="background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.3);border-radius:8px;padding:12px 16px;font-size:12px;color:#f6ad55;">
+              ⚠️ Les webhooks Discord permettent d'envoyer automatiquement des notifications dans vos salons Discord. Copiez l'URL du webhook depuis Discord : Paramètres du salon → Intégrations → Webhooks → Créer un webhook.
+            </div>
+
+            <div class="card"><div class="card-header">🚨 Webhook — Création d'intervention</div><div class="card-body">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
+              <input type="url" id="wh-intervention" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Envoyé automatiquement lors de chaque engagement d'intervention</div>
+            </div></div>
+
+            <div class="card"><div class="card-header">🖨️ Webhook — Ticket de départ</div><div class="card-body">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
+              <input type="url" id="wh-ticket" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Envoyé lors de chaque ticket de départ (par engin engagé)</div>
+            </div></div>
+
+            <div class="card"><div class="card-header">📊 Webhook — Synoptique en direct</div><div class="card-body">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
+              <input type="url" id="wh-synoptique" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Mise à jour toutes les 5 minutes avec les interventions en cours</div>
+            </div></div>
+
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-primary" onclick="saveWebhookConfig()">💾 Sauvegarder les webhooks</button>
+              <button class="btn btn-secondary" onclick="webhookSynoptique()">🧪 Tester synoptique</button>
+              <button class="btn btn-secondary" onclick="testWebhookIntervention()">🧪 Tester intervention</button>
+            </div>
+          </div>
+        </div>
 
         <div id="admin-tab-intranet" class="admin-tab-content" style="display:none;">
           <div class="card"><div class="card-body">
@@ -499,11 +532,11 @@
 </div>
 
 <!-- MODAL BER — plein écran, sans header -->
-<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.88);flex-direction:column;align-items:center;justify-content:center;">
+<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:transparent;flex-direction:column;align-items:center;justify-content:center;">
 
-  <div style="color:#718096;font-size:12px;margin-bottom:10px;letter-spacing:1px;font-weight:700;">BER — <span id="ber-engin-nom" style="color:white;font-size:14px;"></span></div>
+  <span id="ber-engin-nom" style="display:none;"></span>
   <!-- Radio EADS SVG réaliste -->
-  <div style="position:relative;width:min(90vw,640px);margin:0 auto;">
+  <div style="position:relative;width:min(88vw,620px);margin:0 auto;transform:translateY(-5%);">
     <button onclick="fermerModal()" style="position:absolute;top:-36px;right:0;background:#e53e3e;border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-weight:900;font-size:16px;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
   <svg id="ber-svg" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
     <!-- Corps de la radio -->

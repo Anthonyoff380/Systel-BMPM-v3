@@ -32,13 +32,13 @@
     .cossim-page.active { display:block; }
 
     /* ===== LAYOUT CRÉATION ===== */
-    .creation-layout { display:grid; grid-template-columns:1fr 300px; gap:16px; max-width:1400px; }
+    .creation-layout { display:grid; grid-template-columns:1fr 360px; gap:16px; max-width:1500px; width:100%; }
     .creation-main { display:flex; flex-direction:column; gap:12px; }
     .creation-sidebar { display:flex; flex-direction:column; gap:12px; }
 
     /* ===== CARDS ===== */
     .cossim-card { background:#2d3748; border-radius:8px; border:1px solid rgba(255,255,255,0.08); overflow:hidden; }
-    .cossim-card-header { padding:10px 16px; background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.08); font-weight:800; font-size:12px; color:#a0aec0; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:8px; }
+    .cossim-card-header { padding:12px 18px; background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.08); font-weight:800; font-size:12px; color:#a0aec0; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:8px; }
     .cossim-card-body { padding:14px 16px; }
 
     /* ===== FORM ===== */
@@ -47,7 +47,7 @@
     .cossim-label { display:block; font-size:11px; font-weight:700; color:#a0aec0; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px; }
     .cossim-input {
       width:100%; background:#1a202c; border:1px solid rgba(255,255,255,0.12);
-      color:white; padding:9px 12px; border-radius:6px; font-size:13px;
+      color:white; padding:10px 14px; border-radius:6px; font-size:14px;
       appearance:none; -webkit-appearance:none;
     }
     .cossim-input:focus { outline:none; border-color:#e53e3e; }
@@ -93,7 +93,7 @@
     .btn-annuler { background:#4a5568; color:white; padding:11px 20px; border:none; border-radius:7px; font-weight:700; cursor:pointer; font-size:13px; }
 
     /* ===== MINI CARTE ===== */
-    #cossim-mini-map { height:200px; border-radius:6px; background:#0d1117; }
+    #cossim-mini-map { height:260px; border-radius:6px; background:#0d1117; }
 
     /* ===== SYNOPTIQUE COSSIM ===== */
     .synop-header-bar { padding:14px 0; display:flex; align-items:center; gap:16px; margin-bottom:12px; }
@@ -541,8 +541,8 @@
       if (!el) return;
       if (cossimMap) { try { cossimMap.remove(); } catch(e){} cossimMap = null; }
       try {
-        el.style.height = '200px';
-        el.style.minHeight = '200px';
+        el.style.height = '260px';
+        el.style.minHeight = '260px';
         const blips = JSON.parse(localStorage.getItem('systel_carte_blips') || '[]');
         cossimMap = L.map('cossim-mini-map', { zoomControl:true, attributionControl:false, crs: L.CRS.Simple });
         const bounds = [[0,0],[1310,877]];
@@ -686,6 +686,14 @@
         }
       });
       sauvegarderDonnees();
+      // Webhooks Discord
+      if (typeof webhookNouvelleIntervention === 'function') {
+        // webhookNouvelleIntervention est dans app.js (index.html) — appel si dispo
+      }
+      // Stocker pour webhook ticket depuis cossim
+      data.engins.forEach(eId => {
+        if (typeof webhookTicketDepart === 'function') webhookTicketDepart(intervention, eId);
+      });
       showCossimToast('✅ Intervention ' + interNum + ' créée !');
       setTimeout(() => { showCossimPage('synoptique', document.querySelector('[data-page=synoptique]')); reinitialiserFormulaire(); }, 1500);
     }

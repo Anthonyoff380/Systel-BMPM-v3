@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   synchroniserTout();
   checkAuth();
   startClock();
+  setTimeout(startSynopDiscordTimer, 2000);
   // Hash pour détecter les modifs externes (autre onglet)
   let _lastSaveKey = '';
   setInterval(() => {
@@ -828,4 +829,118 @@ function logBERAction(enginId, code, label) {
   if (!inter.berLogs) inter.berLogs = [];
   inter.berLogs.push({ enginId, code, label, date: new Date().toISOString() });
   sauvegarderDonnees();
+}
+
+
+// ===== WEBHOOKS DISCORD =====
+function saveWebhookConfig() {
+  if (!CONFIG.webhooks) CONFIG.webhooks = {};
+  CONFIG.webhooks.ticket = document.getElementById('wh-ticket')?.value || '';
+  CONFIG.webhooks.intervention = document.getElementById('wh-intervention')?.value || '';
+  CONFIG.webhooks.synoptique = document.getElementById('wh-synoptique')?.value || '';
+  sauvegarderDonnees();
+  showToast('Webhooks sauvegardés !');
+}
+
+async function sendDiscordWebhook(url, embed) {
+  if (!url) return;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+  } catch(e) { console.warn('Discord webhook error:', e); }
+}
+
+async function webhookNouvelleIntervention(inter, equipes, enginsGFO) {
+  const url = CONFIG?.webhooks?.intervention;
+  if (!url) return;
+  const enginsList = (inter.engins||[]).map(eId => {
+    const e = ENGINS.find(x=>x.id===eId);
+    const gfo = enginsGFO?.[eId] || '--';
+    const membres = equipes?.[eId]?.membres || [];
+    const equipe = membres.map(m => {
+      const u = USERS.find(x=>x.id===m.userId);
+      return u ? `${m.abrev}: ${u.lastname} ${u.firstname}` : m.abrev;
+    }).join('\n');
+    return `**${e?.nom||eId}** — GFO: ${gfo}\n${equipe}`;
+  }).join('\n\n');
+  const embed = {
+    title: '🚨 ' + (inter.type||'INTERVENTION').toUpperCase(),
+    color: 0xe53e3e,
+    fields: [
+      { name: 'N° Intervention', value: inter.numero||inter.id, inline: true },
+      { name: 'Commune', value: inter.commune||'--', inline: true },
+      { name: 'Adresse', value: inter.adresse||'--', inline: false },
+      { name: 'Engins engagés', value: enginsList||'--', inline: false },
+      { name: 'Observations', value: inter.observations||'-', inline: false },
+    ],
+    timestamp: new Date().toISOString(),
+    footer: { text: 'SYSTEL — ' + (CONFIG?.centre||'PTR') }
+  };
+  await sendDiscordWebhook(url, embed);
+}
+
+async function webhookTicketDepart(inter, enginId) {
+  const url = CONFIG?.webhooks?.ticket;
+  if (!url) return;
+  const engin = ENGINS.find(e=>e.id===enginId);
+  const eq = inter.equipes?.[enginId];
+  const membres = (eq?.membres||[]).map(m => {
+    const u = USERS.find(x=>x.id===m.userId);
+    return u ? `${m.abrev}: **${u.lastname} ${u.firstname}** (${u.grade})` : m.abrev;
+  }).join('\n');
+  const embed = {
+    title: '🖨️ Ticket de départ — ' + (engin?.nom||enginId),
+    color: 0x2b6cb0,
+    fields: [
+      { name: 'Intervention', value: inter.numero||inter.id, inline: true },
+      { name: 'Type', value: inter.type||'--', inline: true },
+      { name: 'GFO', value: inter.enginsGFO?.[enginId]||'--', inline: true },
+      { name: 'Adresse', value: inter.adresse||'--', inline: false },
+      { name: 'Équipage', value: membres||'--', inline: false },
+    ],
+    timestamp: new Date().toISOString(),
+    footer: { text: 'SYSTEL — ' + (CONFIG?.centre||'PTR') }
+  };
+  await sendDiscordWebhook(url, embed);
+}
+
+async function webhookSynoptique() {
+  const url = CONFIG?.webhooks?.synoptique;
+  if (!url) return;
+  const enCours = INTERVENTIONS.filter(i=>i.statut==='En cours');
+  if (enCours.length === 0) return;
+  const lines = enCours.map(i => {
+    const engins = (i.engins||[]).map(eId=>ENGINS.find(e=>e.id===eId)?.nom||eId).join(', ');
+    return `**#${i.numero||i.id}** — ${i.type||'?'} — ${i.adresse||'--'} — Engins: ${engins}`;
+  }).join('\n');
+  const embed = {
+    title: '📊 Synoptique Interventions en cours',
+    description: lines,
+    color: 0xf97316,
+    timestamp: new Date().toISOString(),
+    footer: { text: 'SYSTEL — ' + (CONFIG?.centre||'PTR') + ' — ' + enCours.length + ' intervention(s)' }
+  };
+  await sendDiscordWebhook(url, embed);
+}
+
+// Lancer la synoptique Discord toutes les 5 min
+let _synopDiscordTimer = null;
+function startSynopDiscordTimer() {
+  if (_synopDiscordTimer) clearInterval(_synopDiscordTimer);
+  if (CONFIG?.webhooks?.synoptique) {
+    _synopDiscordTimer = setInterval(webhookSynoptique, 5 * 60 * 1000);
+    webhookSynoptique(); // Envoyer immédiatement
+  }
+}
+
+function testWebhookIntervention() {
+  const fakeInter = {
+    id: 'TEST-001', numero: 'TEST-001', type: 'TEST WEBHOOK', commune: 'Marseille',
+    adresse: '1 Rue Test', observations: 'Ceci est un test webhook', engins: [], equipes: {}, enginsGFO: {}
+  };
+  webhookNouvelleIntervention(fakeInter, {}, {});
+  showToast('Test webhook envoyé !');
 }
