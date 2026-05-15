@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COSSIM - Centre PTR</title>
+  <title>COSSIM</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -142,7 +142,7 @@
 <body>
 
   <div class="cossim-header">
-    <div class="cossim-logo">COS<span>SIM</span> <span style="font-size:13px;color:#a0aec0;font-weight:600;">Centre PTR</span></div>
+    <div class="cossim-logo">COS<span style="color:#e53e3e;">SIM</span></div>
     <div class="cossim-nav">
       <button class="cossim-nav-btn active" data-page="creation" onclick="showCossimPage('creation',this)">📞 Création</button>
       <button class="cossim-nav-btn" data-page="synoptique" onclick="showCossimPage('synoptique',this)">📊 Synoptique</button>
@@ -492,7 +492,11 @@
         const fgBadge = fg
           ? `<span style="font-size:10px;background:#38a169;color:white;padding:1px 8px;border-radius:3px;">✓ Feuille de garde du jour</span>`
           : `<span style="font-size:10px;color:#a0aec0;font-style:italic;">Aucune feuille de garde pour aujourd'hui</span>`;
-        const gfoOpts = (COSSIM_CONFIG.gfo_types||['G-SAP','G-SSO','PROMPT_SAP','G-INC']).map(g=>`<option value="${g}">${g}</option>`).join('');
+        // GFO : utiliser les presets de l'engin si définis, sinon tous les types
+        const enginGFOs = engin.gfoPresets && engin.gfoPresets.length > 0
+          ? engin.gfoPresets
+          : (COSSIM_CONFIG.gfo_types||['G-SAP','G-SSO','PROMPT_SAP','G-INC']);
+        const gfoOpts = enginGFOs.map(g=>`<option value="${g}">${g}</option>`).join('');
         return `<div class="equipe-panel">
           <div class="equipe-panel-title">🚒 ${engin.nom} — Équipage ${fgBadge}</div>
           <div class="equipe-row" style="margin-bottom:6px;">

@@ -276,8 +276,9 @@
       <div class="nav-group-label">Opérationnel</div>
       <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">📊 Synoptique</div>
       <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">🔍 Interventions</div>
-      <div class="nav-item" data-section="feuille-garde" onclick="showSection('feuille-garde')">📋 Feuille de garde</div>
+      <div class="nav-item" data-section="historique" onclick="showSection('historique')">📜 Historique</div>
       <div class="nav-group-label">Gestion</div>
+      <div class="nav-item" data-section="feuille-garde" onclick="showSection('feuille-garde')">📋 Feuille de garde</div>
       <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
       <div class="nav-group-label">Outils</div>
       <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
@@ -285,7 +286,7 @@
       <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">⚙️ Configuration</div>
       <div class="nav-group-label">Portail</div>
       <a href="intranet.html" class="nav-item" style="text-decoration:none;">🏠 Intranet</a>
-      <a href="synoptique_ext.html" class="nav-item" style="text-decoration:none;" target="_blank">📺 Synoptique TV</a>
+      <a href="synoptique_ext.html" class="nav-item" style="text-decoration:none;" target="_blank">📺 Synoptique Externe</a>
     </nav>
 
     <div id="content-area">
@@ -313,6 +314,20 @@
           </div>
         </div>
         <div id="interventions-synoptique-container"></div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <div id="section-historique" class="section">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border-color);">
+          <h2 style="font-size:16px;font-weight:900;">📜 HISTORIQUE DES INTERVENTIONS</h2>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="text" id="histo-filter" placeholder="Filtrer par type, adresse, numéro..."
+              style="padding:7px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;width:280px;"
+              oninput="renderHistorique()">
+            <button class="btn btn-secondary btn-sm" onclick="renderHistorique()">🔄 Actualiser</button>
+          </div>
+        </div>
+        <div id="historique-container" style="padding:16px 20px;max-height:calc(100vh - 140px);overflow-y:auto;"></div>
       </div>
 
       <!-- FEUILLE DE GARDE -->
@@ -488,7 +503,7 @@
 
   <div style="color:#718096;font-size:12px;margin-bottom:10px;letter-spacing:1px;font-weight:700;">BER — <span id="ber-engin-nom" style="color:white;font-size:14px;"></span></div>
   <!-- Radio EADS SVG réaliste -->
-  <div style="position:relative;width:min(96vw,700px);">
+  <div style="position:relative;width:min(90vw,640px);margin:0 auto;">
     <button onclick="fermerModal()" style="position:absolute;top:-36px;right:0;background:#e53e3e;border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-weight:900;font-size:16px;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
   <svg id="ber-svg" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
     <!-- Corps de la radio -->

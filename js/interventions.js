@@ -85,6 +85,8 @@ function terminerIntervention(id) {
   // Forcer re-render complet
   renderInterventionsSynoptique();
   if (typeof updateSynoptique === 'function') updateSynoptique();
+  // Logger dans l'historique
+  if (typeof logBERAction === 'function') logBERAction(berEnginActif, code, ber ? ber.label : String(code));
   showToast("Intervention #" + id + " terminée !");
 }
 function relancerCOSSIM(id) { localStorage.setItem('systel_cossim_inter', id); window.open('cossim.html','_blank'); }
@@ -155,5 +157,7 @@ function changerStatutBER(code) {
   if (lcdCode) { lcdCode.textContent = ber ? ber.code : ''; lcdCode.style.color = ber?.couleur || '#0a2a10'; }
   renderInterventionsSynoptique();
   if (typeof updateSynoptique === 'function') updateSynoptique();
+  // Logger dans l'historique
+  if (typeof logBERAction === 'function') logBERAction(berEnginActif, code, ber ? ber.label : String(code));
   showToast(engin.nom + ' → ' + (ber ? ber.label : code));
 }

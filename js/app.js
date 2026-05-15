@@ -79,7 +79,17 @@ function handleLogin(e) {
   e.preventDefault();
   const id = document.getElementById('login-id').value;
   const pwd = document.getElementById('login-pwd').value;
-  const user = USERS.find(u => u.id === id && u.pwd === pwd);
+  // Chercher par id exact OU par prénom/nom formaté
+  const user = USERS.find(u => u.pwd === pwd && (
+    u.id === id ||
+    u.id.toLowerCase() === id.toLowerCase() ||
+    (u.firstname && u.lastname && (
+      `${u.firstname.toLowerCase()}.${u.lastname.toLowerCase()}` === id.toLowerCase() ||
+      `${u.lastname.toLowerCase()}.${u.firstname.toLowerCase()}` === id.toLowerCase() ||
+      u.firstname.toLowerCase() === id.toLowerCase() ||
+      u.lastname.toLowerCase() === id.toLowerCase()
+    ))
+  ));
   if (user) {
     currentUser = user;
   localStorage.setItem('systel_current_user_id', user.id);
@@ -139,6 +149,7 @@ function showSection(name) {
   });
   if (name === 'synoptique') updateSynoptique();
   if (name === 'interventions') renderInterventionsSynoptique();
+  if (name === 'historique') renderHistorique();
   if (name === 'planning') renderPlanning();
   if (name === 'annuaire') renderAnnuaire();
   if (name === 'cartographie') initCartographie();
@@ -470,6 +481,8 @@ function chargerDonnees() {
 function sauvegarderDonnees() {
   const s = (k, v) => localStorage.setItem('systel_' + k, JSON.stringify(v));
   localStorage.setItem('systel_save_ts', Date.now().toString());
+  // Toujours synchroniser users pour la garde COSSIM
+  localStorage.setItem('systel_users', JSON.stringify(USERS));
   s('config',CONFIG); s('intranet',INTRANET_CONFIG); s('casernes',CASERNES); s('engins',ENGINS);
   s('users',USERS); s('planning',PLANNING); s('interventions',INTERVENTIONS);
   s('feuilles_garde',FEUILLES_GARDE); s('carte_blips',CARTE_BLIPS); s('cossim_config',COSSIM_CONFIG);
@@ -548,6 +561,19 @@ function renderAdminEngins() {
           ${postesHTML}
           <button class="btn btn-success btn-sm" style="margin-top:4px;font-size:10px;padding:3px 8px;" onclick="ajouterPoste(${idx})">+ Poste</button>
         </td>
+        <td style="min-width:200px;">
+          <div style="font-size:10px;color:#718096;margin-bottom:4px;font-weight:700;">GFO autorisés</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+            ${(e.gfoPresets||[]).map((g,gi) => `<span style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px;">${g}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:10px;" onclick="supprimerGFOEngin(${idx},${gi})">✕</button></span>`).join('')}
+          </div>
+          <div style="display:flex;gap:4px;">
+            <select id="gfo-preset-sel-${idx}" style="font-size:11px;padding:2px 4px;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-main);color:var(--text-color);">
+              <option value="">-- GFO --</option>
+              ${(COSSIM_CONFIG.gfo_types||['G-SAP','G-SSO','PROMPT_SAP','G-INC']).map(g=>`<option value="${g}">${g}</option>`).join('')}
+            </select>
+            <button class="btn btn-success btn-sm" style="font-size:10px;padding:2px 6px;" onclick="ajouterGFOEngin(${idx})">+</button>
+          </div>
+        </td>
         <td><button class="btn btn-danger btn-sm" onclick="ENGINS.splice(${idx},1);sauvegarderDonnees();renderAdminEngins();">✕</button></td>
       </tr>`;
     });
@@ -555,7 +581,22 @@ function renderAdminEngins() {
   tbody.innerHTML = html;
   // Mettre à jour le thead
   const thead = tbody.closest('table').querySelector('thead tr');
-  if (thead && thead.children.length < 4) thead.innerHTML = '<th>Nom</th><th>Section</th><th>Postes</th><th>Actions</th>';
+  if (thead) thead.innerHTML = '<th>Nom</th><th>Section</th><th>Postes</th><th>GFO Défaut</th><th>Actions</th>';
+}
+function ajouterGFOEngin(idx) {
+  const sel = document.getElementById('gfo-preset-sel-' + idx);
+  if (!sel || !sel.value) return;
+  if (!ENGINS[idx].gfoPresets) ENGINS[idx].gfoPresets = [];
+  if (!ENGINS[idx].gfoPresets.includes(sel.value)) {
+    ENGINS[idx].gfoPresets.push(sel.value);
+    sauvegarderDonnees();
+    renderAdminEngins();
+  }
+}
+function supprimerGFOEngin(enginIdx, gfoIdx) {
+  ENGINS[enginIdx].gfoPresets.splice(gfoIdx, 1);
+  sauvegarderDonnees();
+  renderAdminEngins();
 }
 function ajouterPoste(idx) {
   if (!ENGINS[idx].postes) ENGINS[idx].postes = [{id:'ca',label:"Chef d'agrès",abrev:'C/A'}];
@@ -597,10 +638,7 @@ function checkBipAlertes() {
     if (!bip.acquitte) {
       bipAlerteVisible = true;
       afficherBipAlerte(bip);
-      // Broadcaster aux autres pages via Service Worker
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'BIP_ALERTE', bip });
-      }
+      // BIP uniquement sur index.html — pas de broadcast pour éviter latence
     }
   }
 }
@@ -654,4 +692,140 @@ function acquitterBip() {
   }
   document.getElementById('bip-overlay').style.display = 'none';
   bipAlerteVisible = false;
+}
+
+// ===== HISTORIQUE DES INTERVENTIONS =====
+function renderHistorique() {
+  const container = document.getElementById('historique-container');
+  if (!container) return;
+  chargerDonnees();
+
+  // Toutes les interventions triées par date desc
+  const all = [...INTERVENTIONS].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (all.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-muted);font-size:14px;">📜 Aucune intervention dans l\'historique</div>';
+    return;
+  }
+
+  // Filtre texte
+  const filterVal = document.getElementById('histo-filter')?.value?.toLowerCase() || '';
+
+  const filtered = all.filter(i =>
+    !filterVal ||
+    (i.type||'').toLowerCase().includes(filterVal) ||
+    (i.adresse||'').toLowerCase().includes(filterVal) ||
+    (i.numero||'').toLowerCase().includes(filterVal) ||
+    (i.commune||'').toLowerCase().includes(filterVal)
+  );
+
+  container.innerHTML = filtered.map(inter => {
+    const d = inter.date ? new Date(inter.date) : new Date();
+    const dateStr = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    const statut = inter.statut === 'Terminée' ? '🔴 Terminée' : '🟢 En cours';
+    const statutColor = inter.statut === 'Terminée' ? '#e53e3e' : '#38a169';
+
+    // Construire le journal de l'inter
+    const events = [];
+
+    // 1. Engagement initial
+    const engageurNom = inter.creePar || 'COSSIM';
+    let engagementContent = `ENGAGEMENT ${(inter.engins||[]).map(eId => ENGINS.find(e=>e.id===eId)?.nom||eId).join(', ')}\n\n`;
+    (inter.engins||[]).forEach(eId => {
+      const eq = inter.equipes?.[eId];
+      const gfo = inter.enginsGFO?.[eId] || '';
+      const engin = ENGINS.find(e=>e.id===eId);
+      (eq?.membres||[]).forEach(m => {
+        const u = USERS.find(x=>x.id===m.userId);
+        if (u) engagementContent += `${m.abrev} ${gfo} - ${u.lastname?.toUpperCase()} ${u.firstname}\n`;
+      });
+    });
+    events.push({ date: d, auteur: engageurNom, contenu: engagementContent.trim() });
+
+    // 2. Statuts BER (si logs disponibles)
+    (inter.berLogs||[]).forEach(log => {
+      const ber = BER_STATUTS?.find(b=>b.code===log.code);
+      events.push({
+        date: new Date(log.date),
+        auteur: `Terminal ANTARES BER`,
+        contenu: `${(ENGINS.find(e=>e.id===log.enginId)?.nom||log.enginId)} - ${ber?.label||log.code}`
+      });
+    });
+
+    // 3. Renfort
+    (inter.autresMoyensAlertes||[]).forEach(m => {
+      events.push({
+        date: new Date(m.date||inter.date),
+        auteur: 'COSSIM',
+        contenu: `RENFORT ${m.enginNom||m.enginId} — GFO: ${m.gfo||'--'}`
+      });
+    });
+
+    // 4. Terminaison
+    if (inter.dateFin) {
+      events.push({
+        date: new Date(inter.dateFin),
+        auteur: 'COSSIM',
+        contenu: 'Intervention terminée'
+      });
+    }
+
+    events.sort((a,b) => a.date - b.date);
+
+    const eventsRows = events.map(ev => {
+      const evDate = ev.date.toLocaleDateString('fr-FR') + ' à ' + ev.date.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const lines = ev.contenu.split('\n').filter(Boolean);
+      return `<tr>
+        <td style="vertical-align:top;white-space:nowrap;padding:8px 12px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border-color);min-width:160px;">
+          <div>${evDate}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-top:2px;">${ev.auteur}</div>
+        </td>
+        <td style="padding:8px 12px;font-size:13px;border-bottom:1px solid var(--border-color);white-space:pre-line;">${lines.join('\n')}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div style="margin-bottom:20px;background:var(--card-bg);border-radius:10px;border:1px solid var(--border-color);overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:var(--bg-main);border-bottom:2px solid var(--border-color);cursor:pointer;" onclick="toggleHisto('h-${inter.id}')">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <span style="font-size:14px;font-weight:900;color:var(--accent);">${inter.numero||inter.id}</span>
+          <span style="font-size:13px;font-weight:800;">${inter.type||'INTERVENTION'}</span>
+          <span style="font-size:12px;color:var(--text-muted);">📍 ${inter.adresse||'--'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:12px;color:var(--text-muted);">${dateStr}</span>
+          <span style="font-size:11px;font-weight:800;color:${statutColor};background:${statutColor}22;padding:2px 10px;border-radius:10px;">${statut}</span>
+        </div>
+      </div>
+      <div id="h-${inter.id}" style="display:none;">
+        <div style="padding:10px 18px;background:var(--bg-main);border-bottom:1px solid var(--border-color);display:flex;gap:16px;font-size:12px;color:var(--text-muted);">
+          <span>🏘️ <strong>${inter.commune||'--'}</strong></span>
+          <span>📞 ${inter.nca||'--'}</span>
+          <span>👤 ${inter.contact||'--'}</span>
+          ${inter.observations ? `<span>📝 ${inter.observations.substring(0,60)}${inter.observations.length>60?'...':''}</span>` : ''}
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="padding:6px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;border-bottom:2px solid var(--border-color);">Horodatage</th>
+            <th style="padding:6px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;border-bottom:2px solid var(--border-color);">Contenu</th>
+          </tr></thead>
+          <tbody>${eventsRows}</tbody>
+        </table>
+        ${userHasCOSSIM(currentUser) ? `<div style="padding:10px 18px;border-top:1px solid var(--border-color);"><button class="btn btn-secondary btn-sm" onclick="window.open('ticket_depart.html?inter=${inter.id}&engin=${(inter.engins||[])[0]||''}','_blank')">🖨️ Ticket</button></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHisto(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// Ajouter un log BER à une intervention
+function logBERAction(enginId, code, label) {
+  const inter = INTERVENTIONS.find(i => i.statut === 'En cours' && (i.engins||[]).includes(enginId));
+  if (!inter) return;
+  if (!inter.berLogs) inter.berLogs = [];
+  inter.berLogs.push({ enginId, code, label, date: new Date().toISOString() });
+  sauvegarderDonnees();
 }
