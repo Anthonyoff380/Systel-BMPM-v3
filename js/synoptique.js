@@ -66,10 +66,15 @@ function updateSynoptique() {
 function onEnginClick(id) {
   const engin = ENGINS.find(e => e.id === id);
   if (!engin) return;
-  // Dans la synoptique : toggle dispo/indispo uniquement
-  // (les engins en intervention sont cliquables uniquement depuis le panel Interventions)
+  // Vérifier le rôle
+  const canToggle = typeof currentUser !== 'undefined' && currentUser &&
+    (userHasCOSSIM(currentUser) || userIsSOG(currentUser) || userIsAdmin(currentUser));
+  if (!canToggle) {
+    showToast('Action réservée aux rôles COSSIM, SOG/CDG et ADMIN', 'info');
+    return;
+  }
   if (engin.statut === 'intervention') {
-    showToast(engin.nom + ' est en intervention — utilisez le panel Interventions pour le BER', 'info');
+    showToast(engin.nom + ' est en intervention — utilisez le panel Interventions', 'info');
     return;
   }
   toggleEnginStatut(id);

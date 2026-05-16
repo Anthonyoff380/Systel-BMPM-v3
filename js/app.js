@@ -389,30 +389,26 @@ function renderAdminUsers() {
 let currentEditIdx = null;
 function ajouterUserAdmin() {
   currentEditIdx = null;
-  document.getElementById('mu-id').value = "";
-  document.getElementById('mu-lastname').value = "";
-  document.getElementById('mu-firstname').value = "";
-  document.getElementById('mu-pwd').value = "";
+  const g = id => document.getElementById(id);
+  if(g('mu-id')) g('mu-id').value = '';
+  if(g('mu-lastname')) g('mu-lastname').value = '';
+  if(g('mu-firstname')) g('mu-firstname').value = '';
+  if(g('mu-pwd')) g('mu-pwd').value = '';
   refreshGradeSelect();
-  document.getElementById('mu-grade').value = (CONFIG.grades_custom||['Sapeur'])[0] || "Sapeur";
-  document.getElementById('mu-tel').value = "06 XX XX XX XX";
-  document.getElementById('mu-email').value = "@ptr.fr";
-  document.getElementById('mu-photo-preview').src = 'https://www.w3schools.com/howto/img_avatar.png';
+  if(g('mu-grade')) g('mu-grade').value = (CONFIG.grades_custom||['Sapeur'])[0] || 'Sapeur';
   renderRolesCheckboxes([]);
   ouvrirModal('modal-user-admin');
 }
 function editUserAdmin(idx) {
   currentEditIdx = idx;
   const u = USERS[idx];
-  document.getElementById('mu-id').value = u.id;
-  document.getElementById('mu-lastname').value = u.lastname || u.name;
-  document.getElementById('mu-firstname').value = u.firstname || "";
-  document.getElementById('mu-pwd').value = u.pwd;
+  const g = id => document.getElementById(id);
+  if(g('mu-id')) g('mu-id').value = u.id;
+  if(g('mu-lastname')) g('mu-lastname').value = u.lastname || u.name || '';
+  if(g('mu-firstname')) g('mu-firstname').value = u.firstname || '';
+  if(g('mu-pwd')) g('mu-pwd').value = u.pwd;
   refreshGradeSelect();
-  document.getElementById('mu-grade').value = u.grade;
-  document.getElementById('mu-tel').value = u.tel;
-  document.getElementById('mu-email').value = u.email;
-  document.getElementById('mu-photo-preview').src = u.photo || 'https://www.w3schools.com/howto/img_avatar.png';
+  if(g('mu-grade')) g('mu-grade').value = u.grade || '';
   renderRolesCheckboxes(u.roles || [u.role]);
   ouvrirModal('modal-user-admin');
 }
@@ -431,20 +427,33 @@ function getSelectedRoles() {
 function renderAdminGrades() {
   const container = document.getElementById('admin-tab-grades');
   if (!container) return;
-  const grades = CONFIG.grades_custom || [];
+  // Initialiser avec des grades par défaut si vide
+  if (!CONFIG.grades_custom || CONFIG.grades_custom.length === 0) {
+    CONFIG.grades_custom = ['Sapeur','SA1 Cls','SA2 Cls','Caporal','Caporal-Chef','Sergent','Sergent-Chef','Adjudant','Adjudant-Chef','Major','BCH','MDC','Lieutenant','Capitaine','Commandant','Lieutenant-Colonel','Colonel','Médecin'];
+    sauvegarderDonnees();
+  }
+  const grades = CONFIG.grades_custom;
   container.innerHTML = `
-    <div style="max-width:600px;">
-      <div class="card" style="margin-bottom:16px;"><div class="card-header">🎖️ Grades disponibles</div><div class="card-body">
-        <div id="adm-grades-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
-          ${grades.map((g,i) => `<span style="display:flex;align-items:center;gap:4px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:5px;padding:4px 10px;font-size:12px;font-weight:700;">
-            ${g}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;" onclick="supprimerGrade(${i})">✕</button>
-          </span>`).join('')}
+    <div style="max-width:680px;">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header" style="font-weight:800;">Grades disponibles <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(${grades.length} grades configurés)</span></div>
+        <div class="card-body">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;min-height:40px;">
+            ${grades.length === 0
+              ? '<span style="color:var(--text-muted);font-size:13px;font-style:italic;">Aucun grade — ajoutez-en ci-dessous</span>'
+              : grades.map((g,i) => `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:5px;padding:5px 12px;font-size:13px;font-weight:700;">
+                ${g}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:13px;line-height:1;" title="Supprimer" onclick="supprimerGrade(${i})">✕</button>
+              </span>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="new-grade-input" placeholder="Ex: Lieutenant, Adjudant-Chef, SGT..." 
+              style="flex:1;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;"
+              onkeydown="if(event.key==='Enter')ajouterGrade()">
+            <button class="btn btn-success" onclick="ajouterGrade()">+ Ajouter</button>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">Ces grades seront disponibles dans le sélecteur lors de la création des comptes.</div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="new-grade-input" placeholder="Nouveau grade (ex: LTN, ADJ...)" style="flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);">
-          <button class="btn btn-success btn-sm" onclick="ajouterGrade()">+ Ajouter</button>
-        </div>
-      </div></div>
+      </div>
     </div>`;
 }
 function ajouterGrade() {
