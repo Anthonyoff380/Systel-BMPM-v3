@@ -199,6 +199,13 @@
     .fg-engin-person { font-size:12px; color:var(--text-color); flex:1; }
     /* Actions */
     .fg-actions { display:flex; gap:10px; padding:14px 20px; border-top:1px solid var(--border-color); background:var(--bg-main); }
+    .synop-action-btn { border:none; cursor:pointer; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:800; transition:all 0.15s; letter-spacing:0.3px; }
+    .synop-btn-terminer { background:rgba(229,62,62,0.15); color:#fc8181; border:1px solid rgba(229,62,62,0.3); }
+    .synop-btn-terminer:hover { background:rgba(229,62,62,0.3); color:white; }
+    .synop-btn-renfort { background:rgba(56,161,105,0.15); color:#68d391; border:1px solid rgba(56,161,105,0.3); }
+    .synop-btn-renfort:hover { background:rgba(56,161,105,0.3); color:white; }
+    .synop-btn-info { background:rgba(66,153,225,0.15); color:#63b3ed; border:1px solid rgba(66,153,225,0.3); }
+    .synop-btn-info:hover { background:rgba(66,153,225,0.3); color:white; }
   </style>
 </head>
 <body class="login-page" data-theme="night">
@@ -535,11 +542,11 @@
 </div>
 
 <!-- MODAL BER — plein écran, sans header -->
-<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:transparent;flex-direction:column;align-items:center;justify-content:center;">
+<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:transparent;flex-direction:column;align-items:center;justify-content:center;" onclick="closeBERIfOutside(event)">
 
   <span id="ber-engin-nom" style="display:none;"></span>
-  <!-- Radio EADS SVG réaliste -->
-  <div style="position:relative;width:min(88vw,620px);margin:0 auto;transform:translateY(-5%);">
+  <!-- Radio EADS SVG draggable -->
+  <div id="ber-drag-wrapper" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-55%);width:min(88vw,620px);cursor:move;user-select:none;" onmousedown="startBERDrag(event)">
     <button onclick="fermerModal()" style="position:absolute;top:-36px;right:0;background:#e53e3e;border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-weight:900;font-size:16px;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
   <svg id="ber-svg" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
     <!-- Corps de la radio -->
@@ -736,6 +743,53 @@ document.addEventListener('DOMContentLoaded', () => {
     Notification.requestPermission();
   }
 });
+</script>
+
+
+<script>
+// ===== BER DRAGGABLE =====
+let _berDragging = false, _berDX = 0, _berDY = 0, _berX = null, _berY = null;
+
+function startBERDrag(e) {
+  if (e.target.tagName === 'BUTTON') return; // Ne pas drag si clic sur bouton
+  const wrap = document.getElementById('ber-drag-wrapper');
+  if (!wrap) return;
+  _berDragging = true;
+  // Position actuelle
+  const rect = wrap.getBoundingClientRect();
+  _berDX = e.clientX - rect.left;
+  _berDY = e.clientY - rect.top;
+  e.preventDefault();
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!_berDragging) return;
+  const wrap = document.getElementById('ber-drag-wrapper');
+  if (!wrap) return;
+  const x = e.clientX - _berDX;
+  const y = e.clientY - _berDY;
+  wrap.style.transform = 'none';
+  wrap.style.left = x + 'px';
+  wrap.style.top = y + 'px';
+});
+
+document.addEventListener('mouseup', () => { _berDragging = false; });
+
+function closeBERIfOutside(e) {
+  // Fermer si clic en dehors du wrapper
+  if (e.target.id === 'modal-ber') fermerModal();
+}
+
+// Reset position BER quand on l'ouvre
+const _origOuvrirBER = typeof ouvrirBER !== 'undefined' ? ouvrirBER : null;
+function resetBERPosition() {
+  const wrap = document.getElementById('ber-drag-wrapper');
+  if (wrap) {
+    wrap.style.left = '50%';
+    wrap.style.top = '50%';
+    wrap.style.transform = 'translate(-50%,-55%)';
+  }
+}
 </script>
 
 </body>

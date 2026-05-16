@@ -47,9 +47,9 @@ function renderInterventionCard(inter) {
         ${servicesHTML ? `<div class="synop-services-row">${servicesHTML}</div>` : ''}
         <div class="synop-engins-row">${enginsHTML||'<span style="color:#999;font-size:12px;">Aucun engin engagé</span>'}</div>
         <div class="synop-inter-actions">
-          ${userPeutTerminer() ? '<button class="synop-action-btn" onclick="terminerIntervention(\''+inter.id+'\')" title="Terminer">🔴</button>' : ''}
-          <button class="synop-action-btn" onclick="relancerCOSSIM('${inter.id}')" title="Ouvrir COSSIM">🟢</button>
-          <button class="synop-action-btn" onclick="infoIntervention('${inter.id}')" title="Info">ℹ️</button>
+          ${userPeutTerminer() ? '<button class="synop-action-btn synop-btn-terminer" onclick="terminerIntervention(\''+inter.id+'\')">' + (currentUser && userHasCOSSIM(currentUser) ? '🔴 Terminer' : '') + '</button>' : ''}
+          ${userPeutTerminer() ? '<button class="synop-action-btn synop-btn-renfort" onclick="envoyerRenfort(\''+inter.id+'\')" title="Envoyer un renfort">🚒 Envoyer Renfort</button>' : ''}
+          <button class="synop-action-btn synop-btn-info" onclick="infoIntervention('${inter.id}')">ℹ️ Info</button>
         </div>
       </div>
     </div>`;
@@ -85,16 +85,76 @@ function terminerIntervention(id) {
   // Forcer re-render complet
   renderInterventionsSynoptique();
   if (typeof updateSynoptique === 'function') updateSynoptique();
-  // Logger dans l'historique
-  if (typeof logBERAction === 'function') logBERAction(berEnginActif, code, ber ? ber.label : String(code));
-  // Sons BER enchaînés
-  if (typeof playBERStatut === 'function') playBERStatut();
   showToast("Intervention #" + id + " terminée !");
 }
 function relancerCOSSIM(id) { localStorage.setItem('systel_cossim_inter', id); window.open('cossim.html','_blank'); }
 function infoIntervention(id) {
   const i = INTERVENTIONS.find(x => x.id === id);
-  if (i) alert(`Intervention #${i.id}\nType: ${i.type}\nAdresse: ${i.adresse}\nEngins: ${(i.engins||[]).join(', ')}`);
+  if (!i) return;
+  const d = i.date ? new Date(i.date) : new Date();
+  const dateStr = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const enginsList = (i.engins||[]).map(eId => {
+    const e = ENGINS.find(x=>x.id===eId);
+    const eq = i.equipes?.[eId];
+    const gfo = i.enginsGFO?.[eId] || '--';
+    const ber = e?.berStatut ? BER_STATUTS.find(b=>b.code===e.berStatut) : null;
+    const membres = (eq?.membres||[]).map(m => {
+      const u = USERS.find(x=>x.id===m.userId);
+      return u ? `<tr><td style="padding:3px 8px;font-weight:700;">${m.abrev}</td><td style="padding:3px 8px;">${u.grade||''}</td><td style="padding:3px 8px;font-weight:800;">${(u.lastname||'').toUpperCase()} ${u.firstname||''}</td></tr>` : '';
+    }).join('');
+    return `<div style="margin-bottom:12px;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;">
+      <div style="background:var(--bg-main);padding:8px 12px;font-weight:900;display:flex;justify-content:space-between;align-items:center;">
+        <span>🚒 ${e?.nom||eId} <span style="font-size:11px;color:#a0aec0;">GFO: ${gfo}</span></span>
+        ${ber ? '<span style="background:'+ber.couleur+';color:white;font-size:11px;padding:2px 8px;border-radius:4px;">BER '+ber.code+' — '+ber.label+'</span>' : ''}
+      </div>
+      ${membres ? '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr><th style="padding:3px 8px;text-align:left;font-size:11px;color:var(--text-muted);">Poste</th><th style="padding:3px 8px;text-align:left;font-size:11px;color:var(--text-muted);">Grade</th><th style="padding:3px 8px;text-align:left;font-size:11px;color:var(--text-muted);">Nom</th></tr></thead><tbody>'+membres+'</tbody></table>' : '<div style="padding:8px 12px;color:var(--text-muted);font-size:12px;font-style:italic;">Équipage non renseigné</div>'}
+    </div>`;
+  }).join('');
+
+  const servicesHTML = (i.services||[]).map(s=>`<span style="background:rgba(255,255,255,0.06);border:1px solid var(--border-color);border-radius:4px;padding:2px 8px;font-size:12px;">${s}</span>`).join(' ');
+  const autresHTML = (i.autresMoyensAlertes||[]).map(m=>`<div style="font-size:13px;">🚒 ${m.enginNom||m.enginId} <span style="color:var(--text-muted);">— GFO: ${m.gfo||'--'}</span></div>`).join('');
+
+  // Créer le modal
+  let modal = document.getElementById('modal-info-inter');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-info-inter';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:8500;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div style="background:var(--card-bg);border-radius:12px;border:1px solid var(--border-color);width:100%;max-width:680px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div style="background:var(--bg-main);padding:14px 20px;border-bottom:2px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2;">
+      <div>
+        <div style="font-weight:900;font-size:15px;color:var(--accent);">#${i.numero||i.id} — ${i.type||'INTERVENTION'}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${dateStr} • ${i.statut||'En cours'}</div>
+      </div>
+      <button onclick="document.getElementById('modal-info-inter').remove()" style="background:none;border:1px solid var(--border-color);color:var(--text-color);padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">✕</button>
+    </div>
+    <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;">
+        <div><span style="color:var(--text-muted);font-size:11px;font-weight:700;display:block;text-transform:uppercase;margin-bottom:3px;">Commune</span>${i.commune||'--'}</div>
+        <div><span style="color:var(--text-muted);font-size:11px;font-weight:700;display:block;text-transform:uppercase;margin-bottom:3px;">Adresse</span>${i.adresse||'--'}</div>
+        <div><span style="color:var(--text-muted);font-size:11px;font-weight:700;display:block;text-transform:uppercase;margin-bottom:3px;">Contact</span>${i.contact||'-'}</div>
+        <div><span style="color:var(--text-muted);font-size:11px;font-weight:700;display:block;text-transform:uppercase;margin-bottom:3px;">N° Contre-appel</span>${i.nca||'-'}</div>
+        ${i.etablissement ? `<div><span style="color:var(--text-muted);font-size:11px;font-weight:700;display:block;text-transform:uppercase;margin-bottom:3px;">ETARE</span>${i.etablissement}</div>` : ''}
+      </div>
+      ${i.observations ? `<div><div style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Observations</div><div style="font-size:13px;background:var(--bg-main);padding:8px 12px;border-radius:6px;border:1px solid var(--border-color);">${i.observations}</div></div>` : ''}
+      ${servicesHTML ? `<div><div style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Services concernés</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${servicesHTML}</div></div>` : ''}
+      <div><div style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Engins engagés</div>${enginsList||'<div style="color:var(--text-muted);font-style:italic;font-size:13px;">Aucun engin</div>'}</div>
+      ${autresHTML ? `<div><div style="color:var(--text-muted);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Autres moyens alertés</div>${autresHTML}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button onclick="window.open('ticket_depart.html?inter=${i.id}&engin=${(i.engins||[])[0]||''}','_blank')" style="background:var(--bg-main);border:1px solid var(--border-color);color:var(--text-color);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;">🖨️ Ticket</button>
+        <button onclick="document.getElementById('modal-info-inter').remove()" style="background:var(--accent);border:none;color:white;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;margin-left:auto;">Fermer</button>
+      </div>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+}
+
+function envoyerRenfort(interId) {
+  localStorage.setItem('systel_cossim_inter', interId);
+  window.open('cossim.html', '_blank');
 }
 
 // ===== BER MODAL IMAGE =====
@@ -104,6 +164,8 @@ function ouvrirBER(enginId) {
   if (!engin) return;
   berEnginActif = enginId;
   document.getElementById('ber-engin-nom').textContent = engin.nom;
+  // Reset position draggable
+  if (typeof resetBERPosition === 'function') resetBERPosition();
   // Reset tous les boutons
   for (let i = 1; i <= 9; i++) {
     const btn = document.getElementById('ber-btn-' + i);

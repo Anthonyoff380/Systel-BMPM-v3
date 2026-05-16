@@ -356,7 +356,7 @@
       const d = (key) => localStorage.getItem('systel_' + key);
       try { if (d('config')) CONFIG = JSON.parse(d('config')); } catch(e) {}
       try { if (d('casernes')) CASERNES = JSON.parse(d('casernes')); } catch(e) {}
-      try { if (d('engins')) ENGINS = JSON.parse(d('engins')); } catch(e) {}
+      const engRaw = d('engins'); if (engRaw !== null) { try { ENGINS = JSON.parse(engRaw); } catch(e) { ENGINS = []; } }
       try { if (d('users')) USERS = JSON.parse(d('users')); } catch(e) {}
       try { if (d('interventions')) INTERVENTIONS = JSON.parse(d('interventions')); } catch(e) {}
       try { if (d('feuilles_garde')) FEUILLES_GARDE = JSON.parse(d('feuilles_garde')); } catch(e) {}

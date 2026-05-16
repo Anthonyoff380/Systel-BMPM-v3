@@ -517,7 +517,9 @@ function chargerDonnees() {
   if (d('config')) CONFIG = JSON.parse(d('config'));
   if (d('intranet')) INTRANET_CONFIG = JSON.parse(d('intranet'));
   if (d('casernes')) CASERNES = JSON.parse(d('casernes'));
-  if (d('engins')) ENGINS = JSON.parse(d('engins'));
+  const enginsRaw = d('engins');
+  if (enginsRaw !== null) { try { ENGINS = JSON.parse(enginsRaw); } catch(e) { ENGINS = []; } }
+  // Ne pas utiliser les defaults si localStorage a une liste (même vide)
   if (d('users')) USERS = JSON.parse(d('users'));
   if (d('planning')) PLANNING = JSON.parse(d('planning'));
   if (d('interventions')) INTERVENTIONS = JSON.parse(d('interventions'));
