@@ -475,30 +475,48 @@ function supprimerGrade(idx) {
 function refreshGradeSelect() {
   const sel = document.getElementById('mu-grade');
   if (!sel) return;
+  // Initialiser les grades si vides
+  if (!CONFIG.grades_custom || CONFIG.grades_custom.length === 0) {
+    CONFIG.grades_custom = ['Sapeur','SA1 Cls','SA2 Cls','Caporal','Caporal-Chef','Sergent','Sergent-Chef','Adjudant','Adjudant-Chef','Major','BCH','MDC','Lieutenant','Capitaine','Commandant','Lieutenant-Colonel','Colonel','Médecin'];
+    sauvegarderDonnees();
+  }
   const cur = sel.value;
-  sel.innerHTML = (CONFIG.grades_custom||[]).map(g=>`<option value="${g}" ${g===cur?'selected':''}>${g}</option>`).join('');
+  sel.innerHTML = CONFIG.grades_custom.map(g=>`<option value="${g}" ${g===cur?'selected':''}>${g}</option>`).join('');
 }
 function deleteUserAdmin(idx) {
   if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
   if (confirm("Supprimer ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
 }
 function sauvegarderUserAdmin() {
+  const g = id => document.getElementById(id);
+  const id = (g('mu-id')?.value||'').trim();
+  const pwd = (g('mu-pwd')?.value||'').trim();
+  if (!id) return showToast("L'identifiant est requis !", "error");
+  if (!pwd) return showToast("Le mot de passe est requis !", "error");
   const selectedRoles = getSelectedRoles();
   if (selectedRoles.length === 0) return showToast("Sélectionnez au moins un rôle !", "error");
+  const ln = (g('mu-lastname')?.value||'').trim();
+  const fn = (g('mu-firstname')?.value||'').trim();
+  const existingUser = currentEditIdx !== null ? USERS[currentEditIdx] : null;
   const u = {
-    id: document.getElementById('mu-id').value,
-    lastname: document.getElementById('mu-lastname').value,
-    firstname: document.getElementById('mu-firstname').value,
-    name: `${document.getElementById('mu-lastname').value} ${document.getElementById('mu-firstname').value}`.trim(),
-    pwd: document.getElementById('mu-pwd').value,
-    roles: selectedRoles, role: selectedRoles[0],
-    grade: document.getElementById('mu-grade').value || document.getElementById('mu-grade-text')?.value || 'Sapeur',
-    tel: document.getElementById('mu-tel').value,
-    email: document.getElementById('mu-email').value,
-    photo: document.getElementById('mu-photo-preview').src.startsWith('data:') ? document.getElementById('mu-photo-preview').src : USERS[currentEditIdx]?.photo
+    id,
+    lastname: ln,
+    firstname: fn,
+    name: (ln + ' ' + fn).trim() || id,
+    pwd,
+    roles: selectedRoles,
+    role: selectedRoles[0],
+    grade: g('mu-grade')?.value || existingUser?.grade || 'Sapeur',
+    tel: existingUser?.tel || '',
+    email: existingUser?.email || '',
+    photo: existingUser?.photo || null
   };
   if (currentEditIdx !== null) USERS[currentEditIdx] = u; else USERS.push(u);
-  synchroniserTout(); fermerModal(); renderAdminUsers(); showToast("Enregistré !");
+  sauvegarderDonnees();
+  synchroniserTout();
+  fermerModal();
+  renderAdminUsers();
+  showToast("Compte " + (currentEditIdx !== null ? "modifié" : "créé") + " !");
 }
 function handlePhotoUpload(e) {
   const file = e.target.files[0];
@@ -724,7 +742,7 @@ function afficherBipAlerte(bip) {
   const motif = (bip.motif || 'INTERVENTION').toUpperCase();
   if(el('bip-screen-motif')) el('bip-screen-motif').textContent = motif;
   if(el('bip-screen-engin')) el('bip-screen-engin').textContent = bip.enginNom || '';
-  if(el('bip-screen-place')) el('bip-screen-place').textContent = 'Place: ' + (bip.place || '?');
+  if(el('bip-screen-place')) el('bip-screen-place').textContent = bip.place || '';
   if(el('bip-screen-num')) el('bip-screen-num').textContent = bip.interNum || '';
   overlay.style.display = 'flex';
   // Son embarqué base64 — zéro 404
