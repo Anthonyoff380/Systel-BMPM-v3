@@ -185,6 +185,14 @@ function showAdminTab(tabName, evt) {
     document.getElementById('adm-centre-nom').value = CONFIG.nom;
     document.getElementById('adm-centre-code').value = CONFIG.centre;
   }
+  if (tabName === 'grades') setTimeout(renderAdminGrades, 50);
+  if (tabName === 'webhooks') setTimeout(() => {
+    const wh = CONFIG?.webhooks || {};
+    const g = id => document.getElementById(id);
+    if(g('wh-ticket')) g('wh-ticket').value = wh.ticket||'';
+    if(g('wh-intervention')) g('wh-intervention').value = wh.intervention||'';
+    if(g('wh-synoptique')) g('wh-synoptique').value = wh.synoptique||'';
+  }, 50);
 }
 
 function renderAdminIntranet() {
@@ -733,19 +741,15 @@ function checkBipAlertes() {
 function afficherBipAlerte(bip) {
   const overlay = document.getElementById('bip-overlay');
   if (!overlay) return;
-  // Titre et sous-titre extérieurs (au-dessus du téléphone)
   const el = (id) => document.getElementById(id);
-  if(el('bip-motif')) el('bip-motif').textContent = (bip.motif || 'INTERVENTION').toUpperCase();
-  if(el('bip-engin')) el('bip-engin').textContent = bip.enginNom || '';
-  if(el('bip-inter-num')) el('bip-inter-num').textContent = bip.interNum || '';
-  // Cadre vert — toutes les infos utiles
+  // Cadre vert uniquement
   const motif = (bip.motif || 'INTERVENTION').toUpperCase();
   if(el('bip-screen-motif')) el('bip-screen-motif').textContent = motif;
   if(el('bip-screen-engin')) el('bip-screen-engin').textContent = bip.enginNom || '';
-  if(el('bip-screen-place')) el('bip-screen-place').textContent = bip.place || '';
+  // Poste sans le préfixe "Place:"
+  if(el('bip-screen-place')) el('bip-screen-place').textContent = (bip.place||'').replace(/^Place:\s*/i,'');
   if(el('bip-screen-num')) el('bip-screen-num').textContent = bip.interNum || '';
   overlay.style.display = 'flex';
-  // Son embarqué base64 — zéro 404
   if (typeof playBip === 'function') { playBip(true); }
 }
 
