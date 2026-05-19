@@ -373,3 +373,42 @@ function fbStopListeners() {
   _listeners = {};
   console.log("✅ Tous les écouteurs arrêtés");
 }
+
+// ===== OPTIMISATION BIPS - VERSION ROBUSTE =====
+function fbListenBipAlertsOptimized(userId, callback) {
+  if (!_db) {
+    console.warn("Firebase pas prêt pour les bips");
+    return;
+  }
+  
+  try {
+    // Écouter TOUS les bips (pas seulement les non-lus)
+    _listeners.bipOptimized = _db.collection(COL.BIP_ALERTES)
+      .where('targetUserId', '==', userId)
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const alert = change.doc.data();
+            console.log("✅ Nouveau bip détecté:", alert);
+            
+            // Callback immédiat
+            callback(alert);
+            
+            // Marquer comme lu après traitement
+            setTimeout(() => {
+              _db.collection(COL.BIP_ALERTES).doc(change.doc.id).update({ read: true })
+                .catch(e => console.warn("Erreur marquage bip:", e));
+            }, 100);
+          }
+        });
+      }, (error) => {
+        console.error("❌ Erreur écouteur bips:", error);
+      });
+    
+    console.log("✅ Écouteur bips optimisé activé pour:", userId);
+  } catch(e) {
+    console.error("❌ Erreur setup écouteur bips:", e);
+  }
+}

@@ -1476,3 +1476,88 @@ if (typeof _fbReady !== 'undefined' && _fbReady && typeof fbListenPresence === '
     });
   }
 }
+
+// ===== DIAGNOSTIC FIREBASE =====
+let fbDiagnostics = {
+  connected: false,
+  lastBip: null,
+  lastSync: null,
+  errors: []
+};
+
+function updateDiagnosticBar() {
+  const bar = document.getElementById('fb-diagnostic-bar');
+  if (!bar) return;
+  
+  const status = _fbReady ? '🟢 CONNECTÉ' : '🔴 DÉCONNECTÉ';
+  const lastBipText = fbDiagnostics.lastBip ? new Date(fbDiagnostics.lastBip).toLocaleTimeString() : 'Aucun';
+  const lastSyncText = fbDiagnostics.lastSync ? new Date(fbDiagnostics.lastSync).toLocaleTimeString() : 'Aucune';
+  
+  bar.innerHTML = `
+    Firebase: ${status} | 
+    Dernier Bip: ${lastBipText} | 
+    Dernière Synchro: ${lastSyncText} |
+    <a href="#" onclick="testBipNow(event)" style="color:#48bb78; text-decoration:none;">🔊 TEST BIP</a>
+  `;
+}
+
+function testBipNow(e) {
+  e.preventDefault();
+  if (!currentUser) return showToast("Connectez-vous d'abord", "error");
+  if (!_fbReady) return showToast("Firebase non connecté", "error");
+  
+  fbTriggerBip(currentUser.id, 'test').then(() => {
+    showToast("Bip de test envoyé!", "success");
+    fbDiagnostics.lastBip = new Date();
+    updateDiagnosticBar();
+  }).catch(e => {
+    showToast("Erreur envoi bip: " + e.message, "error");
+    fbDiagnostics.errors.push(e.message);
+  });
+}
+
+// Mettre à jour la barre toutes les secondes
+setInterval(updateDiagnosticBar, 1000);
+
+// ===== FORCER L'ACTIVATION DES LISTENERS APRÈS CONNEXION =====
+const originalInitApp = initApp;
+initApp = function() {
+  originalInitApp();
+  
+  // Attendre 500ms pour que Firebase soit prêt
+  setTimeout(() => {
+    if (_fbReady && currentUser) {
+      console.log("🔥 Activation forcée des listeners pour:", currentUser.id);
+      
+      // Écouter les bips
+      if (typeof fbListenBipAlerts === 'function') {
+        fbListenBipAlerts(currentUser.id, (alert) => {
+          console.log("🔔 BIP REÇU:", alert);
+          fbDiagnostics.lastBip = new Date();
+          
+          // Jouer le son
+          const audio = new Audio('sounds/bip.mp3');
+          audio.volume = 1;
+          audio.play().catch(e => console.error("Erreur son:", e));
+          
+          // Afficher notification
+          showToast("🔔 BIP REÇU!", "info");
+          updateDiagnosticBar();
+        });
+      }
+      
+      // Écouter les changements de présence
+      if (typeof fbListenPresence === 'function') {
+        fbListenPresence((users) => {
+          fbDiagnostics.lastSync = new Date();
+          users.forEach(u => {
+            const existing = USERS.find(x => x.id === u.id);
+            if (existing) existing.presence = u.presence;
+          });
+          synchroniserTout();
+          updateDiagnosticBar();
+        });
+      }
+    }
+  }, 500);
+};
