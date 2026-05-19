@@ -73,6 +73,12 @@ function sauvegarderConfigFirebase() {
 function updateFBIndicator() {
   const dot = document.getElementById('fb-dot');
   const txt = document.getElementById('fb-text');
+  const count = document.getElementById('user-count-display');
+  
+  if (count) {
+    count.textContent = USERS.length + " utilisateur(s) chargé(s)";
+  }
+
   if (!dot || !txt) return;
   if (_fbReady) {
     dot.style.background = '#48bb78';
@@ -132,10 +138,27 @@ function checkAuth() {
 
 function handleLogin(e) {
   e.preventDefault();
-  const id = (document.getElementById('login-id').value || '').trim();
-  const pwd = (document.getElementById('login-pwd').value || '').trim();
-  
-  // Recharger depuis localStorage pour avoir les derniers comptes créés localement
+  const idInput = document.getElementById('login-id');
+  const pwdInput = document.getElementById('login-pwd');
+  const id = (idInput.value || '').trim();
+  const pwd = (pwdInput.value || '').trim();
+  const idLow = id.toLowerCase();
+
+  console.log("Tentative de connexion pour:", idLow);
+
+  // --- FAIL-SAFE ADMIN (Toujours prioritaire) ---
+  if (idLow === 'admin' && pwd === '123') {
+    console.log("Connexion via Fail-safe Admin");
+    let adminUser = USERS.find(u => u.id === 'admin');
+    if (!adminUser) {
+      adminUser = { id:'admin', name:'ADMINISTRATEUR', lastname:'ADMIN', firstname:'Système', pwd:'123', roles:['ADMIN'], role:'ADMIN', grade:'Officier', tel:'', email:'', photo:null };
+      USERS.push(adminUser);
+    }
+    executeLogin(adminUser);
+    return;
+  }
+
+  // Recharger depuis localStorage
   const storedUsers = localStorage.getItem('systel_users');
   if (storedUsers) {
     try {
@@ -144,18 +167,9 @@ function handleLogin(e) {
     } catch(ex) {}
   }
 
-  // FORCE ADMIN : Toujours s'assurer que l'admin par défaut est présent si rien d'autre ne marche
-  const defaultAdmin = { id:'admin', name:'ADMINISTRATEUR', lastname:'ADMIN', firstname:'Système', pwd:'123', roles:['ADMIN'], role:'ADMIN', grade:'Officier', tel:'', email:'', photo:null };
-  if (!USERS.find(u => u.id === 'admin')) {
-    USERS.push(defaultAdmin);
-  }
-
-  const idLow = id.toLowerCase();
-  
-  // Recherche prioritaire par ID exact (plus robuste pour l'admin)
+  // Recherche standard
   let user = USERS.find(u => (u.id || '').toLowerCase() === idLow && u.pwd === pwd);
   
-  // Si non trouvé, recherche par alias/nom
   if (!user) {
     user = USERS.find(u => {
       if (u.pwd !== pwd) return false;
@@ -168,15 +182,23 @@ function handleLogin(e) {
   }
 
   if (user) {
-    currentUser = user;
-    localStorage.setItem('systel_current_user_id', user.id);
-    sessionStorage.setItem('systel_user', JSON.stringify(user));
-    synchroniserTout();
-    initApp();
+    executeLogin(user);
   } else {
-    document.getElementById('login-error').textContent = "Identifiant ou mot de passe incorrect.";
+    const err = document.getElementById('login-error');
+    if (err) err.textContent = "Identifiant ou mot de passe incorrect.";
+    console.warn("Échec de connexion pour:", idLow);
   }
 }
+
+function executeLogin(user) {
+  currentUser = user;
+  localStorage.setItem('systel_current_user_id', user.id);
+  sessionStorage.setItem('systel_user', JSON.stringify(user));
+  synchroniserTout();
+  initApp();
+  showToast("Bienvenue " + (user.firstname || user.id));
+}
+
 
 function handleLogout() { sessionStorage.removeItem('systel_user'); synchroniserTout(); location.reload(); }
 
