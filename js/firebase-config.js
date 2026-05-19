@@ -289,3 +289,87 @@ async function migrateFromLocalStorage() {
   localStorage.setItem('systel_migrated_to_firebase', 'true');
   console.log("✅ Migration complète !");
 }
+// ============================================================
+// SYNCHRONISATION DE PRÉSENCE (Dispo/Indispo)
+// ============================================================
+
+async function fbUpdatePresence(userId, status) {
+  if (!_db) return;
+  try {
+    await _db.collection(COL.USERS).doc(userId).update({
+      presence: status,
+      lastUpdate: new Date().toISOString()
+    });
+    console.log("✅ Présence mise à jour:", userId, status);
+  } catch(e) {
+    console.warn("Erreur mise à jour présence:", e);
+  }
+}
+
+function fbListenPresence(callback) {
+  if (!_db) return;
+  try {
+    _listeners.presence = _db.collection(COL.USERS)
+      .onSnapshot(snapshot => {
+        const users = [];
+        snapshot.forEach(doc => {
+          users.push({ id: doc.id, ...doc.data() });
+        });
+        callback(users);
+      });
+    console.log("✅ Écouteur présence activé");
+  } catch(e) {
+    console.warn("Erreur écouteur présence:", e);
+  }
+}
+
+// ============================================================
+// SYSTÈME DE BIP/ALERTES SYNCHRONISÉ
+// ============================================================
+
+async function fbTriggerBip(targetUserId, bipType = 'standard') {
+  if (!_db) return;
+  try {
+    const alertId = Date.now().toString();
+    await _db.collection(COL.BIP_ALERTES).doc(alertId).set({
+      targetUserId: targetUserId,
+      type: bipType,
+      timestamp: new Date().toISOString(),
+      read: false
+    });
+    console.log("✅ Alerte bip envoyée à:", targetUserId);
+  } catch(e) {
+    console.warn("Erreur envoi bip:", e);
+  }
+}
+
+function fbListenBipAlerts(userId, callback) {
+  if (!_db) return;
+  try {
+    _listeners.bip = _db.collection(COL.BIP_ALERTES)
+      .where('targetUserId', '==', userId)
+      .where('read', '==', false)
+      .onSnapshot(snapshot => {
+        snapshot.forEach(doc => {
+          callback(doc.data());
+          // Marquer comme lue
+          _db.collection(COL.BIP_ALERTES).doc(doc.id).update({ read: true });
+        });
+      });
+    console.log("✅ Écouteur bip activé pour:", userId);
+  } catch(e) {
+    console.warn("Erreur écouteur bip:", e);
+  }
+}
+
+// ============================================================
+// NETTOYAGE DES LISTENERS
+// ============================================================
+
+function fbStopListeners() {
+  Object.values(_listeners).forEach(listener => {
+    if (typeof listener === 'function') listener();
+  });
+  _listeners = {};
+  console.log("✅ Tous les écouteurs arrêtés");
+}

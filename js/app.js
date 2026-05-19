@@ -140,14 +140,23 @@ function synchroniserTout() {
       u.firstname = parts.slice(1).join(' ');
     }
   });
-  PERSONNELS = USERS.map(u => ({
-    id: u.id,
-    nom: u.lastname || u.id.toUpperCase(),
-    prenom: u.firstname || "",
-    grade: u.grade,
-    statut: (sessionStorage.getItem('systel_user') && JSON.parse(sessionStorage.getItem('systel_user')).id === u.id) ? "DISPO" : "INDISPO",
-    photo: u.photo
-  }));
+  PERSONNELS = USERS.map(u => {
+    let statut = "INDISPO";
+    if (sessionStorage.getItem("systel_user")) {
+      const currentUser = JSON.parse(sessionStorage.getItem("systel_user"));
+      if (u.id === currentUser.id) {
+        statut = u.presence || "DISPO";
+      }
+    }
+    return {
+      id: u.id,
+      nom: u.lastname || u.id.toUpperCase(),
+      prenom: u.firstname || "",
+      grade: u.grade,
+      statut: statut,
+      photo: u.photo
+    };
+  });
   ANNUAIRE = USERS.map(u => ({
     id: u.id,
     nom: `${u.lastname || ""} ${u.firstname || ""}`.trim() || u.name,
@@ -1441,3 +1450,29 @@ sauvegarderDonnees = function() {
     }
   }
 };
+
+// ===== ACTIVATION DES ÉCOUTEURS FIREBASE =====
+// Activer la synchronisation de présence et des bips
+if (typeof _fbReady !== 'undefined' && _fbReady && typeof fbListenPresence === 'function') {
+  fbListenPresence((users) => {
+    // Mettre à jour USERS avec les données de présence
+    users.forEach(u => {
+      const existing = USERS.find(x => x.id === u.id);
+      if (existing) {
+        existing.presence = u.presence;
+      }
+    });
+    synchroniserTout();
+  });
+  
+  // Écouter les bips pour l'utilisateur actuel
+  if (currentUser && typeof fbListenBipAlerts === 'function') {
+    fbListenBipAlerts(currentUser.id, (alert) => {
+      console.log("🔔 Bip reçu:", alert);
+      // Jouer le son du bip
+      const audio = new Audio('sounds/bip.mp3');
+      audio.play().catch(e => console.warn("Erreur lecture bip:", e));
+      showToast("Bip reçu!", "info");
+    });
+  }
+}
