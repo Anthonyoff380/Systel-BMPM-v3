@@ -9,12 +9,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     onFirebaseReady(async () => {
       updateFBIndicator();
       console.log("Chargement des données depuis Firebase...");
+      
+      // Charger les utilisateurs
       const fbUsers = await fbLoadUsers();
       if (fbUsers && fbUsers.length > 0) {
         USERS = fbUsers;
         localStorage.setItem('systel_users', JSON.stringify(USERS));
         synchroniserTout();
       }
+      
+      // Charger les interventions
+      const fbInterventions = await fbLoadInterventions();
+      if (fbInterventions && fbInterventions.length > 0) {
+        INTERVENTIONS = fbInterventions;
+        localStorage.setItem('systel_interventions', JSON.stringify(INTERVENTIONS));
+      }
+      
+      // Charger les engins
+      const fbEngins = await fbLoadEngins();
+      if (fbEngins && fbEngins.length > 0) {
+        ENGINS = fbEngins;
+        localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
+      }
+      
+      // Activer les écouteurs temps réel
+      fbListenInterventions((data) => {
+        INTERVENTIONS = data;
+        localStorage.setItem('systel_interventions', JSON.stringify(INTERVENTIONS));
+        const section = document.querySelector('.section.active-section');
+        if (section && section.id === 'section-synoptique') updateSynoptique();
+        if (section && section.id === 'section-interventions') renderInterventionsSynoptique();
+      });
+      
+      fbListenEngins((data) => {
+        ENGINS = data;
+        localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
+        const section = document.querySelector('.section.active-section');
+        if (section && section.id === 'section-synoptique') updateSynoptique();
+      });
+      
+      fbListenUsers((data) => {
+        USERS = data;
+        localStorage.setItem('systel_users', JSON.stringify(USERS));
+        synchroniserTout();
+      });
     });
   }
 
@@ -1386,3 +1424,20 @@ function supprimerInterHistorique(interId) {
     showToast('Intervention supprimée de l\'historique');
   }
 }
+
+// ===== FIREBASE SYNC ENHANCEMENT =====
+// Intercepter les modifications pour les envoyer directement à Firebase
+const originalSauvegarderDonnees = sauvegarderDonnees;
+sauvegarderDonnees = function() {
+  originalSauvegarderDonnees();
+  
+  // Envoyer les données critiques vers Firebase si disponible
+  if (typeof _fbReady !== 'undefined' && _fbReady) {
+    if (ENGINS && ENGINS.length > 0) {
+      fbSaveEngins(ENGINS).catch(e => console.warn('Erreur sync engins:', e));
+    }
+    if (INTERVENTIONS && INTERVENTIONS.length > 0) {
+      INTERVENTIONS.forEach(iv => fbSaveIntervention(iv).catch(e => console.warn('Erreur sync intervention:', e)));
+    }
+  }
+};
