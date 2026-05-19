@@ -412,6 +412,7 @@ function ajouterUserAdmin() {
   if(g('mu-lastname')) g('mu-lastname').value = '';
   if(g('mu-firstname')) g('mu-firstname').value = '';
   if(g('mu-pwd')) g('mu-pwd').value = '';
+  if(g('mu-photo-data')) g('mu-photo-data').value = '';
   refreshGradeSelect();
   if(g('mu-grade')) g('mu-grade').value = (CONFIG.grades_custom||['Sapeur'])[0] || 'Sapeur';
   // Photo par défaut
@@ -428,6 +429,7 @@ function editUserAdmin(idx) {
   if(g('mu-lastname')) g('mu-lastname').value = u.lastname || u.name || '';
   if(g('mu-firstname')) g('mu-firstname').value = u.firstname || '';
   if(g('mu-pwd')) g('mu-pwd').value = u.pwd;
+  if(g('mu-photo-data')) g('mu-photo-data').value = u.photo || '';
   refreshGradeSelect();
   if(g('mu-grade')) g('mu-grade').value = u.grade || '';
   // Afficher photo
@@ -544,7 +546,14 @@ function handlePhotoUpload(event) {
 }
 function deleteUserAdmin(idx) {
   if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
-  if (confirm("Supprimer ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
+  if (confirm("Supprimer ?")) { 
+    USERS.splice(idx, 1); 
+    localStorage.setItem('systel_users', JSON.stringify(USERS));
+    sauvegarderDonnees();
+    synchroniserTout(); 
+    renderAdminUsers();
+    showToast("Compte supprimé !");
+  }
 }
 function sauvegarderUserAdmin() {
   const g = id => document.getElementById(id);
@@ -557,6 +566,7 @@ function sauvegarderUserAdmin() {
   const ln = (g('mu-lastname')?.value||'').trim();
   const fn = (g('mu-firstname')?.value||'').trim();
   const existingUser = currentEditIdx !== null ? USERS[currentEditIdx] : null;
+  const photoData = document.getElementById('mu-photo-data')?.value || existingUser?.photo || null;
   const u = {
     id,
     lastname: ln,
@@ -568,19 +578,22 @@ function sauvegarderUserAdmin() {
     grade: g('mu-grade')?.value || existingUser?.grade || 'Sapeur',
     tel: existingUser?.tel || '',
     email: existingUser?.email || '',
-    photo: document.getElementById('mu-photo-data')?.value || existingUser?.photo || null
+    photo: photoData
   };
-  if (currentEditIdx !== null) USERS[currentEditIdx] = u; else USERS.push(u);
+  if (currentEditIdx !== null) {
+    USERS[currentEditIdx] = u;
+  } else {
+    USERS.push(u);
+  }
+  // Sauvegarder immédiatement dans localStorage
+  localStorage.setItem('systel_users', JSON.stringify(USERS));
   sauvegarderDonnees();
   synchroniserTout();
   fermerModal();
   renderAdminUsers();
   showToast("Compte " + (currentEditIdx !== null ? "modifié" : "créé") + " !");
 }
-function handlePhotoUpload(e) {
-  const file = e.target.files[0];
-  if (file) { const r = new FileReader(); r.onload = ev => document.getElementById('mu-photo-preview').src = ev.target.result; r.readAsDataURL(file); }
-}
+
 
 function renderAnnuaire() {
   const grid = document.getElementById('annuaire-grid');
