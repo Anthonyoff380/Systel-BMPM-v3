@@ -96,9 +96,12 @@ function handleLogin(e) {
   const idLow = id.toLowerCase();
   const user = USERS.find(u => {
     if (u.pwd !== pwd) return false;
-    if (u.id === id || u.id.toLowerCase() === idLow) return true;
-    const fn = (u.firstname||'').toLowerCase();
-    const ln = (u.lastname||u.name||'').toLowerCase().split(' ')[0];
+    const uId = (u.id || '').toLowerCase();
+    if (uId === idLow) return true;
+    
+    const fn = (u.firstname || '').toLowerCase();
+    const ln = (u.lastname || u.name || '').toLowerCase().split(' ')[0];
+    
     return fn === idLow || ln === idLow ||
            `${fn}.${ln}` === idLow || `${ln}.${fn}` === idLow ||
            `${fn}${ln}` === idLow;
@@ -556,42 +559,71 @@ function deleteUserAdmin(idx) {
   }
 }
 function sauvegarderUserAdmin() {
-  const g = id => document.getElementById(id);
-  const id = (g('mu-id')?.value||'').trim();
-  const pwd = (g('mu-pwd')?.value||'').trim();
-  if (!id) return showToast("L'identifiant est requis !", "error");
-  if (!pwd) return showToast("Le mot de passe est requis !", "error");
-  const selectedRoles = getSelectedRoles();
-  if (selectedRoles.length === 0) return showToast("Sélectionnez au moins un rôle !", "error");
-  const ln = (g('mu-lastname')?.value||'').trim();
-  const fn = (g('mu-firstname')?.value||'').trim();
-  const existingUser = currentEditIdx !== null ? USERS[currentEditIdx] : null;
-  const photoData = document.getElementById('mu-photo-data')?.value || existingUser?.photo || null;
-  const u = {
-    id,
-    lastname: ln,
-    firstname: fn,
-    name: (ln + ' ' + fn).trim() || id,
-    pwd,
-    roles: selectedRoles,
-    role: selectedRoles[0],
-    grade: g('mu-grade')?.value || existingUser?.grade || 'Sapeur',
-    tel: existingUser?.tel || '',
-    email: existingUser?.email || '',
-    photo: photoData
-  };
-  if (currentEditIdx !== null) {
-    USERS[currentEditIdx] = u;
-  } else {
-    USERS.push(u);
+  try {
+    const g = id => document.getElementById(id);
+    const idInput = g('mu-id');
+    const pwdInput = g('mu-pwd');
+    
+    if (!idInput || !pwdInput) {
+      console.error("Éléments de formulaire mu-id ou mu-pwd manquants");
+      return showToast("Erreur interne : Formulaire incomplet", "error");
+    }
+
+    const id = (idInput.value || '').trim();
+    const pwd = (pwdInput.value || '').trim();
+
+    if (!id) return showToast("L'identifiant est requis !", "error");
+    if (!pwd) return showToast("Le mot de passe est requis !", "error");
+
+    const selectedRoles = getSelectedRoles();
+    if (selectedRoles.length === 0) return showToast("Sélectionnez au moins un rôle !", "error");
+
+    const ln = (g('mu-lastname')?.value || '').trim();
+    const fn = (g('mu-firstname')?.value || '').trim();
+    const existingUser = currentEditIdx !== null ? USERS[currentEditIdx] : null;
+    const photoData = g('mu-photo-data')?.value || existingUser?.photo || null;
+
+    const u = {
+      id,
+      lastname: ln,
+      firstname: fn,
+      name: (ln + ' ' + fn).trim() || id,
+      pwd,
+      roles: selectedRoles,
+      role: selectedRoles[0],
+      grade: g('mu-grade')?.value || existingUser?.grade || 'Sapeur',
+      tel: existingUser?.tel || '',
+      email: existingUser?.email || '',
+      photo: photoData
+    };
+
+    console.log("Sauvegarde de l'utilisateur :", u);
+
+    if (currentEditIdx !== null) {
+      USERS[currentEditIdx] = u;
+    } else {
+      // Vérifier si l'ID existe déjà pour un nouvel utilisateur
+      if (USERS.some(user => user.id === id)) {
+        return showToast("Cet identifiant est déjà utilisé !", "error");
+      }
+      USERS.push(u);
+    }
+
+    // Sauvegarder immédiatement dans localStorage sous les deux clés pour compatibilité
+    localStorage.setItem('systel_users', JSON.stringify(USERS));
+    localStorage.setItem('systel_users_list', JSON.stringify(USERS)); // Clé de secours
+    
+    sauvegarderDonnees();
+    synchroniserTout();
+    fermerModal();
+    renderAdminUsers();
+    
+    showToast("Compte " + (currentEditIdx !== null ? "modifié" : "créé") + " !");
+    console.log("Utilisateur sauvegardé avec succès. Total USERS:", USERS.length);
+  } catch (err) {
+    console.error("Erreur lors de la sauvegarde de l'utilisateur :", err);
+    showToast("Une erreur est survenue lors de la sauvegarde", "error");
   }
-  // Sauvegarder immédiatement dans localStorage
-  localStorage.setItem('systel_users', JSON.stringify(USERS));
-  sauvegarderDonnees();
-  synchroniserTout();
-  fermerModal();
-  renderAdminUsers();
-  showToast("Compte " + (currentEditIdx !== null ? "modifié" : "créé") + " !");
 }
 
 

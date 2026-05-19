@@ -235,7 +235,7 @@
       <div class="form-group"><label>Mot de passe</label><input type="password" id="login-pwd" required placeholder="••••••••"/></div>
       <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
     </form>
-    <div id="login-error" style="color:#e53e3e;margin-top:10px;font-weight:700;text-align:center;"></div>
+    <div id="login-error" style="color:#e53e3e;margin-top:10px;font-weight:700;text-align:center;font-size:12px;"></div>
   </div>
 </div>
 
@@ -511,6 +511,7 @@
     <!-- Photo de profil -->
     <div style="display:flex;align-items:center;gap:14px;">
       <img id="mu-photo-display" src="https://ui-avatars.com/api/?name=N&background=2d3748&color=fff&size=80" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color);">
+      <img id="mu-photo-preview" src="" style="display:none;"> <!-- Hidden helper for some JS functions -->
       <div>
         <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Photo de profil</label>
         <input type="file" id="mu-photo-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
