@@ -1,19 +1,273 @@
-/* ============================================================
-   SYSTEL POMPIERS - CONFIGURATION FIREBASE OFFICIELLE
+/*============================================================
+   SYSTEL POMPIERS — FIREBASE FIRESTORE DATABASE LAYER
+   Remplace localStorage par Firestore pour partage en temps réel
    ============================================================ */
 
-const firebaseConfig = {
-  apiKey: "AIzaSyACbm5zQiH-JvvZtHLL4zKiKLHPuByNzvI",
-  authDomain: "sitebmpm.firebaseapp.com",
-  projectId: "sitebmpm",
-  storageBucket: "sitebmpm.firebasestorage.app",
-  messagingSenderId: "896341553765",
-  appId: "1:896341553765:web:7b7bf7e7f65a3ccd8c0c8c"
+// Import Firebase via CDN (chargé dans index.html)
+let _db = null;
+let _fbReady = false;
+let _fbCallbacks = [];
+let _listeners = {}; // Listeners temps réel actifs
+
+// Initialiser Firebase
+function initFirebase() {
+  try {
+    if (!window.firebase) { console.warn("Firebase SDK pas encore chargé"); return false; }
+    if (!firebase.apps || firebase.apps.length === 0) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    _db = firebase.firestore();
+    _fbReady = true;
+    console.log("✅ Firebase Firestore connecté");
+    _fbCallbacks.forEach(fn => fn());
+    _fbCallbacks = [];
+    return true;
+  } catch(e) {
+    console.error("❌ Firebase init error:", e);
+    return false;
+  }
+}
+
+function onFirebaseReady(fn) {
+  if (_fbReady) fn();
+  else _fbCallbacks.push(fn);
+}
+
+// ============================================================
+// COLLECTIONS FIRESTORE
+// ============================================================
+const COL = {
+  CONFIG:        'systel_config',
+  USERS:         'systel_users',
+  CASERNES:      'systel_casernes',
+  ENGINS:        'systel_engins',
+  INTERVENTIONS: 'systel_interventions',
+  COSSIM_CONFIG: 'systel_cossim_config',
+  FEUILLES:      'systel_feuilles_garde',
+  PLANNING:      'systel_planning',
+  BLIPS:         'systel_blips',
+  INTRANET:      'systel_intranet',
+  BIP_ALERTES:   'systel_bip_alertes',
 };
 
-// Note: Pour activer Firebase réellement sur Vercel, vous devrez importer
-// les modules Firebase dans vos scripts JS. Pour l'instant, le système
-// utilise LocalStorage pour garantir un fonctionnement immédiat.
+// ============================================================
+// LECTURE / ÉCRITURE GÉNÉRIQUES
+// ============================================================
 
-console.log("Firebase Config intégrée pour le projet : sitebmpm");
-export default firebaseConfig;
+// Lire un document par ID
+async function fbGet(collection, docId) {
+  if (!_db) return null;
+  try {
+    const snap = await _db.collection(collection).doc(docId).get();
+    return snap.exists ? snap.data() : null;
+  } catch(e) { console.warn('fbGet error:', e); return null; }
+}
+
+// Lire tous les documents d'une collection
+async function fbGetAll(collection) {
+  if (!_db) return [];
+  try {
+    const snap = await _db.collection(collection).get();
+    return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  } catch(e) { console.warn('fbGetAll error:', e); return []; }
+}
+
+// Écrire / mettre à jour un document
+async function fbSet(collection, docId, data) {
+  if (!_db) return false;
+  try {
+    await _db.collection(collection).doc(docId).set(data, { merge: true });
+    return true;
+  } catch(e) { console.warn('fbSet error:', e); return false; }
+}
+
+// Supprimer un document
+async function fbDelete(collection, docId) {
+  if (!_db) return false;
+  try {
+    await _db.collection(collection).doc(docId).delete();
+    return true;
+  } catch(e) { console.warn('fbDelete error:', e); return false; }
+}
+
+// Écoute en temps réel d'une collection
+function fbListen(collection, callback) {
+  if (!_db) return;
+  if (_listeners[collection]) _listeners[collection](); // Détacher l'ancien
+  _listeners[collection] = _db.collection(collection).onSnapshot(snap => {
+    const docs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    callback(docs);
+  });
+}
+
+// ============================================================
+// API SYSTEL — COUCHE HAUTE
+// ============================================================
+
+// --- CONFIG ---
+async function fbSaveConfig(config) {
+  return fbSet(COL.CONFIG, 'main', config);
+}
+async function fbLoadConfig() {
+  return await fbGet(COL.CONFIG, 'main');
+}
+
+// --- USERS ---
+async function fbSaveUser(user) {
+  const id = user.id || 'u_' + Date.now();
+  return fbSet(COL.USERS, id, { ...user, id });
+}
+async function fbDeleteUser(userId) {
+  return fbDelete(COL.USERS, userId);
+}
+async function fbLoadUsers() {
+  return await fbGetAll(COL.USERS);
+}
+function fbListenUsers(callback) {
+  fbListen(COL.USERS, callback);
+}
+
+// --- CASERNES ---
+async function fbSaveCasernes(casernes) {
+  return fbSet(COL.CASERNES, 'main', { data: casernes });
+}
+async function fbLoadCasernes() {
+  const doc = await fbGet(COL.CASERNES, 'main');
+  return doc?.data || [];
+}
+
+// --- ENGINS ---
+async function fbSaveEngins(engins) {
+  return fbSet(COL.ENGINS, 'main', { data: engins });
+}
+async function fbLoadEngins() {
+  const doc = await fbGet(COL.ENGINS, 'main');
+  return doc?.data || [];
+}
+function fbListenEngins(callback) {
+  if (!_db) return;
+  if (_listeners['engins']) _listeners['engins']();
+  _listeners['engins'] = _db.collection(COL.ENGINS).doc('main').onSnapshot(snap => {
+    callback(snap.exists ? (snap.data().data || []) : []);
+  });
+}
+
+// --- INTERVENTIONS ---
+async function fbSaveIntervention(inter) {
+  const id = inter.id || inter.numero || 'i_' + Date.now();
+  return fbSet(COL.INTERVENTIONS, id, { ...inter, id });
+}
+async function fbUpdateIntervention(inter) {
+  return fbSet(COL.INTERVENTIONS, inter.id, inter);
+}
+async function fbDeleteIntervention(interId) {
+  return fbDelete(COL.INTERVENTIONS, interId);
+}
+async function fbLoadInterventions() {
+  return await fbGetAll(COL.INTERVENTIONS);
+}
+function fbListenInterventions(callback) {
+  fbListen(COL.INTERVENTIONS, callback);
+}
+
+// --- COSSIM CONFIG ---
+async function fbSaveCossimConfig(config) {
+  return fbSet(COL.COSSIM_CONFIG, 'main', config);
+}
+async function fbLoadCossimConfig() {
+  return await fbGet(COL.COSSIM_CONFIG, 'main');
+}
+
+// --- BIP ALERTES ---
+async function fbSendBip(userId, bipData) {
+  return fbSet(COL.BIP_ALERTES, userId, { ...bipData, userId, timestamp: Date.now() });
+}
+async function fbGetBip(userId) {
+  return await fbGet(COL.BIP_ALERTES, userId);
+}
+async function fbClearBip(userId) {
+  return fbDelete(COL.BIP_ALERTES, userId);
+}
+function fbListenBip(userId, callback) {
+  if (!_db) return;
+  const key = 'bip_' + userId;
+  if (_listeners[key]) _listeners[key]();
+  _listeners[key] = _db.collection(COL.BIP_ALERTES).doc(userId).onSnapshot(snap => {
+    callback(snap.exists ? snap.data() : null);
+  });
+}
+
+// --- FEUILLES DE GARDE ---
+async function fbSaveFeuille(date, feuille) {
+  return fbSet(COL.FEUILLES, date, feuille);
+}
+async function fbLoadFeuilles() {
+  const docs = await fbGetAll(COL.FEUILLES);
+  const result = {};
+  docs.forEach(d => { result[d._id] = d; });
+  return result;
+}
+async function fbDeleteFeuille(date) {
+  return fbDelete(COL.FEUILLES, date);
+}
+
+// --- BLIPS CARTO ---
+async function fbSaveBlips(blips) {
+  return fbSet(COL.BLIPS, 'main', { data: blips });
+}
+async function fbLoadBlips() {
+  const doc = await fbGet(COL.BLIPS, 'main');
+  return doc?.data || [];
+}
+
+// ============================================================
+// MIGRATION LOCALSTORAGE → FIREBASE (première installation)
+// ============================================================
+async function migrateFromLocalStorage() {
+  if (!_db) return;
+  console.log("🔄 Migration localStorage → Firebase...");
+
+  const migrate = async (lsKey, saveFn) => {
+    const raw = localStorage.getItem(lsKey);
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        await saveFn(data);
+        console.log(`✅ Migré: ${lsKey}`);
+      } catch(e) { console.warn(`❌ Migration erreur ${lsKey}:`, e); }
+    }
+  };
+
+  await migrate('systel_config',       fbSaveConfig);
+  await migrate('systel_casernes',     fbSaveCasernes);
+  await migrate('systel_engins',       fbSaveEngins);
+  await migrate('systel_cossim_config',fbSaveCossimConfig);
+  await migrate('systel_blips',        (b) => fbSaveBlips(b));
+
+  // Users — sauvegarder chacun séparément
+  const usersRaw = localStorage.getItem('systel_users');
+  if (usersRaw) {
+    const users = JSON.parse(usersRaw);
+    for (const u of users) await fbSaveUser(u);
+    console.log(`✅ ${users.length} users migrés`);
+  }
+
+  // Interventions — sauvegarder chacune séparément
+  const ivRaw = localStorage.getItem('systel_interventions');
+  if (ivRaw) {
+    const ivs = JSON.parse(ivRaw);
+    for (const iv of ivs) await fbSaveIntervention(iv);
+    console.log(`✅ ${ivs.length} interventions migrées`);
+  }
+
+  // Feuilles de garde
+  const fgRaw = localStorage.getItem('systel_feuilles_garde');
+  if (fgRaw) {
+    const fg = JSON.parse(fgRaw);
+    for (const [date, feuille] of Object.entries(fg)) await fbSaveFeuille(date, feuille);
+    console.log(`✅ Feuilles de garde migrées`);
+  }
+
+  localStorage.setItem('systel_migrated_to_firebase', 'true');
+  console.log("✅ Migration complète !");
+}
