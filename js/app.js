@@ -2,7 +2,21 @@
    SYSTEL POMPIERS - APP JS (PTR VERSION v18)
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Tenter d'initialiser Firebase si FIREBASE_CONFIG est défini
+  if (typeof FIREBASE_CONFIG !== 'undefined') {
+    initFirebase();
+    onFirebaseReady(async () => {
+      console.log("Chargement des données depuis Firebase...");
+      const fbUsers = await fbLoadUsers();
+      if (fbUsers && fbUsers.length > 0) {
+        USERS = fbUsers;
+        localStorage.setItem('systel_users', JSON.stringify(USERS));
+        synchroniserTout();
+      }
+    });
+  }
+
   chargerDonnees();
   synchroniserTout();
   checkAuth();
@@ -550,8 +564,15 @@ function handlePhotoUpload(event) {
 function deleteUserAdmin(idx) {
   if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
   if (confirm("Supprimer ?")) { 
+    const userIdToDelete = USERS[idx].id;
     USERS.splice(idx, 1); 
     localStorage.setItem('systel_users', JSON.stringify(USERS));
+    
+    // Supprimer de Firebase si disponible
+    if (typeof fbDeleteUser === 'function' && _fbReady) {
+      fbDeleteUser(userIdToDelete).then(() => console.log("Utilisateur supprimé de Firebase"));
+    }
+
     sauvegarderDonnees();
     synchroniserTout(); 
     renderAdminUsers();
@@ -613,6 +634,11 @@ function sauvegarderUserAdmin() {
     localStorage.setItem('systel_users', JSON.stringify(USERS));
     localStorage.setItem('systel_users_list', JSON.stringify(USERS)); // Clé de secours
     
+    // Sauvegarder dans Firebase si disponible
+    if (typeof fbSaveUser === 'function' && _fbReady) {
+      fbSaveUser(u).then(() => console.log("Utilisateur synchronisé avec Firebase"));
+    }
+
     sauvegarderDonnees();
     synchroniserTout();
     fermerModal();

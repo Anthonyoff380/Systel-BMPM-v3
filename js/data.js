@@ -39,6 +39,19 @@ let ENGINS = []; // Chargé depuis localStorage uniquement
 
 const ROLES_DISPONIBLES = ["BMPM", "ADMIN", "SOG/CDG", "COSSIM"];
 
+// Configuration Firebase par défaut (à remplir par l'utilisateur si nécessaire)
+// Si cette variable est présente, l'app tentera de se connecter
+/*
+const FIREBASE_CONFIG = {
+  apiKey: "VOTRE_API_KEY",
+  authDomain: "votre-projet.firebaseapp.com",
+  projectId: "votre-projet",
+  storageBucket: "votre-projet.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+*/
+
 let USERS = [
   { id: "admin", name: "ADMINISTRATEUR", lastname: "ADMIN", firstname: "Système", pwd: "123", roles: ["ADMIN"], role: "ADMIN", grade: "Officier", tel: "06 00 00 00 00", email: "admin@ptr.fr", photo: null },
   { id: "k.ianis", name: "KLEIN Ianis", lastname: "KLEIN", firstname: "Ianis", pwd: "ptr", roles: ["BMPM"], role: "BMPM", grade: "Sapeur", tel: "06 11 22 33 44", email: "k.ianis@ptr.fr", photo: null }

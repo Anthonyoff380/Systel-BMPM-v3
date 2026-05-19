@@ -541,6 +541,7 @@
   <div class="modal-footer">
     <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
     <button class="btn btn-primary" onclick="sauvegarderUserAdmin()">ENREGISTRER</button>
+    <button class="btn btn-secondary" onclick="migrateFromLocalStorage()" style="margin-left:10px; font-size:10px;" title="Envoyer les données locales vers Firebase">☁️ SYNC CLOUD</button>
   </div>
 </div>
 
@@ -699,6 +700,10 @@
 <div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
 <div id="toast" class="toast"></div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/synoptique.js"></script>
