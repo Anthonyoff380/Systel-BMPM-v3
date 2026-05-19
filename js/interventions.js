@@ -37,7 +37,7 @@ function renderInterventionCard(inter) {
     <div class="synop-inter-card">
       <div class="synop-inter-top" onclick="toggleInterCard('${inter.id}')">
         <div class="synop-inter-toggle" id="toggle-${inter.id}">▾</div>
-        <div class="synop-inter-num"><span style="font-weight:900;color:var(--accent);font-size:16px;">#${inter.numero||inter.id}</span></div>
+        <div class="synop-inter-num"></div>
         <div class="synop-inter-date">${dateFormatted}</div>
         <div class="synop-inter-type"><strong>${inter.type||'INTERVENTION'}</strong></div>
         <div class="synop-inter-lieu">${inter.adresse||'--'}</div>

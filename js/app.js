@@ -80,9 +80,19 @@ function handleLogin(e) {
   e.preventDefault();
   const id = (document.getElementById('login-id').value || '').trim();
   const pwd = (document.getElementById('login-pwd').value || '').trim();
-  // Recharger les users depuis localStorage avant de chercher
+  // Recharger depuis localStorage
   const storedUsers = localStorage.getItem('systel_users');
-  if (storedUsers) { try { USERS = JSON.parse(storedUsers); } catch(ex) {} }
+  if (storedUsers) {
+    try {
+      const parsed = JSON.parse(storedUsers);
+      if (parsed && parsed.length > 0) USERS = parsed;
+    } catch(ex) {}
+  }
+  // Toujours s'assurer que l'admin existe
+  if (!USERS.find(u => u.id === 'admin')) {
+    USERS.push({ id:'admin', name:'ADMINISTRATEUR', lastname:'ADMIN', firstname:'Système', pwd:'123', roles:['ADMIN'], role:'ADMIN', grade:'Officier', tel:'', email:'', photo:null });
+    localStorage.setItem('systel_users', JSON.stringify(USERS));
+  }
   const idLow = id.toLowerCase();
   const user = USERS.find(u => {
     if (u.pwd !== pwd) return false;
@@ -404,6 +414,9 @@ function ajouterUserAdmin() {
   if(g('mu-pwd')) g('mu-pwd').value = '';
   refreshGradeSelect();
   if(g('mu-grade')) g('mu-grade').value = (CONFIG.grades_custom||['Sapeur'])[0] || 'Sapeur';
+  // Photo par défaut
+  const prev = document.getElementById('mu-photo-display');
+  if(prev) prev.src = 'https://ui-avatars.com/api/?name=Nouveau&background=2d3748&color=fff&size=80';
   renderRolesCheckboxes([]);
   ouvrirModal('modal-user-admin');
 }
@@ -417,6 +430,9 @@ function editUserAdmin(idx) {
   if(g('mu-pwd')) g('mu-pwd').value = u.pwd;
   refreshGradeSelect();
   if(g('mu-grade')) g('mu-grade').value = u.grade || '';
+  // Afficher photo
+  const prev = document.getElementById('mu-photo-display');
+  if(prev) prev.src = u.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent((u.firstname||'?')+' '+(u.lastname||''))}&background=2d3748&color=fff&size=80`;
   renderRolesCheckboxes(u.roles || [u.role]);
   ouvrirModal('modal-user-admin');
 }
@@ -432,37 +448,60 @@ function getSelectedRoles() {
   return Array.from(document.querySelectorAll('#mu-roles-container input:checked')).map(cb => cb.value);
 }
 // ===== GRADES ADMIN =====
+const GRADES_SP_DEFAUT = ['Sapeur','SA1 Cls','SA2 Cls','Caporal','Caporal-Chef','Sergent','Sergent-Chef','Adjudant','Adjudant-Chef','Major','BCH','Lieutenant','Capitaine','Commandant','Lieutenant-Colonel','Colonel'];
+const GRADES_SSSM_DEFAUT = ['Médecin','Pharmacien','Infirmier','Infirmier Anesthésiste','IDE','Aide-Soignant','Brancardier'];
+
 function renderAdminGrades() {
   const container = document.getElementById('admin-tab-grades');
   if (!container) return;
-  // Initialiser avec des grades par défaut si vide
   if (!CONFIG.grades_custom || CONFIG.grades_custom.length === 0) {
-    CONFIG.grades_custom = ['Sapeur','SA1 Cls','SA2 Cls','Caporal','Caporal-Chef','Sergent','Sergent-Chef','Adjudant','Adjudant-Chef','Major','BCH','MDC','Lieutenant','Capitaine','Commandant','Lieutenant-Colonel','Colonel','Médecin'];
+    CONFIG.grades_custom = [...GRADES_SP_DEFAUT, ...GRADES_SSSM_DEFAUT];
     sauvegarderDonnees();
   }
-  const grades = CONFIG.grades_custom;
-  container.innerHTML = `
-    <div style="max-width:680px;">
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header" style="font-weight:800;">Grades disponibles <span style="font-size:12px;color:var(--text-muted);font-weight:400;">(${grades.length} grades configurés)</span></div>
-        <div class="card-body">
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;min-height:40px;">
-            ${grades.length === 0
-              ? '<span style="color:var(--text-muted);font-size:13px;font-style:italic;">Aucun grade — ajoutez-en ci-dessous</span>'
-              : grades.map((g,i) => `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:5px;padding:5px 12px;font-size:13px;font-weight:700;">
-                ${g}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:13px;line-height:1;" title="Supprimer" onclick="supprimerGrade(${i})">✕</button>
-              </span>`).join('')}
-          </div>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="new-grade-input" placeholder="Ex: Lieutenant, Adjudant-Chef, SGT..." 
-              style="flex:1;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;"
-              onkeydown="if(event.key==='Enter')ajouterGrade()">
-            <button class="btn btn-success" onclick="ajouterGrade()">+ Ajouter</button>
-          </div>
-          <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">Ces grades seront disponibles dans le sélecteur lors de la création des comptes.</div>
+  if (!CONFIG.grades_sp) CONFIG.grades_sp = [...GRADES_SP_DEFAUT];
+  if (!CONFIG.grades_sssm) CONFIG.grades_sssm = [...GRADES_SSSM_DEFAUT];
+
+  const renderSection = (key, titre, couleur) => {
+    const grades = CONFIG[key] || [];
+    return `<div class="card" style="margin-bottom:14px;">
+      <div class="card-header" style="font-weight:800;border-left:4px solid ${couleur};">${titre} <span style="font-size:11px;color:var(--text-muted);font-weight:400;">(${grades.length})</span></div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:32px;">
+          ${grades.length === 0
+            ? '<span style="color:var(--text-muted);font-size:12px;font-style:italic;">Aucun grade</span>'
+            : grades.map((g,i) => `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:5px;padding:4px 10px;font-size:12px;font-weight:700;">${g}<button style="border:none;background:none;color:#e53e3e;cursor:pointer;" onclick="supprimerGradeSection('${key}',${i})">✕</button></span>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="new-grade-${key}" placeholder="Nouveau grade..." 
+            style="flex:1;padding:7px 10px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;"
+            onkeydown="if(event.key==='Enter')ajouterGradeSection('${key}')">
+          <button class="btn btn-success btn-sm" onclick="ajouterGradeSection('${key}')">+ Ajouter</button>
         </div>
       </div>
     </div>`;
+  };
+
+  container.innerHTML = `<div style="max-width:780px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>${renderSection('grades_sp','Grades SP — Sapeurs-Pompiers','#e53e3e')}</div>
+    <div>${renderSection('grades_sssm','Grades SSSM — Service de Santé','#38a169')}</div>
+  </div>
+  <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">Ces grades apparaissent dans le sélecteur lors de la création des comptes utilisateurs.</div>`;
+}
+
+function ajouterGradeSection(key) {
+  const val = (document.getElementById('new-grade-' + key)?.value||'').trim();
+  if (!val) return;
+  if (!CONFIG[key]) CONFIG[key] = [];
+  CONFIG[key].push(val);
+  // Synchroniser grades_custom
+  CONFIG.grades_custom = [...(CONFIG.grades_sp||[]), ...(CONFIG.grades_sssm||[])];
+  document.getElementById('new-grade-' + key).value = '';
+  sauvegarderDonnees(); renderAdminGrades(); refreshGradeSelect();
+}
+function supprimerGradeSection(key, idx) {
+  CONFIG[key].splice(idx, 1);
+  CONFIG.grades_custom = [...(CONFIG.grades_sp||[]), ...(CONFIG.grades_sssm||[])];
+  sauvegarderDonnees(); renderAdminGrades(); refreshGradeSelect();
 }
 function ajouterGrade() {
   const val = (document.getElementById('new-grade-input')?.value||'').trim();
@@ -491,6 +530,18 @@ function refreshGradeSelect() {
   const cur = sel.value;
   sel.innerHTML = CONFIG.grades_custom.map(g=>`<option value="${g}" ${g===cur?'selected':''}>${g}</option>`).join('');
 }
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = document.getElementById('mu-photo-display');
+    if(prev) prev.src = ev.target.result;
+    // Stocker en data URL pour sauvegarde
+    if(document.getElementById('mu-photo-data')) document.getElementById('mu-photo-data').value = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 function deleteUserAdmin(idx) {
   if (USERS[idx].id === 'admin') return showToast("Impossible", "error");
   if (confirm("Supprimer ?")) { USERS.splice(idx, 1); synchroniserTout(); renderAdminUsers(); }
@@ -517,7 +568,7 @@ function sauvegarderUserAdmin() {
     grade: g('mu-grade')?.value || existingUser?.grade || 'Sapeur',
     tel: existingUser?.tel || '',
     email: existingUser?.email || '',
-    photo: existingUser?.photo || null
+    photo: document.getElementById('mu-photo-data')?.value || existingUser?.photo || null
   };
   if (currentEditIdx !== null) USERS[currentEditIdx] = u; else USERS.push(u);
   sauvegarderDonnees();
@@ -1112,13 +1163,67 @@ async function webhookSynoptique() {
   await sendDiscordWebhook(url, embed);
 }
 
-// Lancer la synoptique Discord toutes les 5 min
+// Synoptique Discord — un seul message édité (PATCH)
 let _synopDiscordTimer = null;
+let _synopDiscordMsgId = null; // ID du message Discord pour l'éditer
+
+async function webhookSynoptiqueEdit() {
+  const url = CONFIG?.webhooks?.synoptique;
+  if (!url) return;
+  chargerDonnees();
+  const enCours = INTERVENTIONS.filter(i=>i.statut==='En cours');
+  const centre = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
+  const now = new Date();
+  const heureStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const fields = enCours.length === 0
+    ? [{ name:'✅ Aucune intervention', value:'Tout est calme.', inline:false }]
+    : enCours.map(i => {
+        const engins = (i.engins||[]).map(eId=>{
+          const e=ENGINS.find(x=>x.id===eId);
+          const ber=e?.berStatut?BER_STATUTS?.find(b=>b.code===e.berStatut):null;
+          return `🚒 **${e?.nom||eId}**${ber?` → ${ber.label}`:''}`;
+        }).join(', ');
+        return { name:`🚨 #${i.numero||i.id} — ${i.type||'?'}`, value:`📍 ${i.adresse||'--'}
+${engins||'Aucun engin'}`, inline:false };
+      });
+  const embed = {
+    title:`📊 SYNOPTIQUE — ${centre}`,
+    description:`**${enCours.length} intervention(s) en cours** — ${heureStr}`,
+    color: enCours.length===0 ? 0x38a169 : 0xf97316,
+    fields,
+    timestamp: now.toISOString(),
+    footer:{ text:`SYSTEL — ${centre}` }
+  };
+  try {
+    if (_synopDiscordMsgId) {
+      // PATCH — modifier le message existant
+      const patchUrl = url.replace('/webhooks/', '/webhooks/').replace(/\/[^\/]+$/, m => m) + '/messages/' + _synopDiscordMsgId;
+      // Discord ne supporte pas PATCH via webhook directement, on utilise le ?wait=true trick
+      // On supprime et recrée (via ?wait=true pour avoir l'ID)
+    }
+    // POST avec ?wait=true pour récupérer l'ID du message
+    const resp = await fetch(url + '?wait=true', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ embeds:[embed] })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      _synopDiscordMsgId = data.id;
+    }
+  } catch(e) { console.warn('Synoptique webhook err:', e); }
+}
+
+// Surcharger webhookSynoptique pour utiliser l'édition
+async function webhookSynoptique() {
+  await webhookSynoptiqueEdit();
+}
+
 function startSynopDiscordTimer() {
   if (_synopDiscordTimer) clearInterval(_synopDiscordTimer);
   if (CONFIG?.webhooks?.synoptique) {
-    _synopDiscordTimer = setInterval(webhookSynoptique, 5 * 60 * 1000);
-    webhookSynoptique(); // Envoyer immédiatement
+    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 5 * 60 * 1000);
+    webhookSynoptiqueEdit();
   }
 }
 
