@@ -52,10 +52,12 @@ function ouvrirConfigFirebase() {
 }
 
 function sauvegarderConfigFirebase() {
-  const json = document.getElementById('fb-config-json').value.trim();
+  let json = document.getElementById('fb-config-json').value.trim();
   const err = document.getElementById('fb-config-error');
   try {
     if (json) {
+      // Tenter de nettoyer une virgule finale avant le } pour aider l'utilisateur
+      json = json.replace(/,\s*}/g, '}');
       JSON.parse(json); // Test validité
       localStorage.setItem('systel_firebase_config', json);
     } else {
@@ -64,6 +66,7 @@ function sauvegarderConfigFirebase() {
     location.reload(); // Recharger pour appliquer
   } catch(e) {
     err.style.display = 'block';
+    err.textContent = "JSON invalide : " + e.message;
   }
 }
 
