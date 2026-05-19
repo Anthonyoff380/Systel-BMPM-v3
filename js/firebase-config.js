@@ -13,8 +13,26 @@ let _listeners = {}; // Listeners temps réel actifs
 function initFirebase() {
   try {
     if (!window.firebase) { console.warn("Firebase SDK pas encore chargé"); return false; }
+    
+    // Charger la config depuis localStorage si elle existe (config dynamique)
+    let config = null;
+    const savedConfig = localStorage.getItem('systel_firebase_config');
+    if (savedConfig) {
+      try { config = JSON.parse(savedConfig); } catch(e) {}
+    }
+    
+    // Sinon utiliser la config statique si elle existe
+    if (!config && typeof FIREBASE_CONFIG !== 'undefined') {
+      config = FIREBASE_CONFIG;
+    }
+
+    if (!config) {
+      console.warn("Aucune configuration Firebase trouvée");
+      return false;
+    }
+
     if (!firebase.apps || firebase.apps.length === 0) {
-      firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.initializeApp(config);
     }
     _db = firebase.firestore();
     _fbReady = true;

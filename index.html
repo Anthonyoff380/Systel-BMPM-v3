@@ -236,6 +236,37 @@
       <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
     </form>
     <div id="login-error" style="color:#e53e3e;margin-top:10px;font-weight:700;text-align:center;font-size:12px;"></div>
+    
+    <div id="fb-status-indicator" style="margin-top:20px; text-align:center; font-size:10px; color:var(--text-muted);">
+      <span id="fb-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#718096; margin-right:5px;"></span>
+      Mode: <span id="fb-text">Local (Hors-ligne)</span>
+      <br>
+      <a href="#" onclick="ouvrirConfigFirebase()" style="color:var(--accent); text-decoration:none; margin-top:5px; display:inline-block;">⚙️ Configurer le Cloud</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG FIREBASE -->
+<div id="modal-fb-config" class="modal" style="width:450px;">
+  <div class="modal-header">☁️ Configuration Firebase Cloud</div>
+  <div class="modal-body">
+    <p style="font-size:12px; margin-bottom:15px; color:var(--text-muted);">Collez ici votre configuration Firebase pour activer le partage des comptes en temps réel entre tous les utilisateurs.</p>
+    <div class="form-group">
+      <label>Configuration JSON</label>
+      <textarea id="fb-config-json" style="width:100%; height:180px; font-family:monospace; font-size:11px;" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+    </div>
+    <div id="fb-config-error" style="color:#e53e3e; font-size:11px; margin-top:5px; display:none;">JSON invalide</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
+    <button class="btn btn-primary" onclick="sauvegarderConfigFirebase()">ACTIVER LE CLOUD</button>
   </div>
 </div>
 

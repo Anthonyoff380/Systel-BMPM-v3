@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof FIREBASE_CONFIG !== 'undefined') {
     initFirebase();
     onFirebaseReady(async () => {
+      updateFBIndicator();
       console.log("Chargement des données depuis Firebase...");
       const fbUsers = await fbLoadUsers();
       if (fbUsers && fbUsers.length > 0) {
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   chargerDonnees();
   synchroniserTout();
   checkAuth();
+  updateFBIndicator();
   startClock();
   setTimeout(startSynopDiscordTimer, 2000);
   // Hash pour détecter les modifs externes (autre onglet)
@@ -42,6 +44,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkBipAlertes();
   }, 2000);
 });
+
+function ouvrirConfigFirebase() {
+  const saved = localStorage.getItem('systel_firebase_config');
+  if (saved) document.getElementById('fb-config-json').value = saved;
+  ouvrirModal('modal-fb-config');
+}
+
+function sauvegarderConfigFirebase() {
+  const json = document.getElementById('fb-config-json').value.trim();
+  const err = document.getElementById('fb-config-error');
+  try {
+    if (json) {
+      JSON.parse(json); // Test validité
+      localStorage.setItem('systel_firebase_config', json);
+    } else {
+      localStorage.removeItem('systel_firebase_config');
+    }
+    location.reload(); // Recharger pour appliquer
+  } catch(e) {
+    err.style.display = 'block';
+  }
+}
+
+function updateFBIndicator() {
+  const dot = document.getElementById('fb-dot');
+  const txt = document.getElementById('fb-text');
+  if (!dot || !txt) return;
+  if (_fbReady) {
+    dot.style.background = '#48bb78';
+    txt.textContent = 'Cloud (Connecté)';
+  } else {
+    dot.style.background = '#e53e3e';
+    txt.textContent = 'Local (Hors-ligne)';
+  }
+}
 
 function synchroniserTout() {
   USERS.forEach(u => {
@@ -94,32 +131,39 @@ function handleLogin(e) {
   e.preventDefault();
   const id = (document.getElementById('login-id').value || '').trim();
   const pwd = (document.getElementById('login-pwd').value || '').trim();
-  // Recharger depuis localStorage
+  
+  // Recharger depuis localStorage pour avoir les derniers comptes créés localement
   const storedUsers = localStorage.getItem('systel_users');
   if (storedUsers) {
     try {
       const parsed = JSON.parse(storedUsers);
-      if (parsed && parsed.length > 0) USERS = parsed;
+      if (parsed && Array.isArray(parsed)) USERS = parsed;
     } catch(ex) {}
   }
-  // Toujours s'assurer que l'admin existe
+
+  // FORCE ADMIN : Toujours s'assurer que l'admin par défaut est présent si rien d'autre ne marche
+  const defaultAdmin = { id:'admin', name:'ADMINISTRATEUR', lastname:'ADMIN', firstname:'Système', pwd:'123', roles:['ADMIN'], role:'ADMIN', grade:'Officier', tel:'', email:'', photo:null };
   if (!USERS.find(u => u.id === 'admin')) {
-    USERS.push({ id:'admin', name:'ADMINISTRATEUR', lastname:'ADMIN', firstname:'Système', pwd:'123', roles:['ADMIN'], role:'ADMIN', grade:'Officier', tel:'', email:'', photo:null });
-    localStorage.setItem('systel_users', JSON.stringify(USERS));
+    USERS.push(defaultAdmin);
   }
+
   const idLow = id.toLowerCase();
-  const user = USERS.find(u => {
-    if (u.pwd !== pwd) return false;
-    const uId = (u.id || '').toLowerCase();
-    if (uId === idLow) return true;
-    
-    const fn = (u.firstname || '').toLowerCase();
-    const ln = (u.lastname || u.name || '').toLowerCase().split(' ')[0];
-    
-    return fn === idLow || ln === idLow ||
-           `${fn}.${ln}` === idLow || `${ln}.${fn}` === idLow ||
-           `${fn}${ln}` === idLow;
-  });
+  
+  // Recherche prioritaire par ID exact (plus robuste pour l'admin)
+  let user = USERS.find(u => (u.id || '').toLowerCase() === idLow && u.pwd === pwd);
+  
+  // Si non trouvé, recherche par alias/nom
+  if (!user) {
+    user = USERS.find(u => {
+      if (u.pwd !== pwd) return false;
+      const fn = (u.firstname || '').toLowerCase();
+      const ln = (u.lastname || u.name || '').toLowerCase().split(' ')[0];
+      return fn === idLow || ln === idLow ||
+             `${fn}.${ln}` === idLow || `${ln}.${fn}` === idLow ||
+             `${fn}${ln}` === idLow;
+    });
+  }
+
   if (user) {
     currentUser = user;
     localStorage.setItem('systel_current_user_id', user.id);
