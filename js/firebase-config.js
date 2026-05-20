@@ -332,12 +332,21 @@ window.fbUpdatePresence = fbUpdatePresence;
 
 let heartbeatInterval = null;
 
-function startHeartbeat(userId) {
+async function startHeartbeat(userId) {
 
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
   }
 
+  // Écriture immédiate dès la connexion
+  await db.collection(COL.USERS)
+    .doc(userId)
+    .set({
+      online: true,
+      heartbeat: new Date().toISOString()
+    }, { merge: true });
+
+  // Puis toutes les 30 secondes
   heartbeatInterval = setInterval(async () => {
 
     await db.collection(COL.USERS)
