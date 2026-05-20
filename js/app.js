@@ -1539,19 +1539,14 @@ initApp = function() {
     if (_fbReady && currentUser) {
       console.log("🔥 Activation forcée des listeners pour:", currentUser.id);
       
-      // Écouter les bips
-      if (typeof fbListenBipAlerts === 'function') {
-        fbListenBipAlerts(currentUser.id, (alert) => {
-          console.log("🔔 BIP REÇU:", alert);
+      // Écouter les bips via fbListenBips (Firestore temps réel)
+      if (typeof fbListenBips === 'function') {
+        fbListenBips(currentUser.id, (bip) => {
+          if (bip.read) return;
+          console.log("🔔 BIP REÇU:", bip);
           fbDiagnostics.lastBip = new Date();
-          
-          // Jouer le son
-          const audio = new Audio('sounds/bip.mp3');
-          audio.volume = 1;
-          audio.play().catch(e => console.error("Erreur son:", e));
-          
-          // Afficher notification
-          showToast("🔔 BIP REÇU!", "info");
+          localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify({ ...bip, acquitte: false }));
+          if (typeof afficherBipAlerte === 'function') afficherBipAlerte(bip);
           updateDiagnosticBar();
         });
       }
@@ -1622,31 +1617,38 @@ onFirebaseReady(() => {
   // Démarrer le heartbeat
   startHeartbeat(currentUser.id);
   
-  // Écouter les feuilles de garde
+  // Écouter les feuilles de garde — ne pas appeler synchroniserTout (ferme les selects ouverts)
   fbListenFeuilles((feuilles) => {
     FEUILLES_GARDE = feuilles;
-    synchroniserTout();
+    // Rafraîchir seulement si la section est visible
+    const section = document.querySelector('.section.active-section');
+    if (section && section.id === 'section-feuille-garde') reloadFeuilleGarde();
     console.log("📋 Feuilles de garde mises à jour");
   });
   
   // Écouter le planning
   fbListenPlanning((planning) => {
     PLANNING = planning;
-    synchroniserTout();
+    const section = document.querySelector('.section.active-section');
+    if (section && section.id === 'section-planning') renderPlanning();
     console.log("📅 Planning mis à jour");
   });
   
-  // Écouter les interventions
+  // Écouter les interventions — forcer le rendu chez tous les clients
   fbListenInterventions((interventions) => {
     INTERVENTIONS = interventions;
-    synchroniserTout();
+    if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
+    if (typeof updateSynoptique === 'function') updateSynoptique();
+    const section = document.querySelector('.section.active-section');
+    if (section && section.id === 'section-historique') renderHistorique();
     console.log("🚨 Interventions mises à jour");
   });
   
-  // Écouter les engins
+  // Écouter les engins — forcer les couleurs BER sur la synoptique
   fbListenEngins((engins) => {
     ENGINS = engins;
-    synchroniserTout();
+    if (typeof updateSynoptique === 'function') updateSynoptique();
+    if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
     console.log("🚗 Engins mis à jour");
   });
   
@@ -1657,9 +1659,12 @@ onFirebaseReady(() => {
       if (existing) {
         existing.presence = u.presence;
         existing.online = u.online;
+        existing.heartbeat = u.heartbeat;
       }
     });
+    // Recalcule PERSONNELS sans tout rerendre
     synchroniserTout();
+    if (typeof renderPersonnelsSynoptique === 'function') renderPersonnelsSynoptique();
     console.log("👥 Présences mises à jour");
   });
 

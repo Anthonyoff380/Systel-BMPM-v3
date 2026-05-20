@@ -273,7 +273,10 @@ function majPosteEnginGarde(date, enginId, posteIdx, userId) {
   const enginData = garde?.engins?.find(e => e.id === enginId);
   if (!enginData?.postes?.[posteIdx]) return;
   enginData.postes[posteIdx].userId = userId || null;
-  sauvegarderDonnees();
+  // Sauvegarde directe Firestore sans déclencher le listener local
+  if (typeof fbSaveFeuille === 'function') {
+    fbSaveFeuille(date, garde).catch(e => console.warn('Erreur save feuille:', e));
+  }
 }
 
 function assignerPosteSpecial(date, posteId, userId) {
@@ -282,12 +285,19 @@ function assignerPosteSpecial(date, posteId, userId) {
   if (!garde.postesSpeciaux) garde.postesSpeciaux = {};
   if (userId) garde.postesSpeciaux[posteId] = userId;
   else delete garde.postesSpeciaux[posteId];
-  sauvegarderDonnees();
+  // Sauvegarde directe Firestore sans déclencher le listener local
+  if (typeof fbSaveFeuille === 'function') {
+    fbSaveFeuille(date, garde).catch(e => console.warn('Erreur save feuille:', e));
+  }
   showToast('Poste mis à jour');
 }
 
 function majDescriptionGarde(date, val) {
-  if (FEUILLES_GARDE[date]) { FEUILLES_GARDE[date].description = val; sauvegarderDonnees(); }
+  if (!FEUILLES_GARDE[date]) return;
+  FEUILLES_GARDE[date].description = val;
+  if (typeof fbSaveFeuille === 'function') {
+    fbSaveFeuille(date, FEUILLES_GARDE[date]).catch(e => console.warn('Erreur save feuille:', e));
+  }
 }
 function validerGarde(date) {
   FEUILLES_GARDE[date].status = 'validée'; sauvegarderDonnees(); reloadFeuilleGarde(); showToast('Garde validée !');
