@@ -372,3 +372,35 @@ window.migrateFromLocalStorage = function () {
   return true;
 
 };
+
+// ============================================================
+// 🔧 COMPATIBILITÉ FONCTIONS MANQUANTES (FIX FINAL)
+// ============================================================
+
+// INTERVENTIONS
+window.fbLoadInterventions = async function () {
+  const snapshot = await db.collection(COL.INTERVENTIONS).get();
+
+  const data = [];
+  snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+
+  return data;
+};
+
+// PLANNING
+window.fbSavePlanning = async function (planning) {
+  const id = planning.id || "default";
+
+  await db.collection(COL.PLANNING)
+    .doc(id)
+    .set({ ...planning, id }, { merge: true });
+};
+
+window.fbLoadPlanning = async function () {
+  const snapshot = await db.collection(COL.PLANNING).get();
+
+  const data = [];
+  snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+
+  return data;
+};
