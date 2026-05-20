@@ -234,8 +234,10 @@
       <div class="form-group"><label>Identifiant</label><input type="text" id="login-id" required placeholder="Ex: k.ianis"/></div>
       <div class="form-group"><label>Mot de passe</label><input type="password" id="login-pwd" required placeholder="••••••••"/></div>
       <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
+      <button type="button" class="btn btn-secondary" onclick="enableAudio()" style="margin-top:10px; background:#48bb78; color:white; width:100%;">🔊 ACTIVER LE SON</button>
     </form>
     <div id="login-error" style="color:#e53e3e;margin-top:10px;font-weight:700;text-align:center;font-size:12px;"></div>
+    <div id="fb-permission-error" style="color:#f56565;margin-top:10px;font-weight:700;text-align:center;font-size:12px; display:none;"></div>
     
     <div id="fb-status-indicator" style="margin-top:20px; text-align:center; font-size:10px; color:var(--text-muted);">
       <span id="fb-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#718096; margin-right:5px;"></span>

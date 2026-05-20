@@ -412,3 +412,41 @@ function fbListenBipAlertsOptimized(userId, callback) {
     console.error("❌ Erreur setup écouteur bips:", e);
   }
 }
+
+// ===== TEST DE PERMISSIONS FIREBASE =====
+async function fbTestPermissions() {
+  if (!_db) return { canRead: false, canWrite: false, error: "Firebase non connecté" };
+  
+  try {
+    const testDoc = {
+      testId: 'permission_test_' + Date.now(),
+      timestamp: new Date().toISOString()
+    };
+    
+    // Test d'écriture
+    try {
+      await _db.collection('systel_test_permissions').doc(testDoc.testId).set(testDoc);
+      console.log("✅ Écriture Firebase OK");
+    } catch(e) {
+      console.error("❌ Écriture Firebase BLOQUÉE:", e.message);
+      return { canRead: false, canWrite: false, error: "Écriture refusée: " + e.message };
+    }
+    
+    // Test de lecture
+    try {
+      const snap = await _db.collection('systel_test_permissions').doc(testDoc.testId).get();
+      if (snap.exists) {
+        console.log("✅ Lecture Firebase OK");
+        // Nettoyer le test
+        await _db.collection('systel_test_permissions').doc(testDoc.testId).delete();
+        return { canRead: true, canWrite: true, error: null };
+      }
+    } catch(e) {
+      console.error("❌ Lecture Firebase BLOQUÉE:", e.message);
+      return { canRead: false, canWrite: true, error: "Lecture refusée: " + e.message };
+    }
+  } catch(e) {
+    console.error("❌ Erreur test permissions:", e);
+    return { canRead: false, canWrite: false, error: e.message };
+  }
+}

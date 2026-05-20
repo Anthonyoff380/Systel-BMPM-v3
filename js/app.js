@@ -1561,3 +1561,44 @@ initApp = function() {
     }
   }, 500);
 };
+
+// ===== ACTIVATION SONORE EXPLICITE =====
+let audioEnabled = false;
+
+function enableAudio() {
+  // Créer un son silencieux pour "débloquer" l'audio du navigateur
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  gainNode.gain.setValueAtTime(0, audioContext.currentTime); // Volume à 0
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.001);
+  
+  audioEnabled = true;
+  showToast("🔊 SON ACTIVÉ - Les bips sonneront maintenant!", "success");
+  
+  // Tester les permissions Firebase
+  testFirebasePermissions();
+}
+
+async function testFirebasePermissions() {
+  if (!_fbReady) {
+    showToast("Firebase pas connecté", "error");
+    return;
+  }
+  
+  const result = await fbTestPermissions();
+  const errorDiv = document.getElementById('fb-permission-error');
+  
+  if (!result.error) {
+    errorDiv.style.display = 'none';
+    showToast("✅ Firebase: Lecture et Écriture OK", "success");
+  } else {
+    errorDiv.style.display = 'block';
+    errorDiv.innerHTML = "⚠️ Erreur Firebase: " + result.error + "<br><small>Vérifiez les règles dans votre console Firebase</small>";
+    showToast("❌ " + result.error, "error");
+  }
+}
