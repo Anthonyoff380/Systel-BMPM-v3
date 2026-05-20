@@ -280,6 +280,29 @@ function initApp() {
   // Appliquer thème sauvegardé
   const theme = localStorage.getItem('systel_theme') || 'night';
   applyTheme(theme);
+
+  // Nettoyer l'ancien bip TEST du localStorage (évite le faux bip au refresh)
+  const oldBip = localStorage.getItem('systel_bip_' + currentUser.id);
+  if (oldBip) {
+    try {
+      const b = JSON.parse(oldBip);
+      if (b.motif === 'test' || b.motif === 'TEST' || b.acquitte) {
+        localStorage.removeItem('systel_bip_' + currentUser.id);
+      }
+    } catch(e) { localStorage.removeItem('systel_bip_' + currentUser.id); }
+  }
+
+  // Démarrer l'écoute Firestore des bips — ici currentUser est garanti défini
+  if (typeof fbListenBips === 'function') {
+    fbListenBips(currentUser.id, (bip) => {
+      if (bip.read || bip.acquitte) return;
+      console.log('🔔 BIP REÇU Firestore:', bip);
+      // Ne pas re-afficher si déjà visible
+      if (bipAlerteVisible) return;
+      localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify({ ...bip, acquitte: false }));
+      afficherBipAlerte(bip);
+    });
+  }
 }
 
 // ===== THEME JOUR/NUIT =====
@@ -1031,6 +1054,22 @@ function acquitterBip() {
   }
   document.getElementById('bip-overlay').style.display = 'none';
   bipAlerteVisible = false;
+  // Marquer lu dans Firestore pour ne pas re-déclencher chez soi
+  const bipLocal = localStorage.getItem('systel_bip_' + currentUser.id);
+  if (bipLocal) {
+    try {
+      const bObj = JSON.parse(bipLocal);
+      if (bObj.timestamp && typeof db !== 'undefined') {
+        db.collection('systel_bip_alertes')
+          .where('targetUserId','==',currentUser.id)
+          .where('timestamp','==',bObj.timestamp)
+          .get()
+          .then(snap => snap.forEach(doc => doc.ref.update({ read: true })))
+          .catch(() => {});
+      }
+    } catch(e) {}
+  }
+  localStorage.removeItem('systel_bip_' + currentUser.id);
 }
 
 // ===== HISTORIQUE DES INTERVENTIONS =====
@@ -1668,13 +1707,7 @@ onFirebaseReady(() => {
     console.log("👥 Présences mises à jour");
   });
 
-  // Écouter les bips Firestore en temps réel
-  fbListenBips(currentUser.id, (bip) => {
-    if (!bip.read) {
-      localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify({ ...bip, acquitte: false }));
-      if (typeof afficherBipAlerte === 'function') afficherBipAlerte(bip);
-    }
-  });
+  // fbListenBips est démarré dans initApp() pour garantir que currentUser est défini
 });
 
 // ===== INTERCEPTION DES SAUVEGARDES POUR ENVOYER VERS FIREBASE =====
