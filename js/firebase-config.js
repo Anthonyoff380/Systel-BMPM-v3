@@ -522,3 +522,16 @@ window.fbSaveFeuille = async function (date, feuille) {
 window.fbDeleteFeuille = async function (date) {
   await db.collection(COL.FEUILLES).doc(String(date)).delete();
 };
+
+// ============================================================
+// FIX 5 — fbDeleteUser (suppression réelle dans Firestore)
+// ============================================================
+
+window.fbDeleteUser = async function (userId) {
+  try {
+    await db.collection(COL.USERS).doc(userId).delete();
+    console.log("🗑️ Utilisateur supprimé de Firestore:", userId);
+  } catch (e) {
+    console.error('fbDeleteUser error:', e);
+  }
+};

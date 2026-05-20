@@ -50,8 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       fbListenUsers((data) => {
          USERS = data;
-         synchroniserTout(); // ← ajoute ceci si ce n'est pas déjà là
-         renderPersonnels();  // ou la fonction qui rafraîchit l'affichage
+         synchroniserTout();
         });
     });
 
@@ -144,13 +143,15 @@ function synchroniserTout() {
       u.firstname = parts.slice(1).join(' ');
     }
   });
+  const _now = Date.now();
   PERSONNELS = USERS.map(u => {
-    // Afficher DISPO si l'utilisateur est connecté (online=true) OU si c'est l'utilisateur actuel
+    // DISPO uniquement si heartbeat récent (< 2 minutes) OU utilisateur actuel connecté
     let statut = "INDISPO";
-    if (u.online === true || u.presence === "DISPO") {
-      statut = "DISPO";
+    if (u.heartbeat) {
+      const hb = new Date(u.heartbeat).getTime();
+      if (_now - hb < 2 * 60 * 1000) statut = "DISPO"; // heartbeat < 2 min
     }
-    // Sinon vérifier si c'est l'utilisateur actuel
+    // Vérifier si c'est l'utilisateur actuel de cette session
     if (sessionStorage.getItem("systel_user")) {
       const currentUser = JSON.parse(sessionStorage.getItem("systel_user"));
       if (u.id === currentUser.id) {
