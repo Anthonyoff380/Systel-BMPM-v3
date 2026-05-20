@@ -331,4 +331,58 @@ window.addEventListener("beforeunload", () => {
     clearInterval(heartbeatInterval);
   }
 
+  // ============================================================
+// COMPATIBILITÉ ANCIEN SYSTÈME APP.JS
+// ============================================================
+
+// Chargement users
+async function fbLoadUsers() {
+
+  return new Promise((resolve) => {
+
+    db.collection(COL.USERS)
+      .get()
+      .then((snapshot) => {
+
+        const users = [];
+
+        snapshot.forEach((doc) => {
+
+          users.push({
+            id: doc.id,
+            ...doc.data()
+          });
+
+        });
+
+        resolve(users);
+
+      })
+      .catch((err) => {
+
+        console.error(err);
+        resolve([]);
+
+      });
+
+  });
+
+}
+
+window.fbLoadUsers = fbLoadUsers;
+
+// ============================================================
+// MIGRATION LOCAL STORAGE
+// ============================================================
+
+function migrateFromLocalStorage() {
+
+  console.log("⚠️ Migration localStorage ignorée");
+
+  return true;
+
+}
+
+window.migrateFromLocalStorage = migrateFromLocalStorage;
+
 });
