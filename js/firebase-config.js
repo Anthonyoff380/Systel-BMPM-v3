@@ -1,8 +1,11 @@
 /*============================================================
-   SYSTEL POMPIERS — FIREBASE CONFIG PROPRE
+   SYSTEL POMPIERS — FIREBASE CONFIG COMPATIBLE
 =============================================================*/
 
+// ============================================================
 // CONFIG FIREBASE
+// ============================================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyCXznL5S4qJ9yNUZk-XV0ntI2GOFrX_seM",
   authDomain: "systelbmpm.firebaseapp.com",
@@ -13,12 +16,44 @@ const firebaseConfig = {
   measurementId: "G-KSNZWKSDLV"
 };
 
-// INITIALISATION FIREBASE
+// ============================================================
+// INITIALISATION
+// ============================================================
+
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
 
 console.log("✅ Firebase connecté");
+
+// ============================================================
+// VARIABLES GLOBALES COMPATIBILITÉ
+// ============================================================
+
+let _fbReady = true;
+
+window._fbReady = true;
+window.db = db;
+
+// ============================================================
+// CALLBACK READY
+// ============================================================
+
+function initFirebase() {
+  console.log("✅ Firebase initialisé");
+  return true;
+}
+
+function onFirebaseReady(callback) {
+  console.log("✅ Firebase ready callback");
+
+  if (typeof callback === "function") {
+    callback();
+  }
+}
+
+window.initFirebase = initFirebase;
+window.onFirebaseReady = onFirebaseReady;
 
 // ============================================================
 // COLLECTIONS
@@ -33,161 +68,231 @@ const COL = {
   PLANNING: "systel_planning"
 };
 
+window.COL = COL;
+
 // ============================================================
 // USERS
 // ============================================================
 
 function fbListenUsers(callback) {
-  db.collection(COL.USERS).onSnapshot((snapshot) => {
-    const users = [];
 
-    snapshot.forEach((doc) => {
-      users.push({
-        id: doc.id,
-        ...doc.data()
+  return db.collection(COL.USERS)
+    .onSnapshot((snapshot) => {
+
+      const users = [];
+
+      snapshot.forEach((doc) => {
+
+        users.push({
+          id: doc.id,
+          ...doc.data()
+        });
+
       });
+
+      callback(users);
+
     });
 
-    callback(users);
-  });
 }
 
 async function fbSaveUser(user) {
+
   const id = user.id || Date.now().toString();
 
-  await db.collection(COL.USERS).doc(id).set({
-    ...user,
-    id
-  }, { merge: true });
+  await db.collection(COL.USERS)
+    .doc(id)
+    .set({
+      ...user,
+      id
+    }, { merge: true });
+
 }
+
+window.fbListenUsers = fbListenUsers;
+window.fbSaveUser = fbSaveUser;
 
 // ============================================================
 // ENGINS
 // ============================================================
 
 function fbListenEngins(callback) {
-  db.collection(COL.ENGINS).onSnapshot((snapshot) => {
-    const engins = [];
 
-    snapshot.forEach((doc) => {
-      engins.push({
-        id: doc.id,
-        ...doc.data()
+  return db.collection(COL.ENGINS)
+    .onSnapshot((snapshot) => {
+
+      const engins = [];
+
+      snapshot.forEach((doc) => {
+
+        engins.push({
+          id: doc.id,
+          ...doc.data()
+        });
+
       });
+
+      callback(engins);
+
     });
 
-    callback(engins);
-  });
 }
 
 async function fbSaveEngin(engin) {
-  const id = engin.id || engin.code;
 
-  await db.collection(COL.ENGINS).doc(id).set({
-    ...engin,
-    id
-  }, { merge: true });
+  const id = engin.id || engin.code || Date.now().toString();
+
+  await db.collection(COL.ENGINS)
+    .doc(id)
+    .set({
+      ...engin,
+      id
+    }, { merge: true });
+
 }
+
+window.fbListenEngins = fbListenEngins;
+window.fbSaveEngin = fbSaveEngin;
 
 // ============================================================
 // INTERVENTIONS
 // ============================================================
 
 function fbListenInterventions(callback) {
-  db.collection(COL.INTERVENTIONS).onSnapshot((snapshot) => {
-    const interventions = [];
 
-    snapshot.forEach((doc) => {
-      interventions.push({
-        id: doc.id,
-        ...doc.data()
+  return db.collection(COL.INTERVENTIONS)
+    .onSnapshot((snapshot) => {
+
+      const interventions = [];
+
+      snapshot.forEach((doc) => {
+
+        interventions.push({
+          id: doc.id,
+          ...doc.data()
+        });
+
       });
+
+      callback(interventions);
+
     });
 
-    callback(interventions);
-  });
 }
 
 async function fbSaveIntervention(intervention) {
+
   const id = intervention.id || Date.now().toString();
 
-  await db.collection(COL.INTERVENTIONS).doc(id).set({
-    ...intervention,
-    id
-  }, { merge: true });
+  await db.collection(COL.INTERVENTIONS)
+    .doc(id)
+    .set({
+      ...intervention,
+      id
+    }, { merge: true });
+
 }
+
+window.fbListenInterventions = fbListenInterventions;
+window.fbSaveIntervention = fbSaveIntervention;
 
 // ============================================================
 // FEUILLES DE GARDE
 // ============================================================
 
 function fbListenFeuilles(callback) {
-  db.collection(COL.FEUILLES).onSnapshot((snapshot) => {
-    const feuilles = [];
 
-    snapshot.forEach((doc) => {
-      feuilles.push({
-        id: doc.id,
-        ...doc.data()
+  return db.collection(COL.FEUILLES)
+    .onSnapshot((snapshot) => {
+
+      const feuilles = [];
+
+      snapshot.forEach((doc) => {
+
+        feuilles.push({
+          id: doc.id,
+          ...doc.data()
+        });
+
       });
+
+      callback(feuilles);
+
     });
 
-    callback(feuilles);
-  });
 }
 
 async function fbSaveFeuille(feuille) {
+
   const id = feuille.id || Date.now().toString();
 
-  await db.collection(COL.FEUILLES).doc(id).set({
-    ...feuille,
-    id
-  }, { merge: true });
+  await db.collection(COL.FEUILLES)
+    .doc(id)
+    .set({
+      ...feuille,
+      id
+    }, { merge: true });
+
 }
+
+window.fbListenFeuilles = fbListenFeuilles;
+window.fbSaveFeuille = fbSaveFeuille;
 
 // ============================================================
 // BIPS
 // ============================================================
 
 function fbListenBips(userId, callback) {
-  db.collection(COL.BIPS)
+
+  return db.collection(COL.BIPS)
     .where("targetUserId", "==", userId)
     .onSnapshot((snapshot) => {
 
       snapshot.docChanges().forEach((change) => {
 
         if (change.type === "added") {
+
           callback(change.doc.data());
+
         }
 
       });
 
     });
+
 }
 
 async function fbSendBip(userId, data = {}) {
 
-  await db.collection(COL.BIPS).add({
-    targetUserId: userId,
-    timestamp: new Date().toISOString(),
-    read: false,
-    ...data
-  });
+  await db.collection(COL.BIPS)
+    .add({
+      targetUserId: userId,
+      timestamp: new Date().toISOString(),
+      read: false,
+      ...data
+    });
 
 }
 
+window.fbListenBips = fbListenBips;
+window.fbSendBip = fbSendBip;
+
 // ============================================================
-// PRESENCE / DISPO
+// PRESENCE
 // ============================================================
 
 async function fbUpdatePresence(userId, status) {
 
-  await db.collection(COL.USERS).doc(userId).set({
-    presence: status,
-    lastUpdate: new Date().toISOString()
-  }, { merge: true });
+  await db.collection(COL.USERS)
+    .doc(userId)
+    .set({
+      presence: status,
+      lastUpdate: new Date().toISOString()
+    }, { merge: true });
 
 }
+
+window.fbUpdatePresence = fbUpdatePresence;
 
 // ============================================================
 // HEARTBEAT
@@ -203,17 +308,21 @@ function startHeartbeat(userId) {
 
   heartbeatInterval = setInterval(async () => {
 
-    await db.collection(COL.USERS).doc(userId).set({
-      online: true,
-      heartbeat: new Date().toISOString()
-    }, { merge: true });
+    await db.collection(COL.USERS)
+      .doc(userId)
+      .set({
+        online: true,
+        heartbeat: new Date().toISOString()
+      }, { merge: true });
 
   }, 30000);
 
 }
 
+window.startHeartbeat = startHeartbeat;
+
 // ============================================================
-// STOP LISTENERS
+// CLEANUP
 // ============================================================
 
 window.addEventListener("beforeunload", () => {
