@@ -50,8 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       fbListenUsers((data) => {
          USERS = data;
-         synchroniserTout(); // ← ajoute ceci si ce n'est pas déjà là
-         renderPersonnels();  // ou la fonction qui rafraîchit l'affichage
+         synchroniserTout();
         });
     });
 
@@ -250,13 +249,23 @@ function executeLogin(user) {
   currentUser = user;
   localStorage.setItem('systel_current_user_id', user.id);
   sessionStorage.setItem('systel_user', JSON.stringify(user));
+  // Marquer online dans Firestore
+  if (typeof fbUpdatePresence === 'function') fbUpdatePresence(user.id, 'DISPO');
+  db.collection(COL.USERS).doc(user.id).set({ online: true }, { merge: true });
   synchroniserTout();
   initApp();
   showToast("Bienvenue " + (user.firstname || user.id));
 }
 
 
-function handleLogout() { sessionStorage.removeItem('systel_user'); synchroniserTout(); location.reload(); }
+function handleLogout() {
+  if (currentUser && typeof fbUpdatePresence === 'function') fbUpdatePresence(currentUser.id, 'INDISPO');
+  if (currentUser) db.collection(COL.USERS).doc(currentUser.id).set({ online: false }, { merge: true });
+  sessionStorage.removeItem('systel_user');
+  localStorage.removeItem('systel_current_user_id');
+  synchroniserTout();
+  location.reload();
+}
 
 function initApp() {
   document.getElementById('auth-container').style.display = 'none';
