@@ -50,7 +50,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       fbListenUsers((data) => {
          USERS = data;
-         synchroniserTout();
+         synchroniserTout(); // ← ajoute ceci si ce n'est pas déjà là
+         renderPersonnels();  // ou la fonction qui rafraîchit l'affichage
         });
     });
 
@@ -249,23 +250,13 @@ function executeLogin(user) {
   currentUser = user;
   localStorage.setItem('systel_current_user_id', user.id);
   sessionStorage.setItem('systel_user', JSON.stringify(user));
-  // Marquer online dans Firestore
-  if (typeof fbUpdatePresence === 'function') fbUpdatePresence(user.id, 'DISPO');
-  db.collection(COL.USERS).doc(user.id).set({ online: true }, { merge: true });
   synchroniserTout();
   initApp();
   showToast("Bienvenue " + (user.firstname || user.id));
 }
 
 
-function handleLogout() {
-  if (currentUser && typeof fbUpdatePresence === 'function') fbUpdatePresence(currentUser.id, 'INDISPO');
-  if (currentUser) db.collection(COL.USERS).doc(currentUser.id).set({ online: false }, { merge: true });
-  sessionStorage.removeItem('systel_user');
-  localStorage.removeItem('systel_current_user_id');
-  synchroniserTout();
-  location.reload();
-}
+function handleLogout() { sessionStorage.removeItem('systel_user'); synchroniserTout(); location.reload(); }
 
 function initApp() {
   document.getElementById('auth-container').style.display = 'none';
@@ -1670,6 +1661,14 @@ onFirebaseReady(() => {
     synchroniserTout();
     console.log("👥 Présences mises à jour");
   });
+
+  // Écouter les bips Firestore en temps réel
+  fbListenBips(currentUser.id, (bip) => {
+    if (!bip.read) {
+      localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify({ ...bip, acquitte: false }));
+      if (typeof afficherBipAlerte === 'function') afficherBipAlerte(bip);
+    }
+  });
 });
 
 // ===== INTERCEPTION DES SAUVEGARDES POUR ENVOYER VERS FIREBASE =====
@@ -1678,9 +1677,11 @@ sauvegarderDonnees = function() {
   originalSauvegarderDonnees2();
   
   if (_fbReady && currentUser) {
-    // Envoyer les feuilles de garde
-    if (FEUILLES_GARDE && Array.isArray(FEUILLES_GARDE)) {
-      FEUILLES_GARDE.forEach(f => fbSaveFeuille(f).catch(e => console.warn("Erreur feuille:", e)));
+    // Envoyer les feuilles de garde (FEUILLES_GARDE est un objet {date: garde})
+    if (FEUILLES_GARDE && typeof FEUILLES_GARDE === 'object' && !Array.isArray(FEUILLES_GARDE)) {
+      Object.entries(FEUILLES_GARDE).forEach(([date, feuille]) => {
+        fbSaveFeuille(date, feuille).catch(e => console.warn("Erreur feuille:", e));
+      });
     }
     
     // Envoyer le planning

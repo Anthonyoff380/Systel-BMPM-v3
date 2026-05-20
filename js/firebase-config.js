@@ -445,3 +445,80 @@ window.fbLoadPlanning = async function () {
 
   return data;
 };
+// ============================================================
+// FIX 1 — fbTriggerBip (alias de fbSendBip)
+// ============================================================
+
+window.fbTriggerBip = async function (userId, motif = 'INTERVENTION', data = {}) {
+  await db.collection(COL.BIPS).add({
+    targetUserId: userId,
+    motif: motif,
+    timestamp: new Date().toISOString(),
+    read: false,
+    ...data
+  });
+};
+
+// ============================================================
+// FIX 2 — fbListenPresence (écoute online/presence sur USERS)
+// ============================================================
+
+window.fbListenPresence = function (callback) {
+  return db.collection(COL.USERS)
+    .onSnapshot((snapshot) => {
+      const users = [];
+      snapshot.forEach((doc) => {
+        users.push({ id: doc.id, ...doc.data() });
+      });
+      callback(users);
+    });
+};
+
+// ============================================================
+// FIX 3 — fbListenPlanning (écoute en temps réel)
+// ============================================================
+
+window.fbListenPlanning = function (callback) {
+  return db.collection(COL.PLANNING)
+    .onSnapshot((snapshot) => {
+      const data = [];
+      snapshot.forEach((doc) => data.push({ id: doc.id, ...doc.data() }));
+      callback(data);
+    });
+};
+
+// ============================================================
+// FIX 4 — fbListenFeuilles retourne un OBJET {date: garde}
+//          au lieu d'un tableau pour compatibilité feuille_garde.js
+// ============================================================
+
+// On remplace le listener feuilles pour retourner le bon format
+window.fbListenFeuilles = function (callback) {
+  return db.collection(COL.FEUILLES)
+    .onSnapshot((snapshot) => {
+      const feuillesObj = {};
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        // La clé doc = la date (ex: "2025-06-01")
+        feuillesObj[doc.id] = { ...data, id: doc.id };
+      });
+      callback(feuillesObj);
+    });
+};
+
+// fbSaveFeuille : utilise la date comme ID du document
+window.fbSaveFeuille = async function (date, feuille) {
+  // Accepte fbSaveFeuille(obj) ou fbSaveFeuille(date, obj)
+  if (typeof date === 'object' && date !== null) {
+    feuille = date;
+    date = feuille.date || feuille.id || Date.now().toString();
+  }
+  await db.collection(COL.FEUILLES)
+    .doc(String(date))
+    .set({ ...feuille, id: String(date) }, { merge: true });
+};
+
+// fbDeleteFeuille : supprime une feuille par date
+window.fbDeleteFeuille = async function (date) {
+  await db.collection(COL.FEUILLES).doc(String(date)).delete();
+};
