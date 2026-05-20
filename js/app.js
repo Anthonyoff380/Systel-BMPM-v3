@@ -1602,3 +1602,82 @@ async function testFirebasePermissions() {
     showToast("❌ " + result.error, "error");
   }
 }
+
+// ===== ACTIVATION COMPLÈTE DES ÉCOUTEURS CLOUD AU DÉMARRAGE =====
+onFirebaseReady(() => {
+  if (!_fbReady || !currentUser) return;
+  
+  console.log("🔥 Activation des écouteurs Cloud pour:", currentUser.id);
+  
+  // Démarrer le heartbeat
+  startHeartbeat(currentUser.id);
+  
+  // Écouter les feuilles de garde
+  fbListenFeuilles((feuilles) => {
+    FEUILLES_GARDE = feuilles;
+    synchroniserTout();
+    console.log("📋 Feuilles de garde mises à jour");
+  });
+  
+  // Écouter le planning
+  fbListenPlanning((planning) => {
+    PLANNING = planning;
+    synchroniserTout();
+    console.log("📅 Planning mis à jour");
+  });
+  
+  // Écouter les interventions
+  fbListenInterventions((interventions) => {
+    INTERVENTIONS = interventions;
+    synchroniserTout();
+    console.log("🚨 Interventions mises à jour");
+  });
+  
+  // Écouter les engins
+  fbListenEngins((engins) => {
+    ENGINS = engins;
+    synchroniserTout();
+    console.log("🚗 Engins mis à jour");
+  });
+  
+  // Écouter les présences
+  fbListenPresence((users) => {
+    users.forEach(u => {
+      const existing = USERS.find(x => x.id === u.id);
+      if (existing) {
+        existing.presence = u.presence;
+        existing.online = u.online;
+      }
+    });
+    synchroniserTout();
+    console.log("👥 Présences mises à jour");
+  });
+});
+
+// ===== INTERCEPTION DES SAUVEGARDES POUR ENVOYER VERS FIREBASE =====
+const originalSauvegarderDonnees2 = sauvegarderDonnees;
+sauvegarderDonnees = function() {
+  originalSauvegarderDonnees2();
+  
+  if (_fbReady && currentUser) {
+    // Envoyer les feuilles de garde
+    if (FEUILLES_GARDE && Array.isArray(FEUILLES_GARDE)) {
+      FEUILLES_GARDE.forEach(f => fbSaveFeuille(f).catch(e => console.warn("Erreur feuille:", e)));
+    }
+    
+    // Envoyer le planning
+    if (PLANNING && typeof PLANNING === 'object') {
+      fbSavePlanning(currentUser.id, PLANNING).catch(e => console.warn("Erreur planning:", e));
+    }
+    
+    // Envoyer les interventions
+    if (INTERVENTIONS && Array.isArray(INTERVENTIONS)) {
+      INTERVENTIONS.forEach(iv => fbSaveIntervention(iv).catch(e => console.warn("Erreur intervention:", e)));
+    }
+    
+    // Envoyer les engins
+    if (ENGINS && Array.isArray(ENGINS)) {
+      fbSaveEngins(ENGINS).catch(e => console.warn("Erreur engins:", e));
+    }
+  }
+};

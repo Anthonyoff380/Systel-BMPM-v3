@@ -450,3 +450,153 @@ async function fbTestPermissions() {
     return { canRead: false, canWrite: false, error: e.message };
   }
 }
+
+// ===== SYSTÈME HEARTBEAT (Battement de Cœur) =====
+let heartbeatInterval = null;
+
+function startHeartbeat(userId) {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  
+  // Envoyer un heartbeat toutes les 30 secondes
+  heartbeatInterval = setInterval(async () => {
+    if (!_db || !userId) return;
+    
+    try {
+      await _db.collection(COL.USERS).doc(userId).update({
+        lastHeartbeat: new Date().toISOString(),
+        online: true
+      });
+      console.log("💓 Heartbeat envoyé pour:", userId);
+    } catch(e) {
+      console.warn("Erreur heartbeat:", e);
+    }
+  }, 30000);
+  
+  // Envoyer immédiatement un heartbeat
+  fbSendHeartbeat(userId);
+}
+
+async function fbSendHeartbeat(userId) {
+  if (!_db || !userId) return;
+  try {
+    await _db.collection(COL.USERS).doc(userId).update({
+      lastHeartbeat: new Date().toISOString(),
+      online: true
+    });
+  } catch(e) {
+    console.warn("Erreur envoi heartbeat:", e);
+  }
+}
+
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
+// ===== SYNCHRONISATION FEUILLES DE GARDE =====
+
+async function fbSaveFeuille(feuille) {
+  if (!_db) return;
+  try {
+    const feuillleId = feuille.id || 'feuille_' + Date.now();
+    await _db.collection(COL.FEUILLES).doc(feuillleId).set(feuille, { merge: true });
+    console.log("✅ Feuille de garde sauvegardée:", feuillleId);
+    return feuillleId;
+  } catch(e) {
+    console.error("❌ Erreur sauvegarde feuille:", e);
+  }
+}
+
+function fbListenFeuilles(callback) {
+  if (!_db) return;
+  try {
+    _listeners.feuilles = _db.collection(COL.FEUILLES)
+      .onSnapshot(snapshot => {
+        const feuilles = [];
+        snapshot.forEach(doc => {
+          feuilles.push({ id: doc.id, ...doc.data() });
+        });
+        callback(feuilles);
+        console.log("✅ Feuilles de garde synchronisées:", feuilles.length);
+      }, (error) => {
+        console.error("❌ Erreur écouteur feuilles:", error);
+      });
+  } catch(e) {
+    console.error("❌ Erreur setup écouteur feuilles:", e);
+  }
+}
+
+// ===== SYNCHRONISATION PLANNING =====
+
+async function fbSavePlanning(userId, planning) {
+  if (!_db) return;
+  try {
+    await _db.collection(COL.PLANNING).doc(userId).set(planning, { merge: true });
+    console.log("✅ Planning sauvegardé pour:", userId);
+  } catch(e) {
+    console.error("❌ Erreur sauvegarde planning:", e);
+  }
+}
+
+function fbListenPlanning(callback) {
+  if (!_db) return;
+  try {
+    _listeners.planning = _db.collection(COL.PLANNING)
+      .onSnapshot(snapshot => {
+        const planning = {};
+        snapshot.forEach(doc => {
+          planning[doc.id] = doc.data();
+        });
+        callback(planning);
+        console.log("✅ Planning synchronisé");
+      }, (error) => {
+        console.error("❌ Erreur écouteur planning:", error);
+      });
+  } catch(e) {
+    console.error("❌ Erreur setup écouteur planning:", e);
+  }
+}
+
+// ===== SYNCHRONISATION INTERVENTIONS =====
+
+function fbListenInterventions(callback) {
+  if (!_db) return;
+  try {
+    _listeners.interventions = _db.collection(COL.INTERVENTIONS)
+      .onSnapshot(snapshot => {
+        const interventions = [];
+        snapshot.forEach(doc => {
+          interventions.push({ id: doc.id, ...doc.data() });
+        });
+        callback(interventions);
+        console.log("✅ Interventions synchronisées:", interventions.length);
+      }, (error) => {
+        console.error("❌ Erreur écouteur interventions:", error);
+      });
+  } catch(e) {
+    console.error("❌ Erreur setup écouteur interventions:", e);
+  }
+}
+
+// ===== SYNCHRONISATION ENGINS =====
+
+function fbListenEngins(callback) {
+  if (!_db) return;
+  try {
+    _listeners.engins = _db.collection(COL.ENGINS)
+      .onSnapshot(snapshot => {
+        const engins = [];
+        snapshot.forEach(doc => {
+          engins.push({ id: doc.id, ...doc.data() });
+        });
+        callback(engins);
+        console.log("✅ Engins synchronisés:", engins.length);
+      }, (error) => {
+        console.error("❌ Erreur écouteur engins:", error);
+      });
+  } catch(e) {
+    console.error("❌ Erreur setup écouteur engins:", e);
+  }
+}
