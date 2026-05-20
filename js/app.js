@@ -1756,3 +1756,58 @@ initApp = function() {
   debugBtn.onclick = showErrorConsole;
   document.body.appendChild(debugBtn);
 };
+
+// ===== CORRECTION DU BUG TYPENAME UNDEFINED =====
+// Intercepter les erreurs de synchronisation
+const originalSynchroniserTout = synchroniserTout;
+synchroniserTout = function() {
+  try {
+    // Vérifier que USERS est un tableau valide
+    if (!Array.isArray(USERS)) {
+      console.warn("⚠️ USERS n'est pas un tableau, réinitialisation");
+      USERS = [];
+    }
+    
+    // Nettoyer les utilisateurs invalides
+    USERS = USERS.filter(u => u && typeof u === 'object' && u.id);
+    
+    // Appeler la fonction originale
+    originalSynchroniserTout();
+  } catch(e) {
+    console.error("❌ Erreur dans synchroniserTout:", e);
+    showToast("Erreur de synchronisation: " + e.message, "error");
+  }
+};
+
+// ===== DÉTECTION D'ADBLOCK =====
+function detectAdBlock() {
+  // Créer une image publicitaire factice
+  const testAd = document.createElement('div');
+  testAd.innerHTML = '&nbsp;';
+  testAd.className = 'adsbox';
+  testAd.style.cssText = 'width:1px;height:1px;position:absolute;left:-9999px;';
+  document.body.appendChild(testAd);
+  
+  // Vérifier si elle a été bloquée
+  const isBlocked = testAd.offsetHeight === 0;
+  testAd.remove();
+  
+  return isBlocked;
+}
+
+// Vérifier l'AdBlock au démarrage
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (detectAdBlock()) {
+      console.warn("⚠️ AdBlock détecté - Firebase peut être bloqué!");
+      const warning = document.createElement('div');
+      warning.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; background: #f59e0b; color: white;
+        padding: 12px; text-align: center; z-index: 99998; font-weight: bold;
+      `;
+      warning.innerHTML = '⚠️ Bloqueur de pub détecté - Désactivez-le pour la synchronisation en temps réel!';
+      document.body.appendChild(warning);
+      setTimeout(() => warning.remove(), 5000);
+    }
+  }, 1000);
+});
