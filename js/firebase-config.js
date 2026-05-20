@@ -331,58 +331,44 @@ window.addEventListener("beforeunload", () => {
     clearInterval(heartbeatInterval);
   }
 
-  // ============================================================
-// COMPATIBILITÉ ANCIEN SYSTÈME APP.JS
+});
+
+// ============================================================
+// ANCIENNES FONCTIONS COMPATIBILITÉ
 // ============================================================
 
-// Chargement users
-async function fbLoadUsers() {
+window.fbLoadUsers = async function () {
 
-  return new Promise((resolve) => {
+  try {
 
-    db.collection(COL.USERS)
-      .get()
-      .then((snapshot) => {
+    const snapshot = await db.collection(COL.USERS).get();
 
-        const users = [];
+    const users = [];
 
-        snapshot.forEach((doc) => {
+    snapshot.forEach((doc) => {
 
-          users.push({
-            id: doc.id,
-            ...doc.data()
-          });
-
-        });
-
-        resolve(users);
-
-      })
-      .catch((err) => {
-
-        console.error(err);
-        resolve([]);
-
+      users.push({
+        id: doc.id,
+        ...doc.data()
       });
 
-  });
+    });
 
-}
+    return users;
 
-window.fbLoadUsers = fbLoadUsers;
+  } catch (e) {
 
-// ============================================================
-// MIGRATION LOCAL STORAGE
-// ============================================================
+    console.error(e);
+    return [];
 
-function migrateFromLocalStorage() {
+  }
 
-  console.log("⚠️ Migration localStorage ignorée");
+};
+
+window.migrateFromLocalStorage = function () {
+
+  console.log("⚠️ Migration ignorée");
 
   return true;
 
-}
-
-window.migrateFromLocalStorage = migrateFromLocalStorage;
-
-});
+};
