@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SYSTEL - Centre PTR</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/synoptique.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    /* ===== THEME JOUR/NUIT ===== */
+    [data-theme="day"] {
+      --bg-main:#f0f4f8; --bg-sidebar:#2c3e50; --bg-header:#fff;
+      --primary:#2d3748; --accent:#e53e3e; --text-main:#1a202c;
+      --text-muted:#718096; --border-color:#e2e8f0; --white:#fff;
+      --card-bg:#fff; --infobar-bg:#2c3e50;
+    }
+    [data-theme="night"] {
+      --bg-main:#0f1117; --bg-sidebar:#1a202c; --bg-header:#161b22;
+      --primary:#e2e8f0; --accent:#e53e3e; --text-main:#e2e8f0;
+      --text-muted:#718096; --border-color:#21262d; --white:#1e2430;
+      --card-bg:#161b22; --infobar-bg:#0d1117;
+    }
+    [data-theme="night"] .card { background: var(--card-bg); color: var(--text-main); border-color: var(--border-color); }
+    [data-theme="night"] .card-header { background: #1a2030; border-color: var(--border-color); color: #a0aec0; }
+    [data-theme="night"] .data-table th { color: #718096; border-color: var(--border-color); }
+    [data-theme="night"] .data-table td { border-color: var(--border-color); color: var(--text-main); }
+    [data-theme="night"] .data-table tr:hover { background: #1e2430; }
+    [data-theme="night"] input, [data-theme="night"] select, [data-theme="night"] textarea { background:#1a202c; color:#e2e8f0; border-color:#21262d; }
+    [data-theme="night"] .btn-secondary { background:#2d3748; color:#a0aec0; }
+    [data-theme="night"] .section-title { color: #e2e8f0; }
+    [data-theme="night"] #topbar { background: #161b22; border-color: #21262d; }
+    [data-theme="night"] .annuaire-card { background:#161b22; border-color:#21262d; }
+
+    /* ===== BIP OVERLAY ===== */
+    #bip-overlay {
+      display:none; position:fixed; inset:0; z-index:9999;
+      background: transparent;
+      flex-direction:column; align-items:center; justify-content:center; gap:0;
+    }
+    .bip-title-bar { display:none; }
+    .bip-sub-top { display:none; }
+    .bip-swissphone-wrap {
+      position: relative; width: 340px; user-select: none; flex-shrink: 0; isolation: isolate;
+    }
+    .bip-swissphone-wrap img.bip-phone-img {
+      width: 100%;
+      filter: none;
+      animation: none;
+    }
+    /* BIP.png 353x541 — écran vert: top:9.5% left:13.5% w:73% h:27% */
+    .bip-screen-overlay {
+      position: absolute;
+      top: 9.5%; left: 13.5%; width: 73%; height: 27%;
+      background: #6dc940;
+      border-radius: 3px;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: center;
+      padding: 6px 10px; overflow: hidden; gap: 3px;
+    }
+    .bip-screen-motif {
+      font-size: clamp(11px, 3.5vw, 17px); font-weight: 900; color: #0a1800;
+      line-height: 1.2; word-break: break-word;
+      font-family: Arial, Helvetica, sans-serif; width: 100%;
+    }
+    .bip-screen-engin {
+      font-size: clamp(10px, 2.8vw, 14px); font-weight: 800; color: #0d2200;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .bip-screen-place {
+      font-size: clamp(9px, 2.4vw, 12px); color: #1a3600; font-weight: 700;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .bip-screen-num {
+      font-size: clamp(8px, 2vw, 11px); color: #2a5000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .bip-btn-jaune {
+      position: absolute; bottom: 21.5%; left: 13.5%;
+      width: 31%; aspect-ratio: 1; border-radius: 50%;
+      background: transparent; border: none; cursor: pointer; z-index: 10;
+    }
+    .bip-btn-jaune:hover { background: rgba(255,220,0,0.18); border-radius: 50%; }
+    .bip-btn-jaune:active { background: rgba(255,220,0,0.38); }
+    .bip-hint { font-size: 11px; color: #666; margin-top: 10px; text-align:center; font-style:italic; }
+
+    /* ===== BER MODAL IMAGE ===== */
+    .ber-img-btn {
+      position: absolute;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.1s;
+      z-index: 5;
+    }
+    .ber-img-btn:hover { background: rgba(255,200,0,0.18); }
+    .ber-img-btn:active { background: rgba(255,200,0,0.4); }
+    .ber-img-btn.ber-active-btn { background: rgba(255,200,0,0.25); outline: 2px solid #ffd700; }
+    /* BER SVG boutons */
+    .ber-svg-btn {
+      position:absolute; background:transparent; border:none; cursor:pointer;
+      border-radius:6px; transition:background 0.1s; z-index:5;
+    }
+    .ber-svg-btn:hover { background:rgba(255,200,0,0.2); }
+    .ber-svg-btn:active { background:rgba(255,200,0,0.45); }
+    .ber-svg-btn.ber-active-btn { background:rgba(255,210,0,0.3); outline:3px solid #ffd700; border-radius:7px; }
+
+    /* ===== BER MODAL ===== */
+    .ber-statut-btn {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 15px; border-radius:8px; border:2px solid #ccc;
+      cursor:pointer; font-weight:700; transition:all 0.15s;
+      width:100%; margin-bottom:7px;
+    }
+    .ber-statut-btn:hover { transform:translateX(4px); box-shadow:0 3px 8px rgba(0,0,0,0.12); }
+    .ber-statut-btn.ber-active { border-width:3px!important; box-shadow:0 4px 14px rgba(0,0,0,0.2); }
+    .ber-statut-img { width:44px; height:44px; object-fit:cover; border-radius:4px; flex-shrink:0; }
+    .ber-num-label { font-size:11px; font-weight:900; opacity:0.6; }
+    .ber-label { font-size:13px; font-weight:800; }
+    .ber-code-badge {
+      position:absolute; top:-7px; right:-5px;
+      background:#e53e3e; color:white; font-size:9px; font-weight:900;
+      border-radius:50%; width:16px; height:16px;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    /* ===== INTERVENTIONS SYNOPTIQUE ===== */
+    .synop-inter-header { display:flex; justify-content:space-between; align-items:center; padding:10px 15px; background:#fff5f5; border:1px solid #feb2b2; border-radius:8px; margin-bottom:12px; font-weight:700; color:#c53030; }
+    [data-theme="night"] .synop-inter-header { background:#2d1515; border-color:#7f1d1d; color:#fc8181; }
+    .synop-inter-empty { text-align:center; padding:40px; color:#38a169; font-weight:700; font-size:16px; background:#f0fdf4; border-radius:8px; border:1px solid #9ae6b4; }
+    [data-theme="night"] .synop-inter-empty { background:#0d2d1a; border-color:#166534; color:#68d391; }
+    .synop-inter-card { border:1px solid #e2e8f0; border-radius:8px; margin-bottom:10px; overflow:hidden; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.06); }
+    [data-theme="night"] .synop-inter-card { background:#161b22; border-color:#21262d; }
+    .synop-inter-top { display:grid; grid-template-columns:26px 90px 110px 1fr 1fr 1fr; align-items:center; gap:10px; padding:10px 15px; background:#f8fafc; border-bottom:1px solid #e2e8f0; cursor:pointer; }
+    [data-theme="night"] .synop-inter-top { background:#1a2030; border-color:#21262d; }
+    .synop-inter-toggle { font-size:16px; color:#718096; }
+    .synop-inter-date { font-size:11px; color:#718096; font-weight:600; }
+    .synop-inter-type { font-weight:800; color:#2d3748; }
+    [data-theme="night"] .synop-inter-type { color:#e2e8f0; }
+    .synop-inter-lieu { font-size:12px; color:#4a5568; }
+    .synop-inter-obs { font-size:12px; color:#718096; font-style:italic; }
+    .synop-services-row { display:flex; flex-wrap:wrap; gap:5px; padding:8px 15px; border-bottom:1px solid #f1f5f9; }
+    .synop-service-tag { background:#edf2f7; color:#4a5568; font-size:11px; font-weight:700; padding:3px 8px; border-radius:4px; border:1px solid #cbd5e0; }
+    .synop-engins-row { display:flex; flex-wrap:wrap; gap:8px; padding:10px 15px; border-bottom:1px solid #f1f5f9; align-items:center; }
+    .synop-engin-box { padding:5px 14px; border-radius:5px; font-size:12px; font-weight:800; border:2px solid #ccc; background:#ffedd5; color:#9a3412; cursor:pointer; transition:transform 0.1s; }
+    .synop-engin-box:hover { transform:scale(1.04); }
+    .synop-inter-actions { display:flex; gap:8px; padding:8px 15px; }
+    .synop-action-btn { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; font-size:16px; cursor:pointer; transition:background 0.15s; }
+    [data-theme="night"] .synop-action-btn { background:#1a202c; border-color:#21262d; }
+    .synop-action-btn:hover { background:#edf2f7; }
+
+    /* ===== FEUILLE DE GARDE ===== */
+    .fg-page { display:flex; flex-direction:column; }
+    .fg-toolbar { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; background:var(--card-bg); border-bottom:1px solid var(--border-color); }
+    .fg-toolbar-left { display:flex; gap:16px; align-items:center; }
+    .fg-toolbar-right { display:flex; gap:8px; }
+    .fg-select-group { display:flex; flex-direction:column; gap:4px; }
+    .fg-select-group label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+    .fg-select-group select, .fg-select-group input[type=date] { padding:7px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-main); color:var(--text-color); font-size:13px; }
+    .fg-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:70px 20px; text-align:center; }
+    .fg-card { margin:16px 20px; background:var(--card-bg); border-radius:10px; border:1px solid var(--border-color); overflow:hidden; }
+    .fg-doc-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:var(--bg-main); border-bottom:2px solid var(--border-color); }
+    .fg-doc-title { font-size:15px; font-weight:900; }
+    .fg-doc-meta { font-size:12px; color:var(--text-muted); margin-top:3px; }
+    .fg-section { border-bottom:1px solid var(--border-color); }
+    .fg-section:last-child { border-bottom:none; }
+    .fg-section-title { padding:10px 20px; font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; background:var(--bg-main); border-bottom:1px solid var(--border-color); }
+    .fg-section-body { padding:16px 20px; }
+    .fg-textarea { width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-main); color:var(--text-color); font-size:13px; resize:vertical; font-family:inherit; }
+    .fg-desc-view { font-size:13px; color:var(--text-color); line-height:1.6; min-height:36px; }
+    /* Postes spéciaux */
+    .fg-postes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+    .fg-poste-item { background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; padding:12px 14px; }
+    .fg-poste-abrev { font-size:11px; font-weight:900; color:var(--accent); letter-spacing:1px; }
+    .fg-poste-label { font-size:12px; font-weight:700; color:var(--text-color); margin-bottom:6px; }
+    .fg-poste-select { padding:5px 8px; border:1px solid var(--border-color); border-radius:5px; background:var(--card-bg); color:var(--text-color); font-size:12px; width:100%; }
+    .fg-poste-assigned { font-size:12px; color:var(--text-muted); font-style:italic; }
+    /* Grille engins */
+    .fg-engins-grille { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+    .fg-engin-card { border:2px solid var(--border-color); border-radius:8px; overflow:hidden; }
+    .fg-engin-title { background:var(--bg-main); font-weight:900; font-size:13px; padding:8px 12px; text-align:center; border-bottom:1px solid var(--border-color); }
+    .fg-engin-row { display:flex; align-items:center; gap:8px; padding:5px 10px; border-bottom:1px solid rgba(0,0,0,0.05); }
+    .fg-engin-row:last-of-type { border-bottom:none; }
+    .fg-engin-poste-abrev { font-size:10px; font-weight:800; color:var(--accent); min-width:36px; flex-shrink:0; }
+    .fg-engin-select { flex:1; padding:3px 6px; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-main); color:var(--text-color); font-size:11px; }
+    .fg-engin-person { font-size:12px; color:var(--text-color); flex:1; }
+    /* Actions */
+    .fg-actions { display:flex; gap:10px; padding:14px 20px; border-top:1px solid var(--border-color); background:var(--bg-main); }
+    .synop-action-btn { border:none; cursor:pointer; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:800; transition:all 0.15s; letter-spacing:0.3px; }
+    .synop-btn-terminer { background:rgba(229,62,62,0.15); color:#fc8181; border:1px solid rgba(229,62,62,0.3); }
+    .synop-btn-terminer:hover { background:rgba(229,62,62,0.3); color:white; }
+    .synop-btn-renfort { background:rgba(56,161,105,0.15); color:#68d391; border:1px solid rgba(56,161,105,0.3); }
+    .synop-btn-renfort:hover { background:rgba(56,161,105,0.3); color:white; }
+    .synop-btn-info { background:rgba(66,153,225,0.15); color:#63b3ed; border:1px solid rgba(66,153,225,0.3); }
+    .synop-btn-info:hover { background:rgba(66,153,225,0.3); color:white; }
+  </style>
+  <link rel="icon" href="favicon.ico">
+</head>
+<body class="login-page" data-theme="night">
+
+<!-- ===== BIP OVERLAY ===== -->
+<div id="bip-overlay">
+  <!-- IDs pour compatibilité JS (invisibles) -->
+  <span id="bip-motif" style="display:none;"></span>
+  <span id="bip-engin" style="display:none;"></span>
+  <span id="bip-inter-num" style="display:none;"></span>
+  <span id="bip-place" style="display:none;"></span>
+
+  <div class="bip-swissphone-wrap">
+    <img src="images/BIP.png" alt="Swissphone" class="bip-phone-img">
+    <!-- UNIQUEMENT dans le cadre vert -->
+    <div class="bip-screen-overlay">
+      <div class="bip-screen-motif" id="bip-screen-motif">---</div>
+      <div class="bip-screen-engin" id="bip-screen-engin"></div>
+      <div class="bip-screen-place" id="bip-screen-place"></div>
+      <div class="bip-screen-num" id="bip-screen-num"></div>
+    </div>
+    <button class="bip-btn-jaune" onclick="acquitterBip()" title="Acquitter"></button>
+  </div>
+  <div class="bip-hint">Appuyez sur le bouton jaune pour acquitter</div>
+</div>
+
+<!-- ===== PORTAIL CONNEXION ===== -->
+<div id="auth-container" class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">SYS<span>TEL</span></div>
+      <p>Portail Opérationnel - Centre PTR</p>
+    </div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group"><label>Identifiant</label><input type="text" id="login-id" required placeholder="Ex: k.ianis"/></div>
+      <div class="form-group"><label>Mot de passe</label><input type="password" id="login-pwd" required placeholder="••••••••"/></div>
+      <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
+      <button type="button" class="btn btn-secondary" onclick="enableAudio()" style="margin-top:10px; background:#48bb78; color:white; width:100%;">🔊 ACTIVER LE SON</button>
+    </form>
+    <div id="login-error" style="color:#e53e3e;margin-top:10px;font-weight:700;text-align:center;font-size:12px;"></div>
+    <div id="fb-permission-error" style="color:#f56565;margin-top:10px;font-weight:700;text-align:center;font-size:12px; display:none;"></div>
+    
+    <div id="fb-status-indicator" style="margin-top:20px; text-align:center; font-size:10px; color:var(--text-muted);">
+      <span id="fb-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#718096; margin-right:5px;"></span>
+      Mode: <span id="fb-text">Local (Hors-ligne)</span>
+      <br>
+      <span id="user-count-display" style="opacity:0.7;">Chargement des utilisateurs...</span>
+      <br>
+      <a href="#" onclick="ouvrirConfigFirebase()" style="color:var(--accent); text-decoration:none; margin-top:5px; display:inline-block;">⚙️ Configurer le Cloud</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG FIREBASE -->
+<div id="modal-fb-config" class="modal" style="width:450px;">
+  <div class="modal-header">☁️ Configuration Firebase Cloud</div>
+  <div class="modal-body">
+    <p style="font-size:12px; margin-bottom:15px; color:var(--text-muted);">Collez ici votre configuration Firebase pour activer le partage des comptes en temps réel entre tous les utilisateurs.</p>
+    <div class="form-group">
+      <label>Configuration JSON</label>
+      <textarea id="fb-config-json" style="width:100%; height:180px; font-family:monospace; font-size:11px;" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "storageBucket": "...",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+    </div>
+    <div id="fb-config-error" style="color:#e53e3e; font-size:11px; margin-top:5px; display:none;">JSON invalide</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
+    <button class="btn btn-primary" onclick="sauvegarderConfigFirebase()">ACTIVER LE CLOUD</button>
+  </div>
+</div>
+
+<!-- ===== APPLICATION PRINCIPALE ===== -->
+<div id="app-container" style="display:none;">
+  <!-- Barre de diagnostic Firebase -->
+  <div id="fb-diagnostic-bar" style="position:fixed; bottom:0; left:0; right:0; background:#1a202c; color:#e2e8f0; padding:8px 12px; font-size:11px; font-family:monospace; border-top:1px solid #4a5568; z-index:9999; text-align:center;"></div>
+  <div id="topbar">
+    <div id="topbar-left">
+      <div id="systel-logo">SYS<span>TEL</span></div>
+      <div class="tag-centre">Centre PTR</div>
+    </div>
+    <div id="topbar-center">
+      <div id="center-title">CENTRE PTR - --/--/---- (WEB1)</div>
+    </div>
+    <div id="topbar-right">
+      <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Changer le thème">☀️</button>
+      <div id="user-info" onclick="openProfilMenu()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-left:10px;">
+        <div class="avatar-sm"><img id="top-avatar-img" src="https://www.w3schools.com/howto/img_avatar.png"></div>
+        <div style="text-align:right;">
+          <div id="user-display-name" style="font-weight:700;font-size:13px;">Utilisateur</div>
+          <span id="user-role-badge" class="badge">ROLE</span>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="handleLogout()" style="margin-left:12px;">🚪</button>
+    </div>
+  </div>
+
+  <div class="info-strip">
+    <div class="info-strip-left">
+      <span><strong>ETAT DU SYSTÈME :</strong> <span style="color:#68d391;">● OPÉRATIONNEL</span></span>
+    </div>
+    <div id="current-clock">--:--:--</div>
+  </div>
+
+  <div id="main-layout">
+    <nav id="sidebar">
+      <div class="nav-group-label">Opérationnel</div>
+      <div class="nav-item selected" data-section="synoptique" onclick="showSection('synoptique')">📊 Synoptique</div>
+      <div class="nav-item" data-section="interventions" onclick="showSection('interventions')">🔍 Interventions</div>
+      <div class="nav-item" data-section="historique" onclick="showSection('historique')">📜 Historique</div>
+      <div class="nav-group-label">Gestion</div>
+      <div class="nav-item" data-section="feuille-garde" onclick="showSection('feuille-garde')">📋 Feuille de garde</div>
+      <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
+      <div class="nav-group-label">Outils</div>
+      <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
+      <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">📍 Cartographie</div>
+      <div class="nav-item" data-section="admin" id="nav-admin" onclick="showSection('admin')" style="display:none;">⚙️ Configuration</div>
+      <div class="nav-group-label">Portail</div>
+      <a href="intranet.html" class="nav-item" style="text-decoration:none;">🏠 Intranet</a>
+      <a href="synoptique_ext.html" class="nav-item" style="text-decoration:none;" target="_blank">📺 Synoptique Externe</a>
+    </nav>
+
+    <div id="content-area">
+
+      <!-- SYNOPTIQUE -->
+      <div id="section-synoptique" class="section active-section">
+        <div class="section-header">
+          <div class="section-title">SYNOPTIQUE DES MOYENS</div>
+          <button class="theme-btn" onclick="toggleTheme()" title="Thème">☀️</button>
+        </div>
+        <div id="synoptique-main-container"></div>
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header">PERSONNELS DU CENTRE</div>
+          <div id="personnels-grid" class="card-body"></div>
+        </div>
+      </div>
+
+      <!-- INTERVENTIONS -->
+      <div id="section-interventions" class="section">
+        <div class="section-header">
+          <div class="section-title">SYNOPTIQUE DES INTERVENTIONS</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+            <a href="cossim.html" id="btn-ouvrir-cossim" class="btn btn-primary" style="text-decoration:none;display:none;">🚨 Ouvrir COSSIM</a>
+          </div>
+        </div>
+        <div id="interventions-synoptique-container"></div>
+      </div>
+
+      <!-- HISTORIQUE -->
+      <div id="section-historique" class="section">
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border-color);">
+          <h2 style="font-size:16px;font-weight:900;">📜 HISTORIQUE DES INTERVENTIONS</h2>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="text" id="histo-filter" placeholder="Filtrer par type, adresse, numéro..."
+              style="padding:7px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;width:280px;"
+              oninput="renderHistorique()">
+            <button class="btn btn-secondary btn-sm" onclick="renderHistorique()">🔄 Actualiser</button>
+          </div>
+        </div>
+        <div id="historique-container" style="padding:16px 20px;max-height:calc(100vh - 140px);overflow-y:auto;"></div>
+      </div>
+
+      <!-- FEUILLE DE GARDE -->
+      <div id="section-feuille-garde" class="section">
+        <div class="section-header">
+          <div class="section-title">FEUILLE DE GARDE</div>
+          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+        </div>
+        <div id="feuille-garde-container"></div>
+      </div>
+
+      <!-- PLANNING -->
+      <div id="section-planning" class="section">
+        <div class="section-header">
+          <div class="section-title">PLANNING</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+            <div class="planning-nav">
+              <button class="btn btn-secondary" onclick="semainePrecedente()">◀</button>
+              <span id="planning-semaine-label">---</span>
+              <button class="btn btn-secondary" onclick="semaineSuivante()">▶</button>
+            </div>
+          </div>
+        </div>
+        <div class="card"><div class="card-body">
+          <table class="data-table"><thead id="planning-thead"></thead><tbody id="planning-tbody"></tbody></table>
+        </div></div>
+      </div>
+
+      <!-- ANNUAIRE -->
+      <div id="section-annuaire" class="section">
+        <div class="section-header">
+          <div class="section-title">ANNUAIRE</div>
+          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+        </div>
+        <div class="annuaire-grid" id="annuaire-grid"></div>
+      </div>
+
+      <!-- CARTOGRAPHIE -->
+      <div id="section-cartographie" class="section">
+        <div class="section-header">
+          <div class="section-title">CARTOGRAPHIE</div>
+          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+        </div>
+        <div id="carto-admin-tools" class="carto-admin-panel" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <strong>⚙️ Outils Admin — Blips</strong>
+            <span style="font-size:12px;color:#718096;">Cliquez sur la carte pour placer un point</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+            <span class="synop-service-tag">🚒 Centre de secours</span>
+            <span class="synop-service-tag">🌲 DFCI</span>
+            <span class="synop-service-tag">🔴 Poteau incendie</span>
+            <span class="synop-service-tag">🚧 Circulation bloquée</span>
+            <span class="synop-service-tag">⛔ Route coupée</span>
+            <span class="synop-service-tag">⚠️ Zone dangereuse</span>
+            <span class="synop-service-tag">📍 Point custom</span>
+          </div>
+          <div style="max-height:150px;overflow-y:auto;" id="blips-liste"></div>
+        </div>
+        <div id="carto-map" style="width:100%;height:calc(100vh - 160px);min-height:500px;border-radius:8px;"></div>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="section-admin" class="section">
+        <div class="section-header">
+          <div class="section-title">CONFIGURATION</div>
+          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+        </div>
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" data-tab="centre"   onclick="showAdminTab('centre',event)">Config Systel</button>
+          <button class="admin-tab-btn"         data-tab="casernes" onclick="showAdminTab('casernes',event)">Casernes</button>
+          <button class="admin-tab-btn"         data-tab="engins"   onclick="showAdminTab('engins',event)">Engins</button>
+          <button class="admin-tab-btn"         data-tab="users"    onclick="showAdminTab('users',event)">Comptes</button>
+          <button class="admin-tab-btn"         data-tab="cossim"   onclick="showAdminTab('cossim',event)">Config COSSIM</button>
+          <button class="admin-tab-btn" data-tab="grades"   onclick="showAdminTab('grades',event)">Grades</button>
+          <button class="admin-tab-btn" data-tab="webhooks" onclick="showAdminTab('webhooks',event)">Webhooks</button>
+          <button class="admin-tab-btn"         data-tab="intranet" onclick="showAdminTab('intranet',event)">Config Intranet</button>
+        </div>
+
+        <div id="admin-tab-centre" class="admin-tab-content">
+          <div class="card"><div class="card-body">
+            <div class="form-group"><label>Nom Centre</label><input type="text" id="adm-centre-nom"></div>
+            <div class="form-group"><label>Code</label><input type="text" id="adm-centre-code"></div>
+            <button class="btn btn-primary" onclick="sauvegarderToutAdmin()">Enregistrer</button>
+          </div></div>
+          <div class="card" style="margin-top:20px;border:1px solid #fed7d7;">
+            <div class="card-body">
+              <h3 style="color:#c53030;margin-top:0;">Zone de Danger</h3>
+              <button class="btn btn-danger" onclick="resetSystem()">RÉINITIALISER TOUT LE SYSTÈME</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
+          <div class="card"><div class="card-body">
+            <table class="data-table"><thead><tr><th>Nom</th><th>Actions</th></tr></thead><tbody id="adm-casernes-list"></tbody></table>
+          </div></div>
+        </div>
+
+        <div id="admin-tab-engins" class="admin-tab-content" style="display:none;">
+          <div class="card"><div class="card-body">
+            <button class="btn btn-success btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
+            <table class="data-table"><thead><tr><th>Nom</th><th>Section</th><th>Actions</th></tr></thead><tbody id="adm-engins-list"></tbody></table>
+          </div></div>
+        </div>
+
+        <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
+          <div class="card"><div class="card-body">
+            <button class="btn btn-success btn-sm mb-10" onclick="ajouterUserAdmin()">+ Créer Compte</button>
+            <table class="data-table"><thead><tr><th>Photo</th><th>ID</th><th>Nom</th><th>Rôles</th><th>Actions</th></tr></thead><tbody id="adm-users-list"></tbody></table>
+          </div></div>
+        </div>
+
+        <div id="admin-tab-cossim" class="admin-tab-content" style="display:none;"></div>
+
+        <div id="admin-tab-grades" class="admin-tab-content" style="display:none;"></div>
+
+        <div id="admin-tab-webhooks" class="admin-tab-content" style="display:none;">
+          <div style="max-width:700px;display:flex;flex-direction:column;gap:20px;padding:4px 0;">
+            <div style="background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.3);border-radius:8px;padding:12px 16px;font-size:12px;color:#f6ad55;">
+              ⚠️ Les webhooks Discord permettent d'envoyer automatiquement des notifications dans vos salons Discord. Copiez l'URL du webhook depuis Discord : Paramètres du salon → Intégrations → Webhooks → Créer un webhook.
+            </div>
+
+            <div class="card"><div class="card-header">🚨 Webhook — Création d'intervention</div><div class="card-body">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
+              <input type="url" id="wh-intervention" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Envoyé automatiquement lors de chaque engagement d'intervention</div>
+            </div></div>
+
+            <div class="card"><div class="card-header">🖨️ Webhook — Ticket de départ</div><div class="card-body">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
+              <input type="url" id="wh-ticket" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Envoyé lors de chaque ticket de départ (par engin engagé)</div>
+            </div></div>
+
+            <div class="card"><div class="card-header">📊 Webhook — Synoptique en direct</div><div class="card-body">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
+              <input type="url" id="wh-synoptique" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Mise à jour toutes les 5 minutes avec les interventions en cours</div>
+            </div></div>
+
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-primary" onclick="saveWebhookConfig()">💾 Sauvegarder les webhooks</button>
+              <button class="btn btn-secondary" onclick="webhookSynoptique()">🧪 Tester synoptique</button>
+              <button class="btn btn-secondary" onclick="testWebhookIntervention()">🧪 Tester intervention</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-tab-intranet" class="admin-tab-content" style="display:none;">
+          <div class="card"><div class="card-body">
+            <div class="form-group"><label>Titre Portail</label><input type="text" id="adm-intra-title" onchange="INTRANET_CONFIG.title=this.value;sauvegarderDonnees();"></div>
+            <div class="form-group"><label>Sous-titre</label><input type="text" id="adm-intra-subtitle" onchange="INTRANET_CONFIG.subtitle=this.value;sauvegarderDonnees();"></div>
+            <hr>
+            <div id="adm-intranet-list"></div>
+          </div></div>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-layout -->
+</div><!-- /app-container -->
+
+<!-- MODALES -->
+<div id="modal-profil" class="modal">
+  <div class="modal-header">PROFIL UTILISATEUR</div>
+  <div class="modal-body" style="text-align:center;">
+    <div class="avatar-lg" style="margin:0 auto 15px;"><img id="prof-img" src=""></div>
+    <h2 id="prof-name">---</h2>
+    <p id="prof-grade" style="color:var(--accent);font-weight:800;"></p>
+    <p>Rôles : <span id="prof-role" class="badge"></span></p>
+  </div>
+  <div class="modal-footer"><button class="btn btn-secondary" onclick="fermerModal()">FERMER</button></div>
+</div>
+
+<div id="modal-user-admin" class="modal" style="width:560px;">
+  <div class="modal-header">GESTION DU COMPTE</div>
+  <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+    <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted);">
+      Seuls l'identifiant et le mot de passe sont requis pour la connexion.
+    </div>
+    <!-- Photo de profil -->
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img id="mu-photo-display" src="https://ui-avatars.com/api/?name=N&background=2d3748&color=fff&size=80" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color);">
+      <img id="mu-photo-preview" src="" style="display:none;"> <!-- Hidden helper for some JS functions -->
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Photo de profil</label>
+        <input type="file" id="mu-photo-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mu-photo-input').click()">Choisir une photo</button>
+      </div>
+      <input type="hidden" id="mu-photo-data" value="">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin:0;"><label>ID (Login) <span style="color:#e53e3e;">*</span></label><input type="text" id="mu-id" placeholder="ex: k.ianis, bapt"></div>
+      <div class="form-group" style="margin:0;"><label>Mot de passe <span style="color:#e53e3e;">*</span></label><input type="password" id="mu-pwd" placeholder="Mot de passe"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group" style="margin:0;"><label>NOM</label><input type="text" id="mu-lastname" placeholder="Dupont"></div>
+      <div class="form-group" style="margin:0;"><label>PRÉNOM</label><input type="text" id="mu-firstname" placeholder="Jean"></div>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Grade</label>
+      <select id="mu-grade" style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;"></select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Rôles</label>
+      <div id="mu-roles-container" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);"></div>
+    </div>
+    <input type="hidden" id="mu-tel" value="">
+    <input type="hidden" id="mu-email" value="">
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
+    <button class="btn btn-primary" onclick="sauvegarderUserAdmin()">ENREGISTRER</button>
+    <button class="btn btn-secondary" onclick="migrateFromLocalStorage()" style="margin-left:10px; font-size:10px;" title="Envoyer les données locales vers Firebase">☁️ SYNC CLOUD</button>
+  </div>
+</div>
+
+
+<!-- MODAL BER — plein écran, sans header -->
+<div id="modal-ber" style="display:none;position:fixed;inset:0;z-index:8000;background:transparent;flex-direction:column;align-items:center;justify-content:center;" onclick="closeBERIfOutside(event)">
+
+  <span id="ber-engin-nom" style="display:none;"></span>
+  <!-- Radio EADS SVG draggable -->
+  <div id="ber-drag-wrapper" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-55%);width:min(88vw,620px);cursor:move;user-select:none;" onmousedown="startBERDrag(event)">
+    <button onclick="fermerModal()" style="position:absolute;top:-36px;right:0;background:#e53e3e;border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-weight:900;font-size:16px;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+  <svg id="ber-svg" viewBox="0 0 650 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:10px;box-shadow:0 0 40px rgba(0,0,0,0.9);">
+    <!-- Corps de la radio -->
+    <rect x="0" y="0" width="650" height="240" rx="10" fill="#111"/>
+    <rect x="2" y="2" width="646" height="236" rx="9" fill="url(#bodyGrad)"/>
+    <defs>
+      <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2a2a2a"/>
+        <stop offset="100%" stop-color="#151515"/>
+      </linearGradient>
+      <linearGradient id="screenGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#b8d4e8"/>
+        <stop offset="100%" stop-color="#9ec0d8"/>
+      </linearGradient>
+      <linearGradient id="btnGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3a3a3a"/>
+        <stop offset="100%" stop-color="#222"/>
+      </linearGradient>
+      <radialGradient id="btnHover" cx="50%" cy="30%" r="60%">
+        <stop offset="0%" stop-color="#555"/>
+        <stop offset="100%" stop-color="#222"/>
+      </radialGradient>
+    </defs>
+    <!-- Bouton rouge en haut à gauche (call end) -->
+    <ellipse cx="38" cy="30" rx="16" ry="10" fill="#c00"/>
+    <ellipse cx="38" cy="29" rx="15" ry="9" fill="#e00"/>
+    <!-- Knob volume gauche -->
+    <circle cx="18" cy="120" r="14" fill="#333" stroke="#444" stroke-width="1.5"/>
+    <circle cx="18" cy="120" r="10" fill="#2a2a2a"/>
+    <circle cx="18" cy="110" r="3" fill="#555"/>
+    <!-- Logo EADS -->
+    <text x="20" y="175" font-family="Arial" font-size="9" fill="#555" font-weight="700" letter-spacing="1">EADS</text>
+    <!-- ===== ÉCRAN LCD ===== -->
+    <rect x="40" y="10" width="235" height="180" rx="4" fill="#222" stroke="#444" stroke-width="1"/>
+    <rect x="44" y="14" width="227" height="172" rx="3" fill="url(#screenGrad)"/>
+    <!-- Icônes status en haut de l'écran -->
+    <text x="50" y="30" font-family="Arial" font-size="10" fill="#1a4a6a">📡 |||</text>
+    <line x1="44" y1="35" x2="271" y2="35" stroke="#7a9ab0" stroke-width="0.8"/>
+    <!-- Zone texte LCD -->
+    <text id="ber-lcd-code" x="52" y="75" font-family="Courier New,monospace" font-size="22" font-weight="900" fill="#0a2a40">--</text>
+    <text id="ber-lcd-statut" x="52" y="100" font-family="Courier New,monospace" font-size="13" font-weight="800" fill="#0d3010">En attente</text>
+    <text id="ber-lcd-engin" x="52" y="118" font-family="Courier New,monospace" font-size="11" font-weight="700" fill="#1a4010"></text>
+    <!-- Softkeys bas écran -->
+    <line x1="44" y1="155" x2="271" y2="155" stroke="#7a9ab0" stroke-width="0.8"/>
+    <text x="55" y="170" font-family="Arial" font-size="9" fill="#2a5a7a">Menu</text>
+    <text x="215" y="170" font-family="Arial" font-size="9" fill="#2a5a7a">Abc</text>
+    <!-- ===== D-PAD ===== -->
+    <!-- Croix directionnelle -->
+    <rect x="298" y="68" width="22" height="64" rx="5" fill="#2a2a2a" stroke="#3a3a3a" stroke-width="1"/>
+    <rect x="284" y="82" width="50" height="36" rx="5" fill="#2a2a2a" stroke="#3a3a3a" stroke-width="1"/>
+    <circle cx="309" cy="100" r="16" fill="#222" stroke="#3a3a3a" stroke-width="1"/>
+    <polygon points="309,72 304,82 314,82" fill="#d08000"/>
+    <polygon points="309,128 304,118 314,118" fill="#d08000"/>
+    <polygon points="285,100 295,95 295,105" fill="#d08000"/>
+    <polygon points="333,100 323,95 323,105" fill="#d08000"/>
+    <!-- Appel vert et rouge -->
+    <ellipse cx="300" cy="148" rx="14" ry="9" fill="#155a00"/>
+    <ellipse cx="300" cy="147" rx="13" ry="8" fill="#22aa00"/>
+    <ellipse cx="320" cy="148" rx="14" ry="9" fill="#8a0000"/>
+    <ellipse cx="320" cy="147" rx="13" ry="8" fill="#cc0000"/>
+    <!-- Boutons spéciaux bas -->
+    <rect x="284" y="162" width="18" height="14" rx="3" fill="#2a2a2a"/>
+    <rect x="305" y="162" width="18" height="14" rx="3" fill="#2a2a2a"/>
+    <rect x="326" y="162" width="18" height="14" rx="3" fill="#2a2a2a"/>
+    <!-- ===== PAVÉ NUMÉRIQUE 3x3 ===== -->
+    <!-- Rangée 1: 1, 2ABC, 3DEF -->
+    <rect id="ber-btn-bg-1" x="360" y="8" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="390" y="32" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">1</text>
+    <text x="390" y="48" text-anchor="middle" font-family="Arial" font-size="8" fill="#b06000"></text>
+    <rect id="ber-btn-bg-2" x="430" y="8" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="460" y="32" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">2</text>
+    <text x="460" y="48" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">ABC</text>
+    <rect id="ber-btn-bg-3" x="500" y="8" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="530" y="32" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">3</text>
+    <text x="530" y="48" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">DEF</text>
+    <!-- Bouton urgence rouge -->
+    <rect x="572" y="8" width="58" height="66" rx="7" fill="#7a0000" stroke="#aa0000" stroke-width="1.5"/>
+    <text x="601" y="45" text-anchor="middle" font-size="22">⚠️</text>
+    <!-- Rangée 2: 4GHI, 5JKL, 6MNO -->
+    <rect id="ber-btn-bg-4" x="360" y="84" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="390" y="108" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">4</text>
+    <text x="390" y="124" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">GHI</text>
+    <rect id="ber-btn-bg-5" x="430" y="84" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="460" y="108" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">5</text>
+    <text x="460" y="124" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">JKL</text>
+    <rect id="ber-btn-bg-6" x="500" y="84" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="530" y="108" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">6</text>
+    <text x="530" y="124" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">MNO</text>
+    <!-- Rangée 3: 7PQ, 8TUV, 9WX -->
+    <rect id="ber-btn-bg-7" x="360" y="160" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="390" y="184" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">7</text>
+    <text x="390" y="200" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">PQR</text>
+    <rect id="ber-btn-bg-8" x="430" y="160" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="460" y="184" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">8</text>
+    <text x="460" y="200" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">TUV</text>
+    <rect id="ber-btn-bg-9" x="500" y="160" width="60" height="66" rx="7" fill="url(#btnGrad)" stroke="#3a3a3a" stroke-width="1.2"/>
+    <text x="530" y="184" text-anchor="middle" font-family="Courier New" font-size="20" font-weight="900" fill="#e08000">9</text>
+    <text x="530" y="200" text-anchor="middle" font-family="Arial" font-size="8" fill="#888">WXY</text>
+    <!-- Rangée bas: *, 0, # et icônes -->
+    <rect x="360" y="236" width="60" height="0" rx="4" fill="#1e1e1e"/>
+    <!-- Softkeys bas -->
+    <rect x="40" y="196" width="70" height="14" rx="7" fill="#1a1a1a" stroke="#d08000" stroke-width="1.2"/>
+    <rect x="120" y="196" width="90" height="14" rx="7" fill="#1a1a1a" stroke="#d08000" stroke-width="1.2"/>
+    <rect x="220" y="196" width="50" height="14" rx="7" fill="#1a1a1a" stroke="#d08000" stroke-width="1.2"/>
+    <!-- Volume haut-parleur droite -->
+    <text x="622" y="125" font-size="18" fill="#e08000">🔊</text>
+    <!-- Bords esthétiques -->
+    <rect x="0" y="0" width="650" height="240" rx="10" fill="none" stroke="#2a2a2a" stroke-width="2"/>
+    <!-- ZONES CLIQUABLES INVISIBLES (par-dessus le SVG) -->
+  </svg>
+  <!-- Boutons cliquables sur le SVG (calés sur viewBox 650x240) -->
+  <div style="position:absolute;inset:0;">
+    <!-- Rangée 1: x=360,430,500 y=8 w=60 h=66 dans viewBox 650x240 -->
+    <button class="ber-svg-btn" id="ber-btn-1" onclick="changerStatutBER(1)" title="1 – PARTIS"      style="left:55.4%;top:3.3%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-2" onclick="changerStatutBER(2)" title="2 – SSL"         style="left:66.2%;top:3.3%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-3" onclick="changerStatutBER(3)" title="3 – DEM RADIO"   style="left:76.9%;top:3.3%;width:9.2%;height:27.5%;"></button>
+    <!-- Rangée 2: y=84 -->
+    <button class="ber-svg-btn" id="ber-btn-4" onclick="changerStatutBER(4)" title="4 – URG RADIO"  style="left:55.4%;top:35%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-5" onclick="changerStatutBER(5)" title="5 – TRANSP CHU" style="left:66.2%;top:35%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-6" onclick="changerStatutBER(6)" title="6 – ARRIV CHU"  style="left:76.9%;top:35%;width:9.2%;height:27.5%;"></button>
+    <!-- Rangée 3: y=160 -->
+    <button class="ber-svg-btn" id="ber-btn-7" onclick="changerStatutBER(7)" title="7 – RET DISPO"  style="left:55.4%;top:66.7%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-8" onclick="changerStatutBER(8)" title="8 – RET INDISPO"style="left:66.2%;top:66.7%;width:9.2%;height:27.5%;"></button>
+    <button class="ber-svg-btn" id="ber-btn-9" onclick="changerStatutBER(9)" title="9 – DISPO CAS"  style="left:76.9%;top:66.7%;width:9.2%;height:27.5%;"></button>
+  </div>
+  </div>
+</div>
+
+<!-- MODAL AJOUT BLIP -->
+<div id="modal-ajout-blip" class="modal" style="width:400px;">
+  <div class="modal-header">📍 Ajouter un point</div>
+  <div class="modal-body">
+    <div class="form-group"><label>Type</label><select id="blip-type-select"></select></div>
+    <div class="form-group"><label>Label</label><input type="text" id="blip-label" placeholder="Ex: CS PTR, DFCI Col de Vence..."></div>
+    <div style="display:flex;gap:10px;">
+      <div class="form-group" style="flex:1;"><label>Lat</label><input type="number" id="blip-lat" step="0.1"></div>
+      <div class="form-group" style="flex:1;"><label>Lng</label><input type="number" id="blip-lng" step="0.1"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="fermerModal()">ANNULER</button>
+    <button class="btn btn-primary" onclick="confirmerAjoutBlip()">AJOUTER</button>
+  </div>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" onclick="fermerModal()"></div>
+<div id="toast" class="toast"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/synoptique.js"></script>
+<script src="js/interventions.js"></script>
+<script src="js/planning.js"></script>
+<script src="js/personnels.js"></script>
+<script src="js/annuaire.js"></script>
+<script src="js/feuille_garde.js"></script>
+<script src="js/cartographie.js"></script>
+  <button id="global-theme-btn" onclick="toggleTheme()" style="position:fixed;bottom:24px;right:24px;z-index:9998;width:44px;height:44px;border-radius:50%;border:none;background:var(--card-bg,#2d3748);color:var(--text-color,white);font-size:20px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);" title="Thème jour/nuit">☀️</button>
+
+<script>
+// Charger sounds.js de façon asynchrone pour ne pas bloquer la page
+(function() {
+  var s = document.createElement('script');
+  s.src = 'js/sounds.js';
+  s.async = true;
+  document.head.appendChild(s);
+})();
+</script>
+<script>
+// ===== SERVICE WORKER — BIP MULTIPAGE =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('SW enregistré');
+  }).catch(e => console.log('SW erreur', e));
+
+  // Recevoir les bips diffusés par le SW
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data?.type === 'BIP_ALERTE') {
+      const bip = event.data.bip;
+      // Trouver l'user courant depuis localStorage
+      const uid = localStorage.getItem('systel_current_user_id');
+      if (!uid || bip.userId !== uid) return; // pas pour moi
+      // Si on est sur index.html avec currentUser, laisser checkBipAlertes gérer
+      if (typeof afficherBipAlerte === 'function') return;
+      // Sinon : jouer le son + notification visuelle
+      if (typeof playBip === 'function') playBip(true);
+    }
+  });
+}
+
+// ===== Demander permission notifications =====
+document.addEventListener('DOMContentLoaded', () => {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+});
+</script>
+
+
+<script>
+// ===== BER DRAGGABLE =====
+let _berDragging = false, _berDX = 0, _berDY = 0, _berX = null, _berY = null;
+
+function startBERDrag(e) {
+  if (e.target.tagName === 'BUTTON') return; // Ne pas drag si clic sur bouton
+  const wrap = document.getElementById('ber-drag-wrapper');
+  if (!wrap) return;
+  _berDragging = true;
+  // Position actuelle
+  const rect = wrap.getBoundingClientRect();
+  _berDX = e.clientX - rect.left;
+  _berDY = e.clientY - rect.top;
+  e.preventDefault();
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!_berDragging) return;
+  const wrap = document.getElementById('ber-drag-wrapper');
+  if (!wrap) return;
+  const x = e.clientX - _berDX;
+  const y = e.clientY - _berDY;
+  wrap.style.transform = 'none';
+  wrap.style.left = x + 'px';
+  wrap.style.top = y + 'px';
+});
+
+document.addEventListener('mouseup', () => { _berDragging = false; });
+
+function closeBERIfOutside(e) {
+  // Fermer si clic en dehors du wrapper
+  if (e.target.id === 'modal-ber') fermerModal();
+}
+
+// Reset position BER quand on l'ouvre
+const _origOuvrirBER = typeof ouvrirBER !== 'undefined' ? ouvrirBER : null;
+function resetBERPosition() {
+  const wrap = document.getElementById('ber-drag-wrapper');
+  if (wrap) {
+    wrap.style.left = '50%';
+    wrap.style.top = '50%';
+    wrap.style.transform = 'translate(-50%,-55%)';
+  }
+}
+</script>
+
+</body>
+</html>
