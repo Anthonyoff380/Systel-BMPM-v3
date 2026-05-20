@@ -88,6 +88,7 @@ function toggleEnginStatut(id) {
   engin.statut = cycle[(idx + 1) % cycle.length];
   if (engin.statut !== 'intervention') { engin.berStatut = null; engin.chefAgres = null; }
   sauvegarderDonnees();
+  if (typeof fbSaveEngins === 'function') fbSaveEngins(ENGINS);
   updateSynoptique();
   if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
   showToast(engin.nom + " : " + engin.statut);

@@ -54,6 +54,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         synchroniserTout();
       });
     });
+
+      fbListenFeuilles((data) => {
+        FEUILLES_GARDE = data;
+        localStorage.setItem('systel_feuilles_garde', JSON.stringify(FEUILLES_GARDE));
+        const section = document.querySelector('.section.active-section');
+        if (section && section.id === 'section-feuille-garde') renderFeuilleGarde();
+        if (typeof updateSynoptique === 'function') updateSynoptique();
+      });
+
   }
 
   chargerDonnees();
@@ -65,12 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Hash pour détecter les modifs externes (autre onglet)
   let _lastSaveKey = '';
   setInterval(() => {
-    // Ne recharger depuis localStorage QUE si une autre instance a sauvegardé
-    const currentKey = localStorage.getItem('systel_save_ts') || '';
-    if (currentKey !== _lastSaveKey) {
-      chargerDonnees();
-      _lastSaveKey = currentKey;
-    }
+    // Synchronisation gérée uniquement par Firebase temps réel
     const section = document.querySelector('.section.active-section');
     if (section) {
       const id = section.id.replace('section-', '');
