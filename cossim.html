@@ -718,17 +718,39 @@
       data.engins.forEach(enginId => {
         const engin = ENGINS.find(e => e.id === enginId);
         if (engin) { engin.statut = 'intervention'; engin.berStatut = 1; engin.chefAgres = equipes[enginId]?.chefAgres || null; }
-        // BIP chef d'agrès
+        // BIP chef d'agrès — envoi Firestore (multi-utilisateur temps réel)
         const chefId = equipes[enginId]?.chefAgres;
         if (chefId) {
           const enginObj = ENGINS.find(e => e.id === enginId);
-          localStorage.setItem('systel_bip_' + chefId, JSON.stringify({
+          const bipData = {
             userId: chefId, enginId, enginNom: enginObj?.nom || enginId,
             interventionId: interNum, interNum, motif: data.sinistre,
             adresse: data.adresse, place: "Chef d'agrès", isChefAgres: true,
             acquitte: false, timestamp: Date.now()
-          }));
+          };
+          // Firestore = reçu par TOUS les navigateurs connectés
+          if (typeof fbSendBip === 'function') {
+            fbSendBip(chefId, bipData).catch(e => console.warn('Erreur bip Firestore:', e));
+          }
+          // Fallback localStorage pour l'onglet local
+          localStorage.setItem('systel_bip_' + chefId, JSON.stringify(bipData));
         }
+        // BIP tous les membres de l'équipe
+        const membres = equipes[enginId]?.membres || [];
+        membres.forEach(m => {
+          if (!m.userId || m.userId === equipes[enginId]?.chefAgres) return;
+          const enginObj = ENGINS.find(e => e.id === enginId);
+          const bipMembre = {
+            userId: m.userId, enginId, enginNom: enginObj?.nom || enginId,
+            interventionId: interNum, interNum, motif: data.sinistre,
+            adresse: data.adresse, place: m.posteLabel || 'Équipier',
+            acquitte: false, timestamp: Date.now()
+          };
+          if (typeof fbSendBip === 'function') {
+            fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
+          }
+          localStorage.setItem('systel_bip_' + m.userId, JSON.stringify(bipMembre));
+        });
         // Ouvrir ticket départ dans un nouvel onglet
         const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
         setTimeout(() => window.open('ticket_depart.html?' + tParams.toString(), '_blank'), 500);
