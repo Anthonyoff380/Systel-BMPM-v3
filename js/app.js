@@ -33,34 +33,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       
       // Activer les écouteurs temps réel
-      fbListenInterventions((data) => {
-        INTERVENTIONS = data;
-        localStorage.setItem('systel_interventions', JSON.stringify(INTERVENTIONS));
-        const section = document.querySelector('.section.active-section');
-        if (section && section.id === 'section-synoptique') updateSynoptique();
-        if (section && section.id === 'section-interventions') renderInterventionsSynoptique();
-      });
-      
-      fbListenEngins((data) => {
-        ENGINS = data;
-        localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
-        const section = document.querySelector('.section.active-section');
-        if (section && section.id === 'section-synoptique') updateSynoptique();
-      });
-      
-      fbListenUsers((data) => {
-         USERS = data;
-         synchroniserTout();
-        });
+      // Listeners gérés dans onFirebaseReady() — évite les doubles
     });
-
-      fbListenFeuilles((data) => {
-        FEUILLES_GARDE = data;
-        localStorage.setItem('systel_feuilles_garde', JSON.stringify(FEUILLES_GARDE));
-        const section = document.querySelector('.section.active-section');
-        if (section && section.id === 'section-feuille-garde') renderFeuilleGarde();
-        if (typeof updateSynoptique === 'function') updateSynoptique();
-      });
 
   }
 
@@ -940,11 +914,15 @@ function renderAdminEngins() {
 }
 function supprimerEnginAdmin(idx) {
   if (!confirm("Supprimer cet engin ?")) return;
+  const enginId = ENGINS[idx]?.id;
   ENGINS.splice(idx, 1);
-  // Forcer la sauvegarde ET mettre à jour save_ts
   localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
   localStorage.setItem('systel_save_ts', Date.now().toString());
-  sauvegarderDonnees();
+  // Supprimer dans Firestore (sinon le listener le remet)
+  if (enginId && typeof db !== 'undefined') {
+    db.collection(COL.ENGINS).doc(String(enginId)).delete()
+      .catch(e => console.warn('Erreur suppression engin Firestore:', e));
+  }
   renderAdminEngins();
   updateSynoptique();
   showToast("Engin supprimé !");
@@ -1477,7 +1455,11 @@ function supprimerInterHistorique(interId) {
   const idx = INTERVENTIONS.findIndex(i => i.id === interId);
   if (idx !== -1) {
     INTERVENTIONS.splice(idx, 1);
-    sauvegarderDonnees();
+    // Supprimer dans Firestore (sinon le listener la remet)
+    if (typeof db !== 'undefined') {
+      db.collection(COL.INTERVENTIONS).doc(String(interId)).delete()
+        .catch(e => console.warn('Erreur suppression intervention Firestore:', e));
+    }
     renderHistorique();
     showToast('Intervention supprimée de l\'historique');
   }
@@ -1501,30 +1483,7 @@ sauvegarderDonnees = function() {
 };
 
 // ===== ACTIVATION DES ÉCOUTEURS FIREBASE =====
-// Activer la synchronisation de présence et des bips
-if (typeof _fbReady !== 'undefined' && _fbReady && typeof fbListenPresence === 'function') {
-  fbListenPresence((users) => {
-    // Mettre à jour USERS avec les données de présence
-    users.forEach(u => {
-      const existing = USERS.find(x => x.id === u.id);
-      if (existing) {
-        existing.presence = u.presence;
-      }
-    });
-    synchroniserTout();
-  });
-  
-  // Écouter les bips pour l'utilisateur actuel
-  if (currentUser && typeof fbListenBipAlerts === 'function') {
-    fbListenBipAlerts(currentUser.id, (alert) => {
-      console.log("🔔 Bip reçu:", alert);
-      // Jouer le son du bip
-      const audio = new Audio('sounds/bip.mp3');
-      audio.play().catch(e => console.warn("Erreur lecture bip:", e));
-      showToast("Bip reçu!", "info");
-    });
-  }
-}
+// Les listeners sont gérés dans onFirebaseReady() et initApp()
 
 // ===== DIAGNOSTIC FIREBASE =====
 let fbDiagnostics = {
@@ -1568,43 +1527,7 @@ function testBipNow(e) {
 // Mettre à jour la barre toutes les secondes
 setInterval(updateDiagnosticBar, 1000);
 
-// ===== FORCER L'ACTIVATION DES LISTENERS APRÈS CONNEXION =====
-const originalInitApp = initApp;
-initApp = function() {
-  originalInitApp();
-  
-  // Attendre 500ms pour que Firebase soit prêt
-  setTimeout(() => {
-    if (_fbReady && currentUser) {
-      console.log("🔥 Activation forcée des listeners pour:", currentUser.id);
-      
-      // Écouter les bips via fbListenBips (Firestore temps réel)
-      if (typeof fbListenBips === 'function') {
-        fbListenBips(currentUser.id, (bip) => {
-          if (bip.read) return;
-          console.log("🔔 BIP REÇU:", bip);
-          fbDiagnostics.lastBip = new Date();
-          localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify({ ...bip, acquitte: false }));
-          if (typeof afficherBipAlerte === 'function') afficherBipAlerte(bip);
-          updateDiagnosticBar();
-        });
-      }
-      
-      // Écouter les changements de présence
-      if (typeof fbListenPresence === 'function') {
-        fbListenPresence((users) => {
-          fbDiagnostics.lastSync = new Date();
-          users.forEach(u => {
-            const existing = USERS.find(x => x.id === u.id);
-            if (existing) existing.presence = u.presence;
-          });
-          synchroniserTout();
-          updateDiagnosticBar();
-        });
-      }
-    }
-  }, 500);
-};
+// Les listeners sont gérés dans onFirebaseReady() et initApp() — pas de duplication
 
 // ===== ACTIVATION SONORE EXPLICITE =====
 let audioEnabled = false;
@@ -1655,7 +1578,14 @@ onFirebaseReady(() => {
   
   // Démarrer le heartbeat
   startHeartbeat(currentUser.id);
-  
+
+  // Écouter les utilisateurs (synoptique + présences)
+  fbListenUsers((data) => {
+    USERS = data;
+    synchroniserTout();
+    if (typeof renderPersonnelsSynoptique === 'function') renderPersonnelsSynoptique();
+  });
+
   // Écouter les feuilles de garde — ne pas appeler synchroniserTout (ferme les selects ouverts)
   fbListenFeuilles((feuilles) => {
     FEUILLES_GARDE = feuilles;
