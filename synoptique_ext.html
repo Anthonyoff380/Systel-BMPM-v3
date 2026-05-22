@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Synoptique Externe — SYSTEL</title>
+  <script src="js/data.js"></script>
+  <style>
+    :root {
+      --bg-main:#f0f4f8; --card-bg:#fff; --border-color:#e2e8f0;
+      --text-color:#1a202c; --text-muted:#718096; --accent:#e53e3e;
+      --nav-bg:#1a202c; --nav-text:white;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg-main); color:var(--text-color); font-family:'Inter','Segoe UI',system-ui,sans-serif; min-height:100vh; }
+
+    /* HEADER identique au SYSTEL */
+    .header {
+      background:var(--nav-bg); color:var(--nav-text);
+      height:48px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 20px; border-bottom:3px solid var(--accent); position:sticky; top:0; z-index:100;
+    }
+    .header-logo { font-size:18px; font-weight:900; letter-spacing:-0.5px; }
+    .header-logo span { color:var(--accent); }
+    .header-right { display:flex; align-items:center; gap:20px; font-size:13px; color:#a0aec0; }
+    .header-badge { background:rgba(229,62,62,0.2); color:#fc8181; border:1px solid rgba(229,62,62,0.3); padding:3px 10px; border-radius:12px; font-size:12px; font-weight:800; }
+    .header-clock { font-size:15px; font-weight:700; color:white; font-variant-numeric:tabular-nums; }
+
+    /* LAYOUT */
+    .main { display:grid; grid-template-columns:1fr 1fr; gap:0; height:calc(100vh - 48px); }
+    .col { padding:16px 20px; overflow-y:auto; border-right:1px solid var(--border-color); }
+    .col:last-child { border-right:none; }
+    .col-title { font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; }
+    .col-badge { background:var(--accent); color:white; font-size:10px; font-weight:800; padding:1px 8px; border-radius:10px; }
+
+    /* CASERNES */
+    .caserne-group { margin-bottom:14px; }
+    .caserne-name { font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; padding:5px 0; border-bottom:1px solid var(--border-color); margin-bottom:8px; }
+    .section-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; padding:6px 8px; border-radius:6px; background:var(--card-bg); border:1px solid var(--border-color); }
+    .section-label { font-size:11px; color:var(--text-muted); font-weight:700; min-width:80px; flex-shrink:0; }
+    .engins-list { display:flex; flex-wrap:wrap; gap:5px; flex:1; }
+    .engin-chip {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:4px 10px; border-radius:5px; font-size:11px; font-weight:800;
+      border:1.5px solid var(--border-color); background:var(--card-bg); color:var(--text-color);
+    }
+    .engin-chip.disponible { background:#f0fff4; border-color:#9ae6b4; color:#276749; }
+    .engin-chip.indisponible { background:#fff5f5; border-color:#feb2b2; color:#9b2c2c; }
+    .engin-chip.intervention { background:#fffbeb; border-color:#f6e05e; color:#744210; animation:pulseLight 1.5s infinite; }
+    @keyframes pulseLight { 0%,100%{border-color:#f6e05e;} 50%{border-color:#d69e2e;} }
+    .dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+    .dot-dispo { background:#38a169; }
+    .dot-inter { background:#d69e2e; animation:pulse 1.2s infinite; }
+    .dot-indispo { background:#e53e3e; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    .ber-tag { font-size:9px; font-weight:900; padding:1px 5px; border-radius:3px; background:#d69e2e; color:#fff; }
+
+    /* INTERVENTIONS */
+    .inter-card { background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; margin-bottom:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .inter-card-header { padding:10px 14px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:background 0.15s; }
+    .inter-card-header:hover { background:var(--bg-main); }
+    .inter-num { font-size:13px; font-weight:900; color:var(--accent); }
+    .inter-time { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+    .inter-type { font-size:13px; font-weight:800; flex:1; }
+    .inter-lieu { font-size:12px; color:var(--text-muted); }
+    .inter-status { font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px; background:#fff5f5; color:var(--accent); border:1px solid #feb2b2; white-space:nowrap; }
+    .inter-body { display:none; padding:10px 14px 12px; border-top:1px solid var(--border-color); background:var(--bg-main); }
+    .inter-body.open { display:block; }
+    .inter-engins { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0; }
+    .inter-engin-tag { padding:3px 10px; border-radius:4px; font-size:11px; font-weight:800; border:1.5px solid; }
+    .inter-services { display:flex; flex-wrap:wrap; gap:3px; margin-bottom:6px; }
+    .svc-tag { font-size:10px; color:var(--text-muted); background:var(--card-bg); border:1px solid var(--border-color); padding:1px 6px; border-radius:3px; }
+    .inter-obs { font-size:11px; color:var(--text-muted); font-style:italic; margin-top:4px; }
+
+    /* TICKER */
+    .ticker-bar { height:26px; background:var(--nav-bg); border-top:1px solid #2d3748; display:flex; align-items:center; overflow:hidden; position:fixed; bottom:0; left:0; right:0; }
+    .ticker-content { display:flex; gap:60px; animation:ticker 40s linear infinite; white-space:nowrap; padding-left:100%; }
+    @keyframes ticker { from{transform:translateX(0);} to{transform:translateX(-50%);} }
+    .ticker-item { font-size:11px; color:#a0aec0; }
+    .ticker-item strong { color:var(--accent); }
+
+    /* VIDE */
+    .empty-state { text-align:center; padding:50px 20px; color:var(--text-muted); }
+    .empty-state .icon { font-size:40px; margin-bottom:10px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">SYS<span>TEL</span> <span style="font-size:11px;color:#4a5568;font-weight:500;">Synoptique Externe</span></div>
+  <div class="header-right">
+    <span id="hdr-centre">PTR</span>
+    <span id="hdr-inter" class="header-badge">0 intervention(s)</span>
+    <span id="hdr-engins" style="font-size:12px;">0 engin(s) engagé(s)</span>
+    <span class="header-clock" id="hdr-clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="col">
+    <div class="col-title">
+      <span>Disponibilité des engins</span>
+      <span class="col-badge" id="engins-count">0</span>
+    </div>
+    <div id="engins-container"></div>
+  </div>
+  <div class="col" style="padding-bottom:36px;">
+    <div class="col-title">
+      <span>Interventions en cours</span>
+      <span class="col-badge" id="inter-count">0</span>
+    </div>
+    <div id="inter-container"></div>
+  </div>
+</div>
+
+<div class="ticker-bar"><div class="ticker-content" id="ticker"></div></div>
+
+<script>
+function ld(k){try{const v=localStorage.getItem('systel_'+k);return v?JSON.parse(v):null;}catch(e){return null;}}
+
+function refresh() {
+  const cfg=ld('config'); if(cfg) Object.assign(CONFIG,cfg);
+  const cas=ld('casernes'); if(cas) CASERNES=cas;
+  const eng=ld('engins'); if(eng && eng.length>0) ENGINS=eng;
+  const ivs=ld('interventions'); if(ivs) INTERVENTIONS=ivs;
+
+  const now=new Date();
+  document.getElementById('hdr-clock').textContent = now.toLocaleTimeString('fr-FR');
+  document.getElementById('hdr-centre').textContent = CONFIG?.centre||'PTR';
+
+  const enCours = INTERVENTIONS.filter(i=>i.statut==='En cours');
+  const nbEngins = enCours.reduce((a,i)=>a+(i.engins||[]).length,0);
+  document.getElementById('hdr-inter').textContent = enCours.length + ' intervention(s)';
+  document.getElementById('hdr-inter').style.background = enCours.length>0 ? 'rgba(229,62,62,0.2)' : 'rgba(56,161,105,0.2)';
+  document.getElementById('hdr-inter').style.color = enCours.length>0 ? '#fc8181' : '#68d391';
+  document.getElementById('hdr-engins').textContent = nbEngins + ' engin(s) engagé(s)';
+  document.getElementById('engins-count').textContent = ENGINS.length;
+  document.getElementById('inter-count').textContent = enCours.length;
+
+  // ENGINS
+  const engContainer = document.getElementById('engins-container');
+  if (ENGINS.length === 0) {
+    engContainer.innerHTML = '<div class="empty-state"><div class="icon">🚒</div><div>Aucun engin configuré</div></div>';
+  } else {
+    engContainer.innerHTML = CASERNES.map(caserne => {
+      const sections = caserne.sections.map(section => {
+        const engs = ENGINS.filter(e=>e.section===section.id);
+        if (!engs.length) return '';
+        const chips = engs.map(e => {
+          const ber = e.berStatut ? BER_STATUTS?.find(b=>b.code===e.berStatut) : null;
+          const cls = e.statut==='disponible'?'disponible':e.statut==='indisponible'?'indisponible':'intervention';
+          const dotCls = cls==='disponible'?'dot-dispo':cls==='indisponible'?'dot-indispo':'dot-inter';
+          return `<span class="engin-chip ${cls}" title="${e.statut}${ber?' — '+ber.label:''}">
+            <span class="dot ${dotCls}"></span>${e.nom}${ber?`<span class="ber-tag">${ber.code}</span>`:''}
+          </span>`;
+        }).join('');
+        return `<div class="section-row"><span class="section-label">${section.nom}</span><div class="engins-list">${chips}</div></div>`;
+      }).join('');
+      if (!sections.trim()) return '';
+      return `<div class="caserne-group"><div class="caserne-name">${caserne.nom}</div>${sections}</div>`;
+    }).join('') || '<div class="empty-state"><div class="icon">🚒</div><div>Aucun engin</div></div>';
+  }
+
+  // INTERVENTIONS
+  const interContainer = document.getElementById('inter-container');
+  if (!enCours.length) {
+    interContainer.innerHTML = '<div class="empty-state"><div class="icon" style="color:#38a169;">✅</div><div>Aucune intervention en cours</div></div>';
+  } else {
+    interContainer.innerHTML = enCours.map(inter => {
+      const d = inter.date?new Date(inter.date):now;
+      const dStr = d.toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const engChips = (inter.engins||[]).map(eId=>{
+        const e=ENGINS.find(x=>x.id===eId);
+        const ber=e?.berStatut?BER_STATUTS?.find(b=>b.code===e.berStatut):null;
+        const style=ber?`border-color:#d69e2e;color:#744210;`:'border-color:#f97316;color:#c05621;';
+        return `<span class="inter-engin-tag" style="${style}">${e?.nom||eId}${ber?' ('+ber.code+')':''}</span>`;
+      }).join('');
+      const svcs=(inter.services||[]).map(s=>`<span class="svc-tag">${s}</span>`).join('');
+      return `<div class="inter-card">
+        <div class="inter-card-header" onclick="this.nextElementSibling.classList.toggle('open')">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+              <span class="inter-num">#${inter.numero||inter.id}</span>
+              <span class="inter-time">${dStr}</span>
+            </div>
+            <div class="inter-type">${inter.type||'INTERVENTION'}</div>
+            <div class="inter-lieu">📍 ${inter.adresse||'--'}</div>
+          </div>
+          <span class="inter-status">EN COURS</span>
+        </div>
+        <div class="inter-body">
+          ${svcs?`<div class="inter-services">${svcs}</div>`:''}
+          <div class="inter-engins">${engChips||'<span style="color:var(--text-muted);font-size:11px;">Aucun engin</span>'}</div>
+          ${inter.observations?`<div class="inter-obs">${inter.observations}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // TICKER
+  const items = enCours.map(i=>`<span class="ticker-item"><strong>#${i.numero||i.id}</strong> ${i.type||''} — ${i.adresse||''}</span>`);
+  if (!items.length) items.push('<span class="ticker-item">✅ Aucune intervention en cours</span>');
+  const ticker = document.getElementById('ticker');
+  ticker.innerHTML = [...items,...items].join('<span class="ticker-item" style="color:#2d3748;"> | </span>');
+}
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>

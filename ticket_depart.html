@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TICKET DE DÉPART</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#e8e8e8;font-family:Arial,Helvetica,sans-serif;color:#000;}
+    .print-bar{display:flex;gap:10px;justify-content:center;padding:10px;background:#2d3748;position:sticky;top:0;z-index:10;}
+    .btn-print{background:#e53e3e;color:#fff;border:none;padding:8px 24px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;}
+    .btn-close-pg{background:#fff;color:#333;border:1px solid #ccc;padding:8px 18px;border-radius:5px;font-size:13px;cursor:pointer;}
+    .page{background:#fff;width:210mm;margin:10px auto;padding:22mm 15mm 14mm;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+
+    /* HEADER */
+    .doc-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;margin-bottom:10mm;gap:5mm;}
+    .doc-top-left{font-size:9.5pt;line-height:1.7;}
+    .doc-top-mid{text-align:center;font-size:28pt;font-weight:900;letter-spacing:3px;padding:0 8mm;}
+    .doc-top-right{text-align:right;}
+    .engin-big{font-size:26pt;font-weight:900;letter-spacing:-0.5px;}
+    .engin-sub{font-size:9pt;color:#555;margin-top:1mm;}
+
+    /* CADRE SINISTRE */
+    .sinistre-box{border:2.5px solid #000;text-align:center;padding:7px;margin-bottom:6mm;margin-top:4mm;}
+    .sinistre-box div{font-size:13pt;font-weight:900;letter-spacing:2px;}
+
+    /* SECTIONS */
+    .section{border:1.5px solid #000;margin-bottom:3.5mm;}
+    .s-title{background:#000;color:#fff;text-align:center;font-size:10pt;font-weight:700;padding:2px 6px;letter-spacing:1px;}
+    .s-body{padding:3.5mm 5mm;}
+
+    /* GRILLE */
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5mm 10mm;}
+    .irow{display:flex;gap:4px;align-items:baseline;min-height:6mm;}
+    .ilbl{font-weight:700;white-space:nowrap;min-width:88px;font-size:9.5pt;}
+    .ival{border-bottom:1px solid #bbb;flex:1;min-height:5.5mm;padding-left:2px;font-size:9.5pt;line-height:1.4;}
+
+    /* OBS */
+    .obs-body{font-size:9.5pt;line-height:1.9;min-height:22mm;white-space:pre-wrap;}
+
+    /* ARMEMENT */
+    .arm-table{width:100%;border-collapse:collapse;font-size:9.5pt;}
+    .arm-table th{font-weight:700;padding:3px 6px;border-bottom:1.5px solid #000;font-size:9pt;text-align:left;font-family:Arial;}
+    .arm-table td{padding:2.5px 5px;border-bottom:1px solid #ddd;}
+    .arm-table tr:last-child td{border-bottom:none;}
+
+    /* BAS 2 COL */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm;margin-top:3.5mm;}
+    .btable{width:100%;border-collapse:collapse;font-size:9pt;}
+    .btable th{font-weight:700;padding:1.5px 4px;border-bottom:1.5px solid #000;text-align:left;}
+    .btable td{padding:2px 4px;border-bottom:1px solid #eee;}
+    .btable tr:last-child td{border-bottom:none;}
+    .empty-row{color:#aaa;font-style:italic;font-size:8.5pt;}
+
+    @media print{
+      body{background:#fff;}
+      .print-bar{display:none;}
+      .page{margin:0;padding:10mm 14mm;box-shadow:none;width:100%;}
+    }
+  </style>
+</head>
+<body>
+<div class="print-bar">
+  <button class="btn-print" onclick="window.print()">🖨️ IMPRIMER</button>
+  <button class="btn-close-pg" onclick="window.close()">✕ Fermer</button>
+</div>
+
+<div class="page">
+  <div class="doc-top">
+    <div class="doc-top-left">
+      <div id="h-type" style="font-weight:700;">DÉPART STANDARD</div>
+      <div id="h-datetime" style="font-size:9pt;color:#444;"></div>
+    </div>
+    <div class="doc-top-mid" id="h-centre">PTR</div>
+    <div class="doc-top-right">
+      <div class="engin-big" id="h-engin">--</div>
+      <div class="engin-sub" id="h-num">N° --</div>
+    </div>
+  </div>
+
+  <div class="sinistre-box"><div id="t-sinistre">INTERVENTION</div></div>
+
+  <div class="section">
+    <div class="s-title">LOCALISATION DU SINISTRE</div>
+    <div class="s-body">
+      <div class="info-grid">
+        <div class="irow"><span class="ilbl">Commune:</span><span class="ival" id="t-commune"></span></div>
+        <div class="irow"><span class="ilbl">Numéro:</span><span class="ival" id="t-numero"></span></div>
+        <div class="irow"><span class="ilbl">Voie:</span><span class="ival" id="t-voie"></span></div>
+        <div class="irow"><span class="ilbl">ETARE:</span><span class="ival" id="t-erp"></span></div>
+        <div class="irow"><span class="ilbl">Précisions:</span><span class="ival" id="t-precision"></span></div>
+        <div class="irow"><span class="ilbl">Consigne:</span><span class="ival" id="t-consigne"></span></div>
+        <div class="irow"><span class="ilbl">Contact:</span><span class="ival" id="t-contact"></span></div>
+        <div class="irow"><span class="ilbl">N° Contre-appel:</span><span class="ival" id="t-nca"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="s-title">OBSERVATIONS</div>
+    <div class="s-body"><div class="obs-body" id="t-obs">-</div></div>
+  </div>
+
+  <div class="section">
+    <div class="s-title">ARMEMENT DES VÉHICULES</div>
+    <div class="s-body">
+      <table class="arm-table">
+        <thead><tr><th>Engin</th><th>GFO</th><th>POSTE</th><th>GRADE</th><th>NOM</th></tr></thead>
+        <tbody id="t-armement"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="section" style="margin-bottom:0;">
+      <div class="s-title">AUTRES MOYENS ALERTÉS</div>
+      <div class="s-body" style="padding:2.5mm 4mm;">
+        <table class="btable">
+          <thead><tr><th>CENTRE</th><th>GFO</th><th>ENGIN</th></tr></thead>
+          <tbody id="t-autres"><tr><td colspan="3" class="empty-row">-</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section" style="margin-bottom:0;">
+      <div class="s-title">MOYENS DÉJÀ ENGAGÉS</div>
+      <div class="s-body" style="padding:2.5mm 4mm;">
+        <table class="btable">
+          <thead><tr><th>CENTRE</th><th>ENGIN</th><th>DATE/HEURE</th></tr></thead>
+          <tbody id="t-engages"><tr><td colspan="3" class="empty-row">-</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/sounds.js"></script>
+<script src="js/data.js"></script>
+<script>
+// Charger toutes les données
+function ld(k){try{const v=localStorage.getItem('systel_'+k);return v?JSON.parse(v):null;}catch(e){return null;}}
+const cfg=ld('config'); if(cfg) Object.assign(CONFIG,cfg);
+const cas=ld('casernes'); if(cas) CASERNES=cas;
+const eng=ld('engins'); if(eng) ENGINS=eng;
+const usr=ld('users'); if(usr) USERS=usr;
+const ivs=ld('interventions'); if(ivs) INTERVENTIONS=ivs;
+const ccfg=ld('cossim_config'); if(ccfg) Object.assign(COSSIM_CONFIG,ccfg);
+
+function p2(n){return String(n).padStart(2,'0');}
+function fdt(d){return p2(d.getDate())+'-'+p2(d.getMonth()+1)+'-'+d.getFullYear()+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());}
+function getCentre(sectionId){
+  for(const c of CASERNES){for(const s of c.sections){if(s.id===sectionId)return c.nom;}}
+  return CONFIG?.centre||'--';
+}
+
+const params=new URLSearchParams(window.location.search);
+const interId=params.get('inter');
+const enginId=params.get('engin');
+const now=new Date();
+
+const inter=INTERVENTIONS.find(i=>i.id===interId)||{};
+const engin=ENGINS.find(e=>e.id===enginId)||{};
+const interDate=inter.date?new Date(inter.date):now;
+
+// En-tête
+document.getElementById('h-type').textContent = inter.renfortDe ? 'RENFORT' : 'DÉPART STANDARD';
+document.getElementById('h-datetime').textContent = fdt(interDate);
+// Centre = abréviation configurée
+const centreNom = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
+document.getElementById('h-centre').textContent = centreNom;
+document.getElementById('h-engin').textContent = engin.nom || enginId || '--';
+// N° = numéro d'intervention
+document.getElementById('h-num').textContent = 'N° ' + (inter.numero || inter.id || '--');
+
+// Sinistre
+document.getElementById('t-sinistre').textContent = (inter.type||'INTERVENTION').toUpperCase();
+
+// Localisation
+document.getElementById('t-commune').textContent = inter.commune||'--';
+document.getElementById('t-numero').textContent = inter.numero||'';
+document.getElementById('t-voie').textContent = inter.voie||'--';
+document.getElementById('t-erp').textContent = inter.etablissement||'-';
+document.getElementById('t-precision').textContent = inter.precision||'-';
+// Consigne = depuis config ERP si disponible
+const consigneERP = COSSIM_CONFIG?.erp_consignes?.[inter.etablissement] || inter.consigne || 'ERP fermé.';
+document.getElementById('t-consigne').textContent = consigneERP;
+document.getElementById('t-contact').textContent = inter.contact||'-';
+document.getElementById('t-nca').textContent = inter.nca||'-';
+document.getElementById('t-obs').textContent = inter.observations||'-';
+
+// Armement — GFO depuis equipes + membres
+const armTbody = document.getElementById('t-armement');
+const equipeData = inter.equipes?.[enginId] || {};
+const membres = equipeData.membres || [];
+const gfo = inter.enginsGFO?.[enginId] || equipeData.gfo || '--';
+
+if(membres.length > 0){
+  armTbody.innerHTML = membres.map(m => {
+    const u = USERS.find(x=>x.id===m.userId);
+    return `<tr>
+      <td>${engin.nom||'--'}</td>
+      <td><strong>${gfo}</strong></td>
+      <td>${m.abrev||m.posteLabel||'--'}</td>
+      <td>${u?.grade||'--'}</td>
+      <td><strong>${u?(u.lastname+' '+u.firstname).trim():'--'}</strong></td>
+    </tr>`;
+  }).join('');
+} else {
+  armTbody.innerHTML = `<tr><td>${engin.nom||'--'}</td><td>${gfo}</td><td>C/A</td><td>--</td><td>--</td></tr>`;
+}
+
+// Autres moyens alertés (renforts demandés)
+const autresMoyens = inter.autresMoyensAlertes || [];
+if(autresMoyens.length > 0){
+  document.getElementById('t-autres').innerHTML = autresMoyens.map(m => {
+    const e = ENGINS.find(x=>x.id===m.enginId);
+    return `<tr><td>${getCentre(e?.section)}</td><td>${m.gfo||'--'}</td><td>${m.enginNom||e?.nom||m.enginId}</td></tr>`;
+  }).join('');
+}
+
+// Moyens déjà engagés (autres engins de la même inter, en cours)
+const autresEngins = (inter.engins||[]).filter(id=>id!==enginId);
+if(autresEngins.length > 0){
+  document.getElementById('t-engages').innerHTML = autresEngins.map(id => {
+    const e = ENGINS.find(x=>x.id===id);
+    return `<tr><td>${getCentre(e?.section)}</td><td>${e?.nom||id}</td><td>${fdt(interDate)}</td></tr>`;
+  }).join('');
+}
+
+document.title = 'TICKET DÉPART — '+(engin.nom||'')+' — '+(inter.numero||'');
+</script>
+</body>
+</html>
