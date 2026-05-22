@@ -376,7 +376,7 @@
           ENGINS = engins;
           synchroniserTout();
           const page = document.querySelector('.cossim-page.active');
-          if (page && page.id === 'cossim-page-engagement') renderEnginsEngagement();
+          if (page && page.id === 'cossim-page-creation') renderEnginsEngagement();
           if (page && page.id === 'cossim-page-synoptique') renderSynoptiqueCossim();
         });
       }
@@ -559,8 +559,9 @@
       list.innerHTML = ENGINS.map(e => {
         const sel = !!selectedEngins[e.id];
         const dotCls = e.statut === 'intervention' ? 'inter' : e.statut === 'indisponible' ? 'indispo' : '';
-        const fg = FEUILLES_GARDE?.[e.id]?.[today];
-        const armé = fg ? `<span style="font-size:9px;background:#38a169;color:white;padding:1px 5px;border-radius:3px;margin-left:4px;">Armé (${fg.equipe?.length||0})</span>` : '';
+        const fgToday = FEUILLES_GARDE?.[today];
+        const fgEngin = fgToday?.engins?.find(fe => fe.id === e.id);
+        const armé = fgEngin ? `<span style="font-size:9px;background:#38a169;color:white;padding:1px 5px;border-radius:3px;margin-left:4px;">Armé</span>` : '';
         const disabled = e.statut === 'indisponible' ? 'opacity:0.4;cursor:not-allowed;' : '';
         return `<div class="synop-engin-cossim ${sel?'selected':''}" onclick="${e.statut!=='indisponible'?`toggleEnginEngagement('${e.id}')`:'void 0'}" title="${e.nom} — ${e.statut}" style="${disabled}">
           <span class="statut-dot ${dotCls}"></span>
@@ -579,9 +580,10 @@
         if (!engin) return '';
         const postes = engin.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'},{id:'eq1',label:'Équipier 1',abrev:'EQ1'}];
         // Feuille de garde du jour pour pré-remplir
-        const fg = FEUILLES_GARDE?.[enginId]?.[today];
-        const fgEquipe = fg?.equipe || [];
-        const fgBadge = fg
+        const fgToday = FEUILLES_GARDE?.[today];
+        const fgEngin = fgToday?.engins?.find(fe => fe.id === enginId);
+        const fgEquipe = fgEngin?.postes || [];
+        const fgBadge = fgEngin
           ? `<span style="font-size:10px;background:#38a169;color:white;padding:1px 8px;border-radius:3px;">✓ Feuille de garde du jour</span>`
           : `<span style="font-size:10px;color:#a0aec0;font-style:italic;">Aucune feuille de garde pour aujourd'hui</span>`;
         // GFO : utiliser les presets de l'engin si définis, sinon tous les types
@@ -599,8 +601,8 @@
             </select>
           </div>
           ${postes.map((p, pi) => {
-            const fgMembre = fgEquipe.find(m => m.fonction === p.label) || fgEquipe[pi];
-            const preselect = fgMembre?.id || '';
+            const fgMembre = fgEquipe.find(m => m.id === p.id) || fgEquipe[pi];
+            const preselect = fgMembre?.userId || '';
             return `<div class="equipe-row">
               <span class="equipe-row-label">${p.abrev}</span>
               <select class="cossim-input" id="poste-${enginId}-${pi}" style="padding:5px 10px;font-size:12px;flex:1;">
