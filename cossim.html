@@ -317,8 +317,17 @@
     let cossimMap = null;
 
     document.addEventListener('DOMContentLoaded', () => {
-      chargerDonnees();
-      synchroniserTout();
+      chargerDonnees(); // config locale uniquement
+      // Démarrer les listeners Firestore (données temps réel)
+      // Attendre que firebase-config.js soit chargé
+      const tryListen = () => {
+        if (typeof fbListenEngins === 'function') {
+          demarrerListenersCossim();
+        } else {
+          setTimeout(tryListen, 200);
+        }
+      };
+      tryListen();
       // Attendre que le DOM soit prêt pour les selects
       setTimeout(() => {
         initCommunesSelect();
@@ -330,12 +339,6 @@
       }, 100);
       setInterval(updateDatetime, 1000);
       updateDatetime();
-      // Refresh synoptique toutes les 5s depuis localStorage
-      setInterval(() => {
-        chargerDonnees();
-        const page = document.querySelector('.cossim-page.active');
-        if (page && page.id === 'cossim-page-synoptique') renderSynoptiqueCossim();
-      }, 5000);
     });
 
     function updateDatetime() {
@@ -353,20 +356,48 @@
     }
 
     function chargerDonnees() {
+      // Config locale uniquement (Firestore gère le reste via listeners)
       const d = (key) => localStorage.getItem('systel_' + key);
       try { if (d('config')) CONFIG = JSON.parse(d('config')); } catch(e) {}
       try { if (d('casernes')) CASERNES = JSON.parse(d('casernes')); } catch(e) {}
-      const engRaw = d('engins'); if (engRaw !== null) { try { ENGINS = JSON.parse(engRaw); } catch(e) { ENGINS = []; } }
-      try { if (d('users')) USERS = JSON.parse(d('users')); } catch(e) {}
-      try { if (d('interventions')) INTERVENTIONS = JSON.parse(d('interventions')); } catch(e) {}
-      try { if (d('feuilles_garde')) FEUILLES_GARDE = JSON.parse(d('feuilles_garde')); } catch(e) {}
       try { if (d('cossim_config')) COSSIM_CONFIG = Object.assign({}, COSSIM_CONFIG, JSON.parse(d('cossim_config'))); } catch(e) {}
     }
     function sauvegarderDonnees() {
-      localStorage.setItem('systel_save_ts', Date.now().toString());
+      // Config locale uniquement
       const s = (key, val) => localStorage.setItem('systel_' + key, JSON.stringify(val));
-      s('config', CONFIG); s('casernes', CASERNES); s('engins', ENGINS); s('users', USERS);
-      s('interventions', INTERVENTIONS); s('feuilles_garde', FEUILLES_GARDE); s('cossim_config', COSSIM_CONFIG);
+      s('config', CONFIG); s('casernes', CASERNES); s('cossim_config', COSSIM_CONFIG);
+    }
+
+    // ===== LISTENERS FIRESTORE POUR COSSIM =====
+    function demarrerListenersCossim() {
+      // Engins — temps réel
+      if (typeof fbListenEngins === 'function') {
+        fbListenEngins(engins => {
+          ENGINS = engins;
+          synchroniserTout();
+          const page = document.querySelector('.cossim-page.active');
+          if (page && page.id === 'cossim-page-engagement') renderEnginsEngagement();
+          if (page && page.id === 'cossim-page-synoptique') renderSynoptiqueCossim();
+        });
+      }
+      // Users — temps réel
+      if (typeof fbListenUsers === 'function') {
+        fbListenUsers(users => {
+          USERS = users.filter(u => u && u.id);
+          normaliserUsers();
+          synchroniserTout();
+        });
+      }
+      // Interventions — temps réel
+      if (typeof fbListenInterventions === 'function') {
+        fbListenInterventions(interventions => {
+          INTERVENTIONS = interventions;
+          synchroniserTout();
+          const page = document.querySelector('.cossim-page.active');
+          if (page && page.id === 'cossim-page-suivi') renderSuiviCossim && renderSuiviCossim();
+          if (page && page.id === 'cossim-page-synoptique') renderSynoptiqueCossim();
+        });
+      }
     }
 
     // ===== BUILD DISCORD EMBEDS =====
@@ -437,7 +468,7 @@
       const page = document.getElementById('cossim-page-' + name);
       if (page) page.classList.add('active');
       if (btn && btn.classList) btn.classList.add('active');
-      chargerDonnees(); // Toujours recharger depuis localStorage
+      // Données chargées par les listeners Firestore en temps réel
       if (name === 'synoptique') renderSynoptiqueCossim();
       if (name === 'creation') {
         initCommunesSelect();
@@ -888,6 +919,12 @@
         const engin = ENGINS.find(e => e.id === eId);
         if (engin) { engin.statut = 'disponible'; engin.berStatut = null; engin.chefAgres = null; }
       });
+      // Sauvegarder dans Firestore — engins remis DISPO + intervention terminée
+      if (typeof fbSaveEngins === 'function') fbSaveEngins(ENGINS).catch(() => {});
+      const interTerminee = INTERVENTIONS.find(i => i.id === id);
+      if (interTerminee && typeof fbSaveIntervention === 'function') {
+        fbSaveIntervention(interTerminee).catch(() => {});
+      }
       sauvegarderDonnees();
       renderSynoptiqueCossim();
       showCossimToast('✅ Intervention ' + id + ' terminée !');
