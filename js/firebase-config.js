@@ -1,11 +1,12 @@
 /*============================================================
-   SYSTEL POMPIERS — FIREBASE CONFIG COMPATIBLE
+   SYSTEL POMPIERS — FIREBASE CONFIG v2 (CLOUD ONLY)
+   Toutes les données passent par Firestore.
+   Plus de localStorage pour les données critiques.
 =============================================================*/
 
 // ============================================================
 // CONFIG FIREBASE
 // ============================================================
-
 const firebaseConfig = {
   apiKey: "AIzaSyCXznL5S4qJ9yNUZk-XV0ntI2GOFrX_seM",
   authDomain: "systelbmpm.firebaseapp.com",
@@ -16,531 +17,269 @@ const firebaseConfig = {
   measurementId: "G-KSNZWKSDLV"
 };
 
-// ============================================================
-// INITIALISATION
-// ============================================================
-
 firebase.initializeApp(firebaseConfig);
-
 const db = firebase.firestore();
-
 console.log("✅ Firebase connecté");
 
-// ============================================================
-// VARIABLES GLOBALES COMPATIBILITÉ
-// ============================================================
-
-let _fbReady = true;
-
 window._fbReady = true;
+let _fbReady = true;
 window.db = db;
-
-// ============================================================
-// CALLBACK READY
-// ============================================================
-
-function initFirebase() {
-  console.log("✅ Firebase initialisé");
-  return true;
-}
-
-function onFirebaseReady(callback) {
-  console.log("✅ Firebase ready callback");
-
-  if (typeof callback === "function") {
-    callback();
-  }
-}
-
-window.initFirebase = initFirebase;
-window.onFirebaseReady = onFirebaseReady;
 
 // ============================================================
 // COLLECTIONS
 // ============================================================
-
 const COL = {
-  USERS: "systel_users",
-  ENGINS: "systel_engins",
+  USERS:         "systel_users",
+  ENGINS:        "systel_engins",
   INTERVENTIONS: "systel_interventions",
-  FEUILLES: "systel_feuilles_garde",
-  BIPS: "systel_bip_alertes",
-  PLANNING: "systel_planning"
+  FEUILLES:      "systel_feuilles_garde",
+  BIPS:          "systel_bip_alertes",
+  PLANNING:      "systel_planning"
 };
-
 window.COL = COL;
+
+// ============================================================
+// CALLBACKS READY (compatibilité)
+// ============================================================
+function initFirebase() { return true; }
+function onFirebaseReady(cb) { if (typeof cb === 'function') cb(); }
+window.initFirebase  = initFirebase;
+window.onFirebaseReady = onFirebaseReady;
 
 // ============================================================
 // USERS
 // ============================================================
+window.fbListenUsers = function(callback) {
+  return db.collection(COL.USERS).onSnapshot(snap => {
+    const users = [];
+    snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+    callback(users);
+  });
+};
 
-function fbListenUsers(callback) {
-
-  return db.collection(COL.USERS)
-    .onSnapshot((snapshot) => {
-
-      const users = [];
-
-      snapshot.forEach((doc) => {
-
-        users.push({
-          id: doc.id,
-          ...doc.data()
-        });
-
-      });
-
-      callback(users);
-
-    });
-
-}
-
-async function fbSaveUser(user) {
-
+window.fbSaveUser = async function(user) {
   const id = user.id || Date.now().toString();
+  await db.collection(COL.USERS).doc(id).set({ ...user, id }, { merge: true });
+};
 
-  await db.collection(COL.USERS)
-    .doc(id)
-    .set({
-      ...user,
-      id
-    }, { merge: true });
+window.fbDeleteUser = async function(userId) {
+  await db.collection(COL.USERS).doc(String(userId)).delete();
+};
 
-}
-
-window.fbListenUsers = fbListenUsers;
-window.fbSaveUser = fbSaveUser;
+window.fbLoadUsers = async function() {
+  const snap = await db.collection(COL.USERS).get();
+  const users = [];
+  snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+  return users;
+};
 
 // ============================================================
 // ENGINS
 // ============================================================
-
-function fbListenEngins(callback) {
-
-  return db.collection(COL.ENGINS)
-    .onSnapshot((snapshot) => {
-
-      const engins = [];
-
-      snapshot.forEach((doc) => {
-
-        engins.push({
-          id: doc.id,
-          ...doc.data()
-        });
-
-      });
-
-      callback(engins);
-
-    });
-
-}
-
-async function fbSaveEngin(engin) {
-
-  const id = engin.id || engin.code || Date.now().toString();
-
-  await db.collection(COL.ENGINS)
-    .doc(id)
-    .set({
-      ...engin,
-      id
-    }, { merge: true });
-
-}
-
-window.fbListenEngins = fbListenEngins;
-window.fbSaveEngin = fbSaveEngin;
-
-// ============================================================
-// ENGINS (fonctions batch manquantes)
-// ============================================================
-
-window.fbLoadEngins = async function () {
-  try {
-    const snapshot = await db.collection(COL.ENGINS || 'engins').get();
+window.fbListenEngins = function(callback) {
+  return db.collection(COL.ENGINS).onSnapshot(snap => {
     const engins = [];
-    snapshot.forEach((doc) => {
-      engins.push({ id: doc.id, ...doc.data() });
-    });
-    return engins;
-  } catch (e) {
-    console.error('fbLoadEngins error:', e);
-    return [];
-  }
+    snap.forEach(doc => engins.push({ id: doc.id, ...doc.data() }));
+    callback(engins);
+  });
 };
 
-window.fbSaveEngins = async function (engins) {
-  try {
-    const batch = db.batch();
-    engins.forEach((engin) => {
-      const id = engin.id || Date.now().toString();
-      const ref = db.collection(COL.ENGINS || 'engins').doc(id);
-      batch.set(ref, { ...engin, id }, { merge: true });
-    });
-    await batch.commit();
-  } catch (e) {
-    console.error('fbSaveEngins error:', e);
-  }
+window.fbSaveEngin = async function(engin) {
+  const id = engin.id || engin.code || Date.now().toString();
+  await db.collection(COL.ENGINS).doc(String(id)).set({ ...engin, id: String(id) }, { merge: true });
+};
+
+window.fbSaveEngins = async function(engins) {
+  if (!engins || !engins.length) return;
+  const batch = db.batch();
+  engins.forEach(engin => {
+    const id = String(engin.id || engin.code || Date.now());
+    batch.set(db.collection(COL.ENGINS).doc(id), { ...engin, id }, { merge: true });
+  });
+  await batch.commit();
+};
+
+window.fbDeleteEngin = async function(enginId) {
+  await db.collection(COL.ENGINS).doc(String(enginId)).delete();
+};
+
+window.fbLoadEngins = async function() {
+  const snap = await db.collection(COL.ENGINS).get();
+  const engins = [];
+  snap.forEach(doc => engins.push({ id: doc.id, ...doc.data() }));
+  return engins;
 };
 
 // ============================================================
 // INTERVENTIONS
 // ============================================================
+window.fbListenInterventions = function(callback) {
+  return db.collection(COL.INTERVENTIONS).onSnapshot(snap => {
+    const list = [];
+    snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+    callback(list);
+  });
+};
 
-function fbListenInterventions(callback) {
+window.fbSaveIntervention = async function(intervention) {
+  const id = String(intervention.id || Date.now());
+  await db.collection(COL.INTERVENTIONS).doc(id).set({ ...intervention, id }, { merge: true });
+};
 
-  return db.collection(COL.INTERVENTIONS)
-    .onSnapshot((snapshot) => {
+window.fbDeleteIntervention = async function(interId) {
+  await db.collection(COL.INTERVENTIONS).doc(String(interId)).delete();
+};
 
-      const interventions = [];
-
-      snapshot.forEach((doc) => {
-
-        interventions.push({
-          id: doc.id,
-          ...doc.data()
-        });
-
-      });
-
-      callback(interventions);
-
-    });
-
-}
-
-async function fbSaveIntervention(intervention) {
-
-  const id = intervention.id || Date.now().toString();
-
-  await db.collection(COL.INTERVENTIONS)
-    .doc(id)
-    .set({
-      ...intervention,
-      id
-    }, { merge: true });
-
-}
-
-window.fbListenInterventions = fbListenInterventions;
-window.fbSaveIntervention = fbSaveIntervention;
+window.fbLoadInterventions = async function() {
+  const snap = await db.collection(COL.INTERVENTIONS).get();
+  const list = [];
+  snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+  return list;
+};
 
 // ============================================================
-// FEUILLES DE GARDE
+// FEUILLES DE GARDE  (clé = date "YYYY-MM-DD")
 // ============================================================
+window.fbListenFeuilles = function(callback) {
+  return db.collection(COL.FEUILLES).onSnapshot(snap => {
+    const obj = {};
+    snap.forEach(doc => { obj[doc.id] = { ...doc.data(), id: doc.id }; });
+    callback(obj); // retourne {date: garde, ...}
+  });
+};
 
-function fbListenFeuilles(callback) {
+window.fbSaveFeuille = async function(dateOrObj, feuilleArg) {
+  let date, feuille;
+  if (typeof dateOrObj === 'object' && dateOrObj !== null) {
+    feuille = dateOrObj;
+    date = feuille.date || feuille.id || Date.now().toString();
+  } else {
+    date = dateOrObj;
+    feuille = feuilleArg;
+  }
+  await db.collection(COL.FEUILLES).doc(String(date)).set({ ...feuille, id: String(date) }, { merge: true });
+};
 
-  return db.collection(COL.FEUILLES)
-    .onSnapshot((snapshot) => {
-
-      const feuilles = [];
-
-      snapshot.forEach((doc) => {
-
-        feuilles.push({
-          id: doc.id,
-          ...doc.data()
-        });
-
-      });
-
-      callback(feuilles);
-
-    });
-
-}
-
-async function fbSaveFeuille(feuille) {
-
-  const id = feuille.id || Date.now().toString();
-
-  await db.collection(COL.FEUILLES)
-    .doc(id)
-    .set({
-      ...feuille,
-      id
-    }, { merge: true });
-
-}
-
-window.fbListenFeuilles = fbListenFeuilles;
-window.fbSaveFeuille = fbSaveFeuille;
+window.fbDeleteFeuille = async function(date) {
+  await db.collection(COL.FEUILLES).doc(String(date)).delete();
+};
 
 // ============================================================
-// BIPS
+// BIPS  (un document par bip, targetUserId + read)
 // ============================================================
-
-function fbListenBips(userId, callback) {
-
+window.fbListenBips = function(userId, callback) {
   return db.collection(COL.BIPS)
-    .where("targetUserId", "==", userId)
-    .onSnapshot((snapshot) => {
-
-      snapshot.docChanges().forEach((change) => {
-
-        if (change.type === "added") {
-
-          callback(change.doc.data());
-
-        }
-
+    .where('targetUserId', '==', userId)
+    .where('read', '==', false)
+    .onSnapshot(snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') callback({ _docId: change.doc.id, ...change.doc.data() });
       });
-
     });
-
-}
-
-async function fbSendBip(userId, data = {}) {
-
-  await db.collection(COL.BIPS)
-    .add({
-      targetUserId: userId,
-      timestamp: new Date().toISOString(),
-      read: false,
-      ...data
-    });
-
-}
-
-window.fbListenBips = fbListenBips;
-window.fbSendBip = fbSendBip;
-
-// ============================================================
-// PRESENCE
-// ============================================================
-
-async function fbUpdatePresence(userId, status) {
-
-  await db.collection(COL.USERS)
-    .doc(userId)
-    .set({
-      presence: status,
-      lastUpdate: new Date().toISOString()
-    }, { merge: true });
-
-}
-
-window.fbUpdatePresence = fbUpdatePresence;
-
-// ============================================================
-// HEARTBEAT
-// ============================================================
-
-let heartbeatInterval = null;
-
-async function startHeartbeat(userId) {
-
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-  }
-
-  // Écriture immédiate dès la connexion
-  await db.collection(COL.USERS)
-    .doc(userId)
-    .set({
-      online: true,
-      heartbeat: new Date().toISOString()
-    }, { merge: true });
-
-  // Puis toutes les 30 secondes
-  heartbeatInterval = setInterval(async () => {
-
-    await db.collection(COL.USERS)
-      .doc(userId)
-      .set({
-        online: true,
-        heartbeat: new Date().toISOString()
-      }, { merge: true });
-
-  }, 30000);
-
-}
-
-window.startHeartbeat = startHeartbeat;
-
-// ============================================================
-// CLEANUP
-// ============================================================
-
-window.addEventListener("beforeunload", () => {
-
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-  }
-
-  // Marquer offline à la déconnexion
-  const userId = localStorage.getItem('systel_current_user_id');
-  if (userId) {
-    db.collection(COL.USERS).doc(userId).set(
-      { online: false, presence: "INDISPO", heartbeat: new Date().toISOString() },
-      { merge: true }
-    );
-  }
-
-});
-
-// ============================================================
-// ANCIENNES FONCTIONS COMPATIBILITÉ
-// ============================================================
-
-window.fbLoadUsers = async function () {
-
-  try {
-
-    const snapshot = await db.collection(COL.USERS).get();
-
-    const users = [];
-
-    snapshot.forEach((doc) => {
-
-      users.push({
-        id: doc.id,
-        ...doc.data()
-      });
-
-    });
-
-    return users;
-
-  } catch (e) {
-
-    console.error(e);
-    return [];
-
-  }
-
 };
 
-window.migrateFromLocalStorage = function () {
-
-  console.log("⚠️ Migration ignorée");
-
-  return true;
-
-};
-
-// ============================================================
-// 🔧 COMPATIBILITÉ FONCTIONS MANQUANTES (FIX FINAL)
-// ============================================================
-
-// INTERVENTIONS
-window.fbLoadInterventions = async function () {
-  const snapshot = await db.collection(COL.INTERVENTIONS).get();
-
-  const data = [];
-  snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
-
-  return data;
-};
-
-// PLANNING
-window.fbSavePlanning = async function (planning) {
-  const id = planning.id || "default";
-
-  await db.collection(COL.PLANNING)
-    .doc(id)
-    .set({ ...planning, id }, { merge: true });
-};
-
-window.fbLoadPlanning = async function () {
-  const snapshot = await db.collection(COL.PLANNING).get();
-
-  const data = [];
-  snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
-
-  return data;
-};
-// ============================================================
-// FIX 1 — fbTriggerBip (alias de fbSendBip)
-// ============================================================
-
-window.fbTriggerBip = async function (userId, motif = 'INTERVENTION', data = {}) {
+window.fbSendBip = async function(userId, data = {}) {
   await db.collection(COL.BIPS).add({
     targetUserId: userId,
-    motif: motif,
     timestamp: new Date().toISOString(),
     read: false,
     ...data
   });
 };
 
-// ============================================================
-// FIX 2 — fbListenPresence (écoute online/presence sur USERS)
-// ============================================================
+window.fbTriggerBip = window.fbSendBip; // alias
 
-window.fbListenPresence = function (callback) {
-  return db.collection(COL.USERS)
-    .onSnapshot((snapshot) => {
-      const users = [];
-      snapshot.forEach((doc) => {
-        users.push({ id: doc.id, ...doc.data() });
-      });
-      callback(users);
-    });
+window.fbMarkBipRead = async function(docId) {
+  if (!docId) return;
+  await db.collection(COL.BIPS).doc(docId).update({ read: true });
 };
 
 // ============================================================
-// FIX 3 — fbListenPlanning (écoute en temps réel)
+// PRÉSENCE  (heartbeat + online)
 // ============================================================
+window.fbListenPresence = function(callback) {
+  return db.collection(COL.USERS).onSnapshot(snap => {
+    const users = [];
+    snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+    callback(users);
+  });
+};
 
-window.fbListenPlanning = function (callback) {
-  return db.collection(COL.PLANNING)
-    .onSnapshot((snapshot) => {
-      const data = [];
-      snapshot.forEach((doc) => data.push({ id: doc.id, ...doc.data() }));
-      callback(data);
-    });
+window.fbUpdatePresence = async function(userId, status) {
+  await db.collection(COL.USERS).doc(userId).set(
+    { presence: status, lastUpdate: new Date().toISOString() },
+    { merge: true }
+  );
 };
 
 // ============================================================
-// FIX 4 — fbListenFeuilles retourne un OBJET {date: garde}
-//          au lieu d'un tableau pour compatibilité feuille_garde.js
+// HEARTBEAT
 // ============================================================
+let heartbeatInterval = null;
 
-// On remplace le listener feuilles pour retourner le bon format
-window.fbListenFeuilles = function (callback) {
-  return db.collection(COL.FEUILLES)
-    .onSnapshot((snapshot) => {
-      const feuillesObj = {};
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        // La clé doc = la date (ex: "2025-06-01")
-        feuillesObj[doc.id] = { ...data, id: doc.id };
-      });
-      callback(feuillesObj);
-    });
+window.startHeartbeat = async function(userId) {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+  const beat = async () => {
+    await db.collection(COL.USERS).doc(userId).set(
+      { online: true, heartbeat: new Date().toISOString() },
+      { merge: true }
+    );
+  };
+
+  await beat(); // immédiat au login
+  heartbeatInterval = setInterval(beat, 30000);
 };
 
-// fbSaveFeuille : utilise la date comme ID du document
-window.fbSaveFeuille = async function (date, feuille) {
-  // Accepte fbSaveFeuille(obj) ou fbSaveFeuille(date, obj)
-  if (typeof date === 'object' && date !== null) {
-    feuille = date;
-    date = feuille.date || feuille.id || Date.now().toString();
+// ============================================================
+// PLANNING
+// ============================================================
+window.fbListenPlanning = function(callback) {
+  return db.collection(COL.PLANNING).onSnapshot(snap => {
+    const data = [];
+    snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+    callback(data);
+  });
+};
+
+window.fbSavePlanning = async function(id, planning) {
+  // Accepte fbSavePlanning(planning) ou fbSavePlanning(id, planning)
+  if (typeof id === 'object') { planning = id; id = 'default'; }
+  await db.collection(COL.PLANNING).doc(String(id)).set({ ...planning, id: String(id) }, { merge: true });
+};
+
+window.fbLoadPlanning = async function() {
+  const snap = await db.collection(COL.PLANNING).get();
+  const data = [];
+  snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+  return data;
+};
+
+// ============================================================
+// CLEANUP — marquer offline à la fermeture
+// ============================================================
+window.addEventListener('beforeunload', () => {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  const userId = localStorage.getItem('systel_current_user_id');
+  if (userId) {
+    db.collection(COL.USERS).doc(userId).set(
+      { online: false, presence: 'INDISPO', heartbeat: new Date().toISOString() },
+      { merge: true }
+    );
   }
-  await db.collection(COL.FEUILLES)
-    .doc(String(date))
-    .set({ ...feuille, id: String(date) }, { merge: true });
-};
-
-// fbDeleteFeuille : supprime une feuille par date
-window.fbDeleteFeuille = async function (date) {
-  await db.collection(COL.FEUILLES).doc(String(date)).delete();
-};
+});
 
 // ============================================================
-// FIX 5 — fbDeleteUser (suppression réelle dans Firestore)
+// COMPAT
 // ============================================================
+window.migrateFromLocalStorage = () => true;
 
-window.fbDeleteUser = async function (userId) {
+async function fbTestPermissions() {
   try {
-    await db.collection(COL.USERS).doc(userId).delete();
-    console.log("🗑️ Utilisateur supprimé de Firestore:", userId);
-  } catch (e) {
-    console.error('fbDeleteUser error:', e);
+    await db.collection(COL.USERS).limit(1).get();
+    return { error: null };
+  } catch(e) {
+    return { error: e.message };
   }
-};
+}
+window.fbTestPermissions = fbTestPermissions;

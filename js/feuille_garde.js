@@ -226,7 +226,10 @@ function confirmerCreerGarde(date) {
   };
 
   document.getElementById('fg-create-modal')?.remove();
-  sauvegarderDonnees();
+  // Sauvegarder dans Firestore directement
+  if (typeof fbSaveFeuille === 'function') {
+    fbSaveFeuille(date, FEUILLES_GARDE[date]).catch(e => console.warn('Erreur save feuille:', e));
+  }
   reloadFeuilleGarde();
   showToast('Feuille de garde créée !');
 }
@@ -234,7 +237,10 @@ function confirmerCreerGarde(date) {
 function supprimerGarde(date) {
   if (!confirm(`Supprimer la feuille de garde du ${formatDateFR(date)} ?`)) return;
   delete FEUILLES_GARDE[date];
-  sauvegarderDonnees();
+  // Supprimer dans Firestore — le listener retirera la feuille chez tout le monde
+  if (typeof fbDeleteFeuille === 'function') {
+    fbDeleteFeuille(date).catch(e => console.warn('Erreur suppression feuille:', e));
+  }
   reloadFeuilleGarde();
   showToast('Feuille supprimée');
 }
@@ -256,7 +262,7 @@ function ajouterEnginGarde(date) {
   const postes = (engin.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'}]).map(p => ({...p, userId: null}));
   if (!garde.engins) garde.engins = [];
   garde.engins.push({ id: engin.id, nom: engin.nom, postes });
-  sauvegarderDonnees();
+  if (typeof fbSaveFeuille === 'function') fbSaveFeuille(date, garde).catch(() => {});
   reloadFeuilleGarde();
 }
 
@@ -264,7 +270,7 @@ function supprimerEnginGarde(date, enginId) {
   const garde = FEUILLES_GARDE[date];
   if (!garde?.engins) return;
   garde.engins = garde.engins.filter(e => e.id !== enginId);
-  sauvegarderDonnees();
+  if (typeof fbSaveFeuille === 'function') fbSaveFeuille(date, garde).catch(() => {});
   reloadFeuilleGarde();
 }
 
@@ -300,10 +306,14 @@ function majDescriptionGarde(date, val) {
   }
 }
 function validerGarde(date) {
-  FEUILLES_GARDE[date].status = 'validée'; sauvegarderDonnees(); reloadFeuilleGarde(); showToast('Garde validée !');
+  FEUILLES_GARDE[date].status = 'validée';
+  if (typeof fbSaveFeuille === 'function') fbSaveFeuille(date, FEUILLES_GARDE[date]).catch(() => {});
+  reloadFeuilleGarde(); showToast('Garde validée !');
 }
 function deverrouillerGarde(date) {
-  FEUILLES_GARDE[date].status = 'brouillon'; sauvegarderDonnees(); reloadFeuilleGarde();
+  FEUILLES_GARDE[date].status = 'brouillon';
+  if (typeof fbSaveFeuille === 'function') fbSaveFeuille(date, FEUILLES_GARDE[date]).catch(() => {});
+  reloadFeuilleGarde();
 }
 
 function imprimerGarde(date) {

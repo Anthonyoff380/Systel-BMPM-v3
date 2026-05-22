@@ -10,30 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateFBIndicator();
       console.log("Chargement des données depuis Firebase...");
       
-      // Charger les utilisateurs
-      const fbUsers = await fbLoadUsers();
-      if (fbUsers && fbUsers.length > 0) {
-        USERS = fbUsers;
-        localStorage.setItem('systel_users', JSON.stringify(USERS));
-        synchroniserTout();
-      }
-      
-      // Charger les interventions
-      const fbInterventions = await fbLoadInterventions();
-      if (fbInterventions && fbInterventions.length > 0) {
-        INTERVENTIONS = fbInterventions;
-        localStorage.setItem('systel_interventions', JSON.stringify(INTERVENTIONS));
-      }
-      
-      // Charger les engins
-      const fbEngins = await fbLoadEngins();
-      if (fbEngins && fbEngins.length > 0) {
-        ENGINS = fbEngins;
-        localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
-      }
-      
-      // Activer les écouteurs temps réel
-      // Listeners gérés dans onFirebaseReady() — évite les doubles
+      // Les données sont chargées via les listeners temps réel dans demarrerListenersFirebase()
+      // Pas de chargement one-shot pour éviter les doublons
     });
 
   }
@@ -150,7 +128,6 @@ function synchroniserTout() {
     photo: u.photo
   }));
   USERS.forEach(u => { if (!PLANNING[u.id]) PLANNING[u.id] = {}; });
-  sauvegarderDonnees();
 }
 
 // ===== AUTH =====
@@ -225,13 +202,24 @@ function executeLogin(user) {
   currentUser = user;
   localStorage.setItem('systel_current_user_id', user.id);
   sessionStorage.setItem('systel_user', JSON.stringify(user));
+  // Marquer online immédiatement dans Firestore
+  if (typeof startHeartbeat === 'function') startHeartbeat(user.id);
+  if (typeof fbUpdatePresence === 'function') fbUpdatePresence(user.id, 'DISPO');
   synchroniserTout();
   initApp();
   showToast("Bienvenue " + (user.firstname || user.id));
 }
 
 
-function handleLogout() { sessionStorage.removeItem('systel_user'); synchroniserTout(); location.reload(); }
+function handleLogout() {
+  if (currentUser) {
+    if (typeof fbUpdatePresence === 'function') fbUpdatePresence(currentUser.id, 'INDISPO');
+    if (typeof db !== 'undefined') db.collection(COL.USERS).doc(currentUser.id).set({ online: false, heartbeat: new Date().toISOString() }, { merge: true });
+  }
+  sessionStorage.removeItem('systel_user');
+  localStorage.removeItem('systel_current_user_id');
+  location.reload();
+}
 
 function initApp() {
   document.getElementById('auth-container').style.display = 'none';
@@ -255,28 +243,8 @@ function initApp() {
   const theme = localStorage.getItem('systel_theme') || 'night';
   applyTheme(theme);
 
-  // Nettoyer l'ancien bip TEST du localStorage (évite le faux bip au refresh)
-  const oldBip = localStorage.getItem('systel_bip_' + currentUser.id);
-  if (oldBip) {
-    try {
-      const b = JSON.parse(oldBip);
-      if (b.motif === 'test' || b.motif === 'TEST' || b.acquitte) {
-        localStorage.removeItem('systel_bip_' + currentUser.id);
-      }
-    } catch(e) { localStorage.removeItem('systel_bip_' + currentUser.id); }
-  }
-
-  // Démarrer l'écoute Firestore des bips — ici currentUser est garanti défini
-  if (typeof fbListenBips === 'function') {
-    fbListenBips(currentUser.id, (bip) => {
-      if (bip.read || bip.acquitte) return;
-      console.log('🔔 BIP REÇU Firestore:', bip);
-      // Ne pas re-afficher si déjà visible
-      if (bipAlerteVisible) return;
-      localStorage.setItem('systel_bip_' + currentUser.id, JSON.stringify({ ...bip, acquitte: false }));
-      afficherBipAlerte(bip);
-    });
-  }
+  // Les listeners Firebase (dont bips) sont démarrés dans demarrerListenersFirebase()
+  // appelé juste après par le wrapper de initApp
 }
 
 // ===== THEME JOUR/NUIT =====
@@ -793,28 +761,26 @@ function renderAnnuaire() {
 
 // ===== PERSISTANCE =====
 function chargerDonnees() {
+  // Charger uniquement la config locale
   const d = key => localStorage.getItem('systel_' + key);
   if (d('config')) CONFIG = JSON.parse(d('config'));
   if (d('intranet')) INTRANET_CONFIG = JSON.parse(d('intranet'));
   if (d('casernes')) CASERNES = JSON.parse(d('casernes'));
-  const enginsRaw = d('engins');
-  if (enginsRaw !== null) { try { ENGINS = JSON.parse(enginsRaw); } catch(e) { ENGINS = []; } }
-  // Ne pas utiliser les defaults si localStorage a une liste (même vide)
-  if (d('users')) USERS = JSON.parse(d('users'));
-  if (d('planning')) PLANNING = JSON.parse(d('planning'));
-  if (d('interventions')) INTERVENTIONS = JSON.parse(d('interventions'));
-  if (d('feuilles_garde')) FEUILLES_GARDE = JSON.parse(d('feuilles_garde'));
   if (d('carte_blips')) CARTE_BLIPS = JSON.parse(d('carte_blips'));
   if (d('cossim_config')) COSSIM_CONFIG = JSON.parse(d('cossim_config'));
+  // Users/Engins/Interventions/Feuilles/Planning : chargés depuis Firestore via les listeners
 }
 function sauvegarderDonnees() {
+  // Sauvegarder uniquement la config locale (UI, préférences)
   const s = (k, v) => localStorage.setItem('systel_' + k, JSON.stringify(v));
   localStorage.setItem('systel_save_ts', Date.now().toString());
-  // Toujours synchroniser users pour la garde COSSIM
-  localStorage.setItem('systel_users', JSON.stringify(USERS));
-  s('config',CONFIG); s('intranet',INTRANET_CONFIG); s('casernes',CASERNES); s('engins',ENGINS);
-  s('users',USERS); s('planning',PLANNING); s('interventions',INTERVENTIONS);
-  s('feuilles_garde',FEUILLES_GARDE); s('carte_blips',CARTE_BLIPS); s('cossim_config',COSSIM_CONFIG);
+  s('config', CONFIG);
+  s('intranet', INTRANET_CONFIG);
+  s('casernes', CASERNES);
+  s('cossim_config', COSSIM_CONFIG);
+  s('carte_blips', CARTE_BLIPS);
+  // Les données critiques (users, engins, interventions, feuilles, planning)
+  // sont gérées directement via fbSave* et synchronisées par les listeners Firestore.
 }
 function startClock() { setInterval(() => { const c = document.getElementById('current-clock'); if (c) c.textContent = new Date().toLocaleTimeString('fr-FR'); }, 1000); }
 function initDate() { const el = document.getElementById('center-title'); if (el) el.textContent = `CENTRE ${CONFIG.centre} - ${new Date().toLocaleDateString('fr-FR')} (WEB1)`; }
@@ -916,15 +882,11 @@ function supprimerEnginAdmin(idx) {
   if (!confirm("Supprimer cet engin ?")) return;
   const enginId = ENGINS[idx]?.id;
   ENGINS.splice(idx, 1);
-  localStorage.setItem('systel_engins', JSON.stringify(ENGINS));
-  localStorage.setItem('systel_save_ts', Date.now().toString());
-  // Supprimer dans Firestore (sinon le listener le remet)
-  if (enginId && typeof db !== 'undefined') {
-    db.collection(COL.ENGINS).doc(String(enginId)).delete()
-      .catch(e => console.warn('Erreur suppression engin Firestore:', e));
+  // Supprimer dans Firestore — le listener mettra à jour ENGINS chez tout le monde
+  if (enginId && typeof fbDeleteEngin === 'function') {
+    fbDeleteEngin(enginId).catch(e => console.warn('Erreur suppression engin:', e));
   }
   renderAdminEngins();
-  updateSynoptique();
   showToast("Engin supprimé !");
 }
 function ajouterGFOEngin(idx) {
@@ -1452,345 +1414,195 @@ function testWebhookIntervention() {
 
 function supprimerInterHistorique(interId) {
   if (!confirm('Supprimer définitivement cette intervention de l\'historique ?')) return;
-  const idx = INTERVENTIONS.findIndex(i => i.id === interId);
-  if (idx !== -1) {
-    INTERVENTIONS.splice(idx, 1);
-    // Supprimer dans Firestore (sinon le listener la remet)
-    if (typeof db !== 'undefined') {
-      db.collection(COL.INTERVENTIONS).doc(String(interId)).delete()
-        .catch(e => console.warn('Erreur suppression intervention Firestore:', e));
-    }
-    renderHistorique();
-    showToast('Intervention supprimée de l\'historique');
+  // Supprimer dans Firestore — le listener retirera la ligne chez tout le monde
+  if (typeof fbDeleteIntervention === 'function') {
+    fbDeleteIntervention(interId)
+      .then(() => { showToast('Intervention supprimée !'); })
+      .catch(e => { console.warn('Erreur suppression intervention:', e); showToast('Erreur suppression', 'error'); });
   }
 }
 
-// ===== FIREBASE SYNC ENHANCEMENT =====
-// Intercepter les modifications pour les envoyer directement à Firebase
-const originalSauvegarderDonnees = sauvegarderDonnees;
-sauvegarderDonnees = function() {
-  originalSauvegarderDonnees();
-  
-  // Envoyer les données critiques vers Firebase si disponible
-  if (typeof _fbReady !== 'undefined' && _fbReady) {
-    if (ENGINS && ENGINS.length > 0) {
-      fbSaveEngins(ENGINS).catch(e => console.warn('Erreur sync engins:', e));
+
+// ============================================================
+// FIREBASE SYNC — bloc unique, propre, sans duplication
+// Démarré après login via initApp()
+// ============================================================
+
+// Références des unsubscribers pour éviter les doubles listeners
+const _fbUnsub = {};
+
+function demarrerListenersFirebase() {
+  if (!currentUser || !_fbReady) return;
+  console.log('🔥 Démarrage listeners Firebase pour:', currentUser.id);
+
+  // -- USERS / PRÉSENCES --
+  if (_fbUnsub.users) _fbUnsub.users();
+  _fbUnsub.users = fbListenUsers(data => {
+    USERS = data.filter(u => u && u.id);
+    synchroniserTout();
+  });
+
+  // -- ENGINS --
+  if (_fbUnsub.engins) _fbUnsub.engins();
+  _fbUnsub.engins = fbListenEngins(engins => {
+    ENGINS = engins;
+    if (typeof updateSynoptique === 'function') updateSynoptique();
+    if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
+  });
+
+  // -- INTERVENTIONS --
+  if (_fbUnsub.interventions) _fbUnsub.interventions();
+  _fbUnsub.interventions = fbListenInterventions(interventions => {
+    INTERVENTIONS = interventions;
+    if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
+    if (typeof updateSynoptique === 'function') updateSynoptique();
+    const sec = document.querySelector('.section.active-section');
+    if (sec && sec.id === 'section-historique') renderHistorique();
+  });
+
+  // -- FEUILLES DE GARDE --
+  if (_fbUnsub.feuilles) _fbUnsub.feuilles();
+  _fbUnsub.feuilles = fbListenFeuilles(feuilles => {
+    FEUILLES_GARDE = feuilles; // objet {date: garde}
+    const sec = document.querySelector('.section.active-section');
+    if (sec && sec.id === 'section-feuille-garde') {
+      if (typeof reloadFeuilleGarde === 'function') reloadFeuilleGarde();
     }
-    if (INTERVENTIONS && INTERVENTIONS.length > 0) {
-      INTERVENTIONS.forEach(iv => fbSaveIntervention(iv).catch(e => console.warn('Erreur sync intervention:', e)));
+  });
+
+  // -- PLANNING --
+  if (_fbUnsub.planning) _fbUnsub.planning();
+  _fbUnsub.planning = fbListenPlanning(planning => {
+    PLANNING = planning;
+    const sec = document.querySelector('.section.active-section');
+    if (sec && sec.id === 'section-planning') {
+      if (typeof renderPlanning === 'function') renderPlanning();
     }
+  });
+
+  // -- BIPS (listener propre, démarré une seule fois) --
+  if (_fbUnsub.bips) _fbUnsub.bips();
+  _fbUnsub.bips = fbListenBips(currentUser.id, bip => {
+    if (bip.read) return;
+    console.log('🔔 BIP reçu:', bip);
+    if (bipAlerteVisible) return; // ne pas empiler
+    afficherBipAlerte(bip);
+    // Stocker le docId pour marquer lu à l'acquittement
+    window._bipEnCours = bip;
+  });
+}
+
+// Démarrer les listeners dans initApp (currentUser garanti)
+const _initAppOrig = initApp;
+initApp = function() {
+  _initAppOrig();
+  demarrerListenersFirebase();
+};
+
+// ============================================================
+// ACQUITTEMENT BIP — marquer lu dans Firestore
+// ============================================================
+const _acquitterOrig = acquitterBip;
+acquitterBip = function() {
+  _acquitterOrig();
+  // Marquer lu dans Firestore
+  if (window._bipEnCours?._docId && typeof fbMarkBipRead === 'function') {
+    fbMarkBipRead(window._bipEnCours._docId).catch(() => {});
+  }
+  window._bipEnCours = null;
+};
+
+// ============================================================
+// SAUVEGARDES CLOUD — appelées depuis feuille_garde, admin, cossim
+// ============================================================
+
+// Créer/modifier un engin → Firestore direct
+const _ajouterEnginOrig = ajouterEnginAdmin;
+ajouterEnginAdmin = function() {
+  _ajouterEnginOrig();
+  // Le dernier engin ajouté
+  const engin = ENGINS[ENGINS.length - 1];
+  if (engin && typeof fbSaveEngin === 'function') {
+    fbSaveEngin(engin).catch(e => console.warn('Erreur save engin:', e));
   }
 };
 
-// ===== ACTIVATION DES ÉCOUTEURS FIREBASE =====
-// Les listeners sont gérés dans onFirebaseReady() et initApp()
+// Créer/modifier un user → Firestore direct (déjà fait dans sauvegarderUserAdmin via fbSaveUser)
 
-// ===== DIAGNOSTIC FIREBASE =====
-let fbDiagnostics = {
-  connected: false,
-  lastBip: null,
-  lastSync: null,
-  errors: []
+// Modifier un engin inline (nom, section, postes) → Firestore
+// Hook sur les onchange inline de renderAdminEngins
+window.fbSaveEnginInline = function(idx) {
+  const engin = ENGINS[idx];
+  if (engin && typeof fbSaveEngin === 'function') {
+    fbSaveEngin(engin).catch(e => console.warn('Erreur save engin inline:', e));
+  }
 };
+
+// ============================================================
+// INTERVENTIONS — sauvegarder directement dans Firestore
+// ============================================================
+// Les interventions sont créées depuis cossim.html via fbSaveIntervention
+// et reçues ici via fbListenInterventions — rien à faire de plus.
+
+// Sauvegarder un log BER dans l'intervention Firestore
+const _logBEROrig = logBERAction;
+logBERAction = function(enginId, code, label) {
+  _logBEROrig(enginId, code, label);
+  // Sauvegarder l'intervention modifiée dans Firestore
+  const inter = INTERVENTIONS.find(i => i.statut === 'En cours' && (i.engins||[]).includes(enginId));
+  if (inter && typeof fbSaveIntervention === 'function') {
+    fbSaveIntervention(inter).catch(e => console.warn('Erreur save intervention BER:', e));
+  }
+};
+
+// ============================================================
+// DIAGNOSTIC FIREBASE
+// ============================================================
+let fbDiagnostics = { lastBip: null, lastSync: null, errors: [] };
 
 function updateDiagnosticBar() {
   const bar = document.getElementById('fb-diagnostic-bar');
   if (!bar) return;
-  
   const status = _fbReady ? '🟢 CONNECTÉ' : '🔴 DÉCONNECTÉ';
-  const lastBipText = fbDiagnostics.lastBip ? new Date(fbDiagnostics.lastBip).toLocaleTimeString() : 'Aucun';
-  const lastSyncText = fbDiagnostics.lastSync ? new Date(fbDiagnostics.lastSync).toLocaleTimeString() : 'Aucune';
-  
-  bar.innerHTML = `
-    Firebase: ${status} | 
-    Dernier Bip: ${lastBipText} | 
-    Dernière Synchro: ${lastSyncText} |
-    <a href="#" onclick="testBipNow(event)" style="color:#48bb78; text-decoration:none;">🔊 TEST BIP</a>
-  `;
+  const lastBip = fbDiagnostics.lastBip ? new Date(fbDiagnostics.lastBip).toLocaleTimeString() : 'Aucun';
+  bar.innerHTML = `Firebase: ${status} | Dernier Bip: ${lastBip} | <a href="#" onclick="testBipNow(event)" style="color:#48bb78;">🔊 TEST BIP</a>`;
 }
+setInterval(updateDiagnosticBar, 2000);
 
 function testBipNow(e) {
   e.preventDefault();
-  if (!currentUser) return showToast("Connectez-vous d'abord", "error");
-  if (!_fbReady) return showToast("Firebase non connecté", "error");
-  
-  fbTriggerBip(currentUser.id, 'test').then(() => {
-    showToast("Bip de test envoyé!", "success");
-    fbDiagnostics.lastBip = new Date();
-    updateDiagnosticBar();
-  }).catch(e => {
-    showToast("Erreur envoi bip: " + e.message, "error");
-    fbDiagnostics.errors.push(e.message);
-  });
+  if (!currentUser || !_fbReady) return showToast('Non connecté', 'error');
+  fbSendBip(currentUser.id, { motif: 'TEST', enginNom: 'TEST', place: 'TEST' })
+    .then(() => showToast('Bip test envoyé !', 'success'))
+    .catch(err => showToast('Erreur: ' + err.message, 'error'));
 }
 
-// Mettre à jour la barre toutes les secondes
-setInterval(updateDiagnosticBar, 1000);
-
-// Les listeners sont gérés dans onFirebaseReady() et initApp() — pas de duplication
-
-// ===== ACTIVATION SONORE EXPLICITE =====
-let audioEnabled = false;
-
-function enableAudio() {
-  // Créer un son silencieux pour "débloquer" l'audio du navigateur
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  gainNode.gain.setValueAtTime(0, audioContext.currentTime); // Volume à 0
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + 0.001);
-  
-  audioEnabled = true;
-  showToast("🔊 SON ACTIVÉ - Les bips sonneront maintenant!", "success");
-  
-  // Tester les permissions Firebase
-  testFirebasePermissions();
-}
-
-async function testFirebasePermissions() {
-  if (!_fbReady) {
-    showToast("Firebase pas connecté", "error");
-    return;
-  }
-  
-  const result = await fbTestPermissions();
-  const errorDiv = document.getElementById('fb-permission-error');
-  
-  if (!result.error) {
-    errorDiv.style.display = 'none';
-    showToast("✅ Firebase: Lecture et Écriture OK", "success");
-  } else {
-    errorDiv.style.display = 'block';
-    errorDiv.innerHTML = "⚠️ Erreur Firebase: " + result.error + "<br><small>Vérifiez les règles dans votre console Firebase</small>";
-    showToast("❌ " + result.error, "error");
-  }
-}
-
-// ===== ACTIVATION COMPLÈTE DES ÉCOUTEURS CLOUD AU DÉMARRAGE =====
-onFirebaseReady(() => {
-  if (!_fbReady || !currentUser) return;
-  
-  console.log("🔥 Activation des écouteurs Cloud pour:", currentUser.id);
-  
-  // Démarrer le heartbeat
-  startHeartbeat(currentUser.id);
-
-  // Écouter les utilisateurs (synoptique + présences)
-  fbListenUsers((data) => {
-    USERS = data;
-    synchroniserTout();
-    if (typeof renderPersonnelsSynoptique === 'function') renderPersonnelsSynoptique();
-  });
-
-  // Écouter les feuilles de garde — ne pas appeler synchroniserTout (ferme les selects ouverts)
-  fbListenFeuilles((feuilles) => {
-    FEUILLES_GARDE = feuilles;
-    // Rafraîchir seulement si la section est visible
-    const section = document.querySelector('.section.active-section');
-    if (section && section.id === 'section-feuille-garde') reloadFeuilleGarde();
-    console.log("📋 Feuilles de garde mises à jour");
-  });
-  
-  // Écouter le planning
-  fbListenPlanning((planning) => {
-    PLANNING = planning;
-    const section = document.querySelector('.section.active-section');
-    if (section && section.id === 'section-planning') renderPlanning();
-    console.log("📅 Planning mis à jour");
-  });
-  
-  // Écouter les interventions — forcer le rendu chez tous les clients
-  fbListenInterventions((interventions) => {
-    INTERVENTIONS = interventions;
-    if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
-    if (typeof updateSynoptique === 'function') updateSynoptique();
-    const section = document.querySelector('.section.active-section');
-    if (section && section.id === 'section-historique') renderHistorique();
-    console.log("🚨 Interventions mises à jour");
-  });
-  
-  // Écouter les engins — forcer les couleurs BER sur la synoptique
-  fbListenEngins((engins) => {
-    ENGINS = engins;
-    if (typeof updateSynoptique === 'function') updateSynoptique();
-    if (typeof renderInterventionsSynoptique === 'function') renderInterventionsSynoptique();
-    console.log("🚗 Engins mis à jour");
-  });
-  
-  // Écouter les présences
-  fbListenPresence((users) => {
-    users.forEach(u => {
-      const existing = USERS.find(x => x.id === u.id);
-      if (existing) {
-        existing.presence = u.presence;
-        existing.online = u.online;
-        existing.heartbeat = u.heartbeat;
-      }
-    });
-    // Recalcule PERSONNELS sans tout rerendre
-    synchroniserTout();
-    if (typeof renderPersonnelsSynoptique === 'function') renderPersonnelsSynoptique();
-    console.log("👥 Présences mises à jour");
-  });
-
-  // fbListenBips est démarré dans initApp() pour garantir que currentUser est défini
-});
-
-// ===== INTERCEPTION DES SAUVEGARDES POUR ENVOYER VERS FIREBASE =====
-const originalSauvegarderDonnees2 = sauvegarderDonnees;
-sauvegarderDonnees = function() {
-  originalSauvegarderDonnees2();
-  
-  if (_fbReady && currentUser) {
-    // Envoyer les feuilles de garde (FEUILLES_GARDE est un objet {date: garde})
-    if (FEUILLES_GARDE && typeof FEUILLES_GARDE === 'object' && !Array.isArray(FEUILLES_GARDE)) {
-      Object.entries(FEUILLES_GARDE).forEach(([date, feuille]) => {
-        fbSaveFeuille(date, feuille).catch(e => console.warn("Erreur feuille:", e));
-      });
-    }
-    
-    // Envoyer le planning
-    if (PLANNING && typeof PLANNING === 'object') {
-      fbSavePlanning(currentUser.id, PLANNING).catch(e => console.warn("Erreur planning:", e));
-    }
-    
-    // Envoyer les interventions
-    if (INTERVENTIONS && Array.isArray(INTERVENTIONS)) {
-      INTERVENTIONS.forEach(iv => fbSaveIntervention(iv).catch(e => console.warn("Erreur intervention:", e)));
-    }
-    
-    // Envoyer les engins
-    if (ENGINS && Array.isArray(ENGINS)) {
-      fbSaveEngins(ENGINS).catch(e => console.warn("Erreur engins:", e));
-    }
-  }
-};
-
-// ===== CONSOLE DE DÉBOGAGE INTÉGRÉE =====
+// ============================================================
+// DEBUG BUTTON
+// ============================================================
 let errorLog = [];
-
-// Intercepter les erreurs globales
-window.addEventListener('error', (e) => {
-  const err = {
-    time: new Date().toLocaleTimeString(),
-    message: e.message,
-    source: e.filename,
-    line: e.lineno,
-    type: 'error'
-  };
-  errorLog.push(err);
-  console.error("❌ ERREUR CAPTURÉE:", err);
-});
-
-// Intercepter les promesses rejetées
-window.addEventListener('unhandledrejection', (e) => {
-  const err = {
-    time: new Date().toLocaleTimeString(),
-    message: e.reason?.message || String(e.reason),
-    type: 'promise_rejection'
-  };
-  errorLog.push(err);
-  console.error("❌ PROMESSE REJETÉE:", err);
-});
+window.addEventListener('error', e => errorLog.push({ time: new Date().toLocaleTimeString(), message: e.message, type: 'error' }));
+window.addEventListener('unhandledrejection', e => errorLog.push({ time: new Date().toLocaleTimeString(), message: String(e.reason?.message || e.reason), type: 'promise_rejection' }));
 
 function showErrorConsole() {
-  const modal = document.createElement('div');
-  modal.style.cssText = `
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #1a202c; color: #e2e8f0; padding: 20px;
-    border-radius: 8px; z-index: 99999; max-width: 600px; max-height: 400px;
-    overflow-y: auto; border: 2px solid #f56565;
-  `;
-  
-  let html = '<h3 style="color:#f56565; margin-top:0;">🔴 CONSOLE D\'ERREURS</h3>';
-  if (errorLog.length === 0) {
-    html += '<p>✅ Aucune erreur détectée</p>';
-  } else {
-    errorLog.forEach(err => {
-      html += `<div style="background:#2d3748; padding:10px; margin:5px 0; border-left:3px solid #f56565; font-size:12px;">
-        <strong>${err.time}</strong> - ${err.type}<br>
-        ${err.message}
-      </div>`;
-    });
-  }
-  html += '<button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; background:#48bb78; color:white; border:none; border-radius:4px; cursor:pointer;">Fermer</button>';
-  
-  modal.innerHTML = html;
-  document.body.appendChild(modal);
+  let html = '<h3 style="color:#f56565;margin-top:0;">🔴 CONSOLE D\'ERREURS</h3>';
+  if (!errorLog.length) html += '<p>✅ Aucune erreur</p>';
+  else errorLog.forEach(e => {
+    html += `<div style="background:#2d3748;padding:8px;margin:4px 0;border-left:3px solid #f56565;font-size:12px;"><strong>${e.time}</strong> — ${e.type}<br>${e.message}</div>`;
+  });
+  html += '<button onclick="this.parentElement.remove()" style="margin-top:8px;padding:6px 14px;background:#48bb78;color:#fff;border:none;border-radius:4px;cursor:pointer;">Fermer</button>';
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a202c;color:#e2e8f0;padding:20px;border-radius:8px;z-index:99999;max-width:600px;max-height:400px;overflow-y:auto;border:2px solid #f56565;';
+  d.innerHTML = html;
+  document.body.appendChild(d);
 }
 
-// Ajouter un bouton pour voir les erreurs
-const originalInitApp2 = initApp;
+const _initAppDebug = initApp;
 initApp = function() {
-  originalInitApp2();
-  
-  // Ajouter un bouton de débogage en bas à droite
-  const debugBtn = document.createElement('button');
-  debugBtn.innerHTML = '🐛 ERREURS';
-  debugBtn.style.cssText = `
-    position: fixed; bottom: 60px; right: 10px; z-index: 9998;
-    padding: 8px 12px; background: #f56565; color: white;
-    border: none; border-radius: 4px; cursor: pointer; font-size: 12px;
-  `;
-  debugBtn.onclick = showErrorConsole;
-  document.body.appendChild(debugBtn);
+  _initAppDebug();
+  const btn = document.createElement('button');
+  btn.innerHTML = '🐛 ERREURS';
+  btn.style.cssText = 'position:fixed;bottom:60px;right:10px;z-index:9998;padding:6px 10px;background:#f56565;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;';
+  btn.onclick = showErrorConsole;
+  document.body.appendChild(btn);
 };
-
-// ===== CORRECTION DU BUG TYPENAME UNDEFINED =====
-// Intercepter les erreurs de synchronisation
-const originalSynchroniserTout = synchroniserTout;
-synchroniserTout = function() {
-  try {
-    // Vérifier que USERS est un tableau valide
-    if (!Array.isArray(USERS)) {
-      console.warn("⚠️ USERS n'est pas un tableau, réinitialisation");
-      USERS = [];
-    }
-    
-    // Nettoyer les utilisateurs invalides
-    USERS = USERS.filter(u => u && typeof u === 'object' && u.id);
-    
-    // Appeler la fonction originale
-    originalSynchroniserTout();
-  } catch(e) {
-    console.error("❌ Erreur dans synchroniserTout:", e);
-    showToast("Erreur de synchronisation: " + e.message, "error");
-  }
-};
-
-// ===== DÉTECTION D'ADBLOCK =====
-function detectAdBlock() {
-  // Créer une image publicitaire factice
-  const testAd = document.createElement('div');
-  testAd.innerHTML = '&nbsp;';
-  testAd.className = 'adsbox';
-  testAd.style.cssText = 'width:1px;height:1px;position:absolute;left:-9999px;';
-  document.body.appendChild(testAd);
-  
-  // Vérifier si elle a été bloquée
-  const isBlocked = testAd.offsetHeight === 0;
-  testAd.remove();
-  
-  return isBlocked;
-}
-
-// Vérifier l'AdBlock au démarrage
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    if (detectAdBlock()) {
-      console.warn("⚠️ AdBlock détecté - Firebase peut être bloqué!");
-      const warning = document.createElement('div');
-      warning.style.cssText = `
-        position: fixed; top: 0; left: 0; right: 0; background: #f59e0b; color: white;
-        padding: 12px; text-align: center; z-index: 99998; font-weight: bold;
-      `;
-      warning.innerHTML = '⚠️ Bloqueur de pub détecté - Désactivez-le pour la synchronisation en temps réel!';
-      document.body.appendChild(warning);
-      setTimeout(() => warning.remove(), 5000);
-    }
-  }, 1000);
-});

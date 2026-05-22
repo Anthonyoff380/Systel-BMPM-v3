@@ -726,14 +726,11 @@
             userId: chefId, enginId, enginNom: enginObj?.nom || enginId,
             interventionId: interNum, interNum, motif: data.sinistre,
             adresse: data.adresse, place: "Chef d'agrès", isChefAgres: true,
-            acquitte: false, timestamp: Date.now()
+            timestamp: new Date().toISOString()
           };
-          // Firestore = reçu par TOUS les navigateurs connectés
           if (typeof fbSendBip === 'function') {
             fbSendBip(chefId, bipData).catch(e => console.warn('Erreur bip Firestore:', e));
           }
-          // Fallback localStorage pour l'onglet local
-          localStorage.setItem('systel_bip_' + chefId, JSON.stringify(bipData));
         }
         // BIP tous les membres de l'équipe
         const membres = equipes[enginId]?.membres || [];
@@ -744,12 +741,11 @@
             userId: m.userId, enginId, enginNom: enginObj?.nom || enginId,
             interventionId: interNum, interNum, motif: data.sinistre,
             adresse: data.adresse, place: m.posteLabel || 'Équipier',
-            acquitte: false, timestamp: Date.now()
+            timestamp: new Date().toISOString()
           };
           if (typeof fbSendBip === 'function') {
             fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
           }
-          localStorage.setItem('systel_bip_' + m.userId, JSON.stringify(bipMembre));
         });
         // Ouvrir ticket départ dans un nouvel onglet
         const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
