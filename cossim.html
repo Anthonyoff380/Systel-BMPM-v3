@@ -745,10 +745,23 @@
         engins: data.engins, equipes, enginsGFO, renfortDe, statut: 'En cours'
       };
       INTERVENTIONS.push(intervention);
+      // Sauvegarder l'intervention dans Firestore
+      if (typeof fbSaveIntervention === 'function') {
+        fbSaveIntervention(intervention).catch(e => {
+          console.error('Erreur lors de la sauvegarde de l\'intervention:', e);
+          showCossimToast('Erreur lors de la sauvegarde de l\'intervention', 'error');
+        });
+      }
       // Mettre les engins en intervention
+      const enginsAMajEnFirestore = [];
       data.engins.forEach(enginId => {
         const engin = ENGINS.find(e => e.id === enginId);
-        if (engin) { engin.statut = 'intervention'; engin.berStatut = 1; engin.chefAgres = equipes[enginId]?.chefAgres || null; }
+        if (engin) { 
+          engin.statut = 'intervention'; 
+          engin.berStatut = 1; 
+          engin.chefAgres = equipes[enginId]?.chefAgres || null;
+          enginsAMajEnFirestore.push(engin);
+        }
         // BIP chef d'agrès — envoi Firestore (multi-utilisateur temps réel)
         const chefId = equipes[enginId]?.chefAgres;
         if (chefId) {
@@ -782,19 +795,53 @@
         const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
         setTimeout(() => window.open('ticket_depart.html?' + tParams.toString(), '_blank'), 500);
       });
-      // Feuille de garde auto
+      // Sauvegarder les engins modifiés dans Firestore
+      if (enginsAMajEnFirestore.length > 0 && typeof fbSaveEngins === 'function') {
+        fbSaveEngins(enginsAMajEnFirestore).catch(e => {
+          console.error('Erreur lors de la sauvegarde des engins:', e);
+        });
+      }
+      // Feuille de garde auto — structure correcte : indexée par DATE, pas par engin
       const today = now.slice(0,10);
-      data.engins.forEach(enginId => {
-        if (!FEUILLES_GARDE[enginId]) FEUILLES_GARDE[enginId] = {};
-        if (!FEUILLES_GARDE[enginId][today]) {
+      if (!FEUILLES_GARDE[today]) {
+        const engins = [];
+        data.engins.forEach(enginId => {
+          const engin = ENGINS.find(e => e.id === enginId);
           const eq = equipes[enginId];
-          const equipe = (eq?.membres || []).map(m => {
-            const p = PERSONNELS.find(x => x.id === m.userId);
-            return p ? { id: p.id, nom: p.nom + ' ' + p.prenom, grade: p.grade, fonction: m.posteLabel } : null;
-          }).filter(Boolean);
-          FEUILLES_GARDE[enginId][today] = { enginId, date: today, equipe, creePar: 'COSSIM (auto)', creeLe: now, status: 'brouillon' };
+          const postes = (engin?.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'}]).map((p, pi) => {
+            const membre = eq?.membres?.find(m => m.posteId === p.id);
+            const pers = PERSONNELS.find(x => x.id === membre?.userId);
+            return {
+              id: p.id,
+              label: p.label,
+              abrev: p.abrev,
+              userId: membre?.userId || null,
+              nom: pers ? pers.nom + ' ' + pers.prenom : null
+            };
+          });
+          engins.push({
+            id: enginId,
+            nom: engin?.nom || enginId,
+            postes
+          });
+        });
+        FEUILLES_GARDE[today] = {
+          date: today,
+          type: 'COSSIM (auto)',
+          engins,
+          postesSpeciaux: [],
+          description: 'Créée automatiquement lors de l\'engagement',
+          creePar: 'COSSIM',
+          creeLe: now,
+          status: 'brouillon'
+        };
+        // Sauvegarder la feuille de garde dans Firestore
+        if (typeof fbSaveFeuille === 'function') {
+          fbSaveFeuille(today, FEUILLES_GARDE[today]).catch(e => {
+            console.error('Erreur lors de la sauvegarde de la feuille de garde:', e);
+          });
         }
-      });
+      }
       sauvegarderDonnees();
       // Webhooks Discord — appel direct car les fonctions sont dans data.js/app.js chargés
       (async () => {

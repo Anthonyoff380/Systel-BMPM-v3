@@ -73,15 +73,29 @@ function terminerIntervention(id) {
   inter.statut = 'Terminée';
   inter.dateFin = new Date().toISOString();
   // Remettre tous les engins engagés en disponible
+  const enginsAMajEnFirestore = [];
   (inter.engins || []).forEach(eId => {
     const engin = ENGINS.find(e => e.id === eId);
     if (engin) {
       engin.statut = 'disponible';
       engin.berStatut = null;
       engin.chefAgres = null;
+      enginsAMajEnFirestore.push(engin);
     }
   });
   sauvegarderDonnees();
+  // Sauvegarder l'intervention modifiée dans Firestore
+  if (typeof fbSaveIntervention === 'function') {
+    fbSaveIntervention(inter).catch(e => {
+      console.error('Erreur lors de la sauvegarde de l\'intervention:', e);
+    });
+  }
+  // Sauvegarder les engins modifiés dans Firestore
+  if (enginsAMajEnFirestore.length > 0 && typeof fbSaveEngins === 'function') {
+    fbSaveEngins(enginsAMajEnFirestore).catch(e => {
+      console.error('Erreur lors de la sauvegarde des engins:', e);
+    });
+  }
   // Forcer re-render complet
   renderInterventionsSynoptique();
   if (typeof updateSynoptique === 'function') updateSynoptique();
@@ -203,6 +217,12 @@ function changerStatutBER(code) {
     engin.statut = 'intervention';
   }
   sauvegarderDonnees();
+  // Sauvegarder l'engin modifié dans Firestore
+  if (typeof fbSaveEngin === 'function') {
+    fbSaveEngin(engin).catch(e => {
+      console.error('Erreur lors de la sauvegarde de l\'engin:', e);
+    });
+  }
   // Reset tous les boutons
   for (let i = 1; i <= 9; i++) {
     const btn = document.getElementById('ber-btn-' + i);

@@ -917,10 +917,19 @@ function supprimerPoste(enginIdx, posteIdx) {
 }
 function ajouterEnginAdmin() {
   if (!CASERNES[0]||CASERNES[0].sections.length===0) return showToast("Créez une section !","error");
-  ENGINS.push({id:"E"+Date.now(),nom:"NOUVEAU",section:CASERNES[0].sections[0].id,statut:"disponible",berStatut:null,chefAgres:null,
+  const newEngin = {id:"E"+Date.now(),nom:"NOUVEAU",section:CASERNES[0].sections[0].id,statut:"disponible",berStatut:null,chefAgres:null,
     postes:[{id:'ca',label:"Chef d'agrès",abrev:'C/A'},{id:'eq1',label:'Équipier 1',abrev:'EQ1'},{id:'eq2',label:'Équipier 2',abrev:'EQ2'}]
-  });
-  renderAdminEngins(); sauvegarderDonnees();
+  };
+  ENGINS.push(newEngin);
+  renderAdminEngins();
+  sauvegarderDonnees();
+  // Sauvegarder immédiatement dans Firestore
+  if (typeof fbSaveEngin === 'function') {
+    fbSaveEngin(newEngin).catch(e => {
+      console.error('Erreur lors de la sauvegarde de l\'engin:', e);
+      showToast('Erreur lors de la sauvegarde de l\'engin', 'error');
+    });
+  }
 }
 function sauvegarderToutAdmin() {
   CONFIG.nom = document.getElementById('adm-centre-nom').value;
@@ -1516,16 +1525,7 @@ acquitterBip = function() {
 // SAUVEGARDES CLOUD — appelées depuis feuille_garde, admin, cossim
 // ============================================================
 
-// Créer/modifier un engin → Firestore direct
-const _ajouterEnginOrig = ajouterEnginAdmin;
-ajouterEnginAdmin = function() {
-  _ajouterEnginOrig();
-  // Le dernier engin ajouté
-  const engin = ENGINS[ENGINS.length - 1];
-  if (engin && typeof fbSaveEngin === 'function') {
-    fbSaveEngin(engin).catch(e => console.warn('Erreur save engin:', e));
-  }
-};
+// Créer/modifier un engin → Firestore direct (déjà géré dans ajouterEnginAdmin)
 
 // Créer/modifier un user → Firestore direct (déjà fait dans sauvegarderUserAdmin via fbSaveUser)
 
@@ -1534,7 +1534,10 @@ ajouterEnginAdmin = function() {
 window.fbSaveEnginInline = function(idx) {
   const engin = ENGINS[idx];
   if (engin && typeof fbSaveEngin === 'function') {
-    fbSaveEngin(engin).catch(e => console.warn('Erreur save engin inline:', e));
+    fbSaveEngin(engin).catch(e => {
+      console.error('Erreur lors de la sauvegarde de l\'engin:', e);
+      showToast('Erreur lors de la sauvegarde de l\'engin', 'error');
+    });
   }
 };
 
