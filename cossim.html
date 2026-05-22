@@ -800,9 +800,7 @@
             fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
           }
         });
-        // Ouvrir ticket départ dans un nouvel onglet
-        const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
-        setTimeout(() => window.open('ticket_depart.html?' + tParams.toString(), '_blank'), 500);
+        // Ticket départ : ouvert automatiquement côté C/A à l'acquittement du BIP (via app.js acquitterBip)
       });
       // Sauvegarder les engins modifiés dans Firestore
       if (enginsAMajEnFirestore.length > 0 && typeof fbSaveEngins === 'function') {
