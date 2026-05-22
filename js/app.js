@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   chargerDonnees();
+  // Charger les utilisateurs Firebase avant l'authentification
+  if (typeof fbLoadUsers === 'function') {
+    try {
+      const fbUsers = await fbLoadUsers();
+      if (Array.isArray(fbUsers) && fbUsers.length) USERS = fbUsers;
+    } catch(e) { console.warn('Erreur chargement utilisateurs', e); }
+  }
   synchroniserTout();
   checkAuth();
   updateFBIndicator();
@@ -176,11 +183,11 @@ function handleLogin(e) {
   }
 
   // Recherche standard
-  let user = USERS.find(u => (u.id || '').toLowerCase() === idLow && u.pwd === pwd);
+  let user = USERS.find(u => (u.id || '').toLowerCase() === idLow && String(u.pwd||'').trim() === pwd);
   
   if (!user) {
     user = USERS.find(u => {
-      if (u.pwd !== pwd) return false;
+      if (String(u.pwd||'').trim() !== pwd) return false;
       const fn = (u.firstname || '').toLowerCase();
       const ln = (u.lastname || u.name || '').toLowerCase().split(' ')[0];
       return fn === idLow || ln === idLow ||
