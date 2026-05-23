@@ -83,21 +83,22 @@ function refreshBlips() {
     const type = BLIP_TYPES.find(t => t.id === blip.type) || BLIP_TYPES[6];
     const icon = L.divIcon({
       html: `<div class="blip-marker-pin" title="${blip.label}">
-        <div class="blip-emoji">${type.emoji}</div>
+        <div class="blip-emoji-wrap">${type.emoji}</div>
         <div class="blip-label-tag">${blip.label}</div>
+        <div class="blip-tail"></div>
       </div>`,
-      iconSize: [40, 50],
-      iconAnchor: [20, 50],
+      iconSize: [44, 58],
+      iconAnchor: [22, 58],
       className: ''
     });
     const marker = L.marker([blip.lat, blip.lng], { icon }).addTo(carteLeaflet);
     const isAdmin = userIsAdmin(currentUser);
     marker.bindPopup(`
-      <div style="text-align:center;min-width:120px;">
-        <div style="font-size:28px;">${type.emoji}</div>
-        <div style="font-weight:800;font-size:14px;margin:4px 0;">${blip.label}</div>
-        <div style="font-size:11px;color:#718096;">${type.label}</div>
-        ${isAdmin ? `<button onclick="supprimerBlip('${blip.id}')" style="margin-top:8px;background:#e53e3e;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;width:100%;">🗑️ Supprimer</button>` : ''}
+      <div style="text-align:center;min-width:130px;padding:4px;">
+        <div style="font-size:30px;line-height:1.2;">${type.emoji}</div>
+        <div style="font-weight:800;font-size:14px;margin:6px 0 2px;color:#1a202c;">${blip.label}</div>
+        <div style="font-size:11px;color:#718096;margin-bottom:6px;">${type.label}</div>
+        ${isAdmin ? `<button onclick="supprimerBlip('${blip.id}')" style="margin-top:4px;background:#e53e3e;color:white;border:none;padding:5px 12px;border-radius:5px;cursor:pointer;width:100%;font-weight:700;font-size:12px;">🗑️ Supprimer</button>` : ''}
       </div>`
     );
     blipMarkers[blip.id] = marker;
@@ -120,17 +121,26 @@ function confirmerAjoutBlip() {
   const lng = parseFloat(document.getElementById('blip-lng').value);
   const label = document.getElementById('blip-label').value || 'Point';
   const type = document.getElementById('blip-type-select').value;
-  CARTE_BLIPS.push({ id: 'blip_'+Date.now(), lat, lng, label, type });
-  sauvegarderDonnees();
+  const newBlip = { id: 'blip_'+Date.now(), lat, lng, label, type };
+  // Sauvegarder dans Firestore (listener Firestore mettra CARTE_BLIPS à jour pour tout le monde)
+  if (typeof fbSaveBlip === 'function') {
+    fbSaveBlip(newBlip).catch(e => console.warn('Erreur save blip:', e));
+  } else {
+    CARTE_BLIPS.push(newBlip);
+    refreshBlips();
+  }
   fermerModal();
-  refreshBlips();
   showToast("Blip ajouté !");
 }
 
 function supprimerBlip(id) {
-  CARTE_BLIPS = CARTE_BLIPS.filter(b => b.id !== id);
-  sauvegarderDonnees();
-  refreshBlips();
+  // Supprimer dans Firestore (listener Firestore mettra CARTE_BLIPS à jour pour tout le monde)
+  if (typeof fbDeleteBlip === 'function') {
+    fbDeleteBlip(id).catch(e => console.warn('Erreur delete blip:', e));
+  } else {
+    CARTE_BLIPS = CARTE_BLIPS.filter(b => b.id !== id);
+    refreshBlips();
+  }
   if (carteLeaflet) carteLeaflet.closePopup();
   showToast("Blip supprimé");
 }

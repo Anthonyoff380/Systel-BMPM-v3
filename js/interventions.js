@@ -27,9 +27,9 @@ function renderInterventionCard(inter) {
     if (!engin) return '';
     const ber = engin.berStatut ? BER_STATUTS.find(b => b.code === engin.berStatut) : null;
     const style = ber && ber.couleur ? `background:${ber.couleur};color:white;border-color:${ber.couleur};` : '';
-    const label = ber ? `${ber.code} – ${ber.label}` : 'En intervention';
+    const label = ber ? ber.label : 'En intervention';
     return `<div class="synop-engin-box" style="${style}" title="${label}"
-      onclick="ouvrirBER('${engin.id}')">${engin.nom}${ber?` <sup>${ber.code}</sup>`:''}</div>`;
+      onclick="ouvrirBER('${engin.id}')">${engin.nom}</div>`;
   }).join('');
   const servicesHTML = (inter.services||[]).map(s => `<span class="synop-service-tag">${s}</span>`).join('');
   const dateFormatted = inter.date ? new Date(inter.date).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '--';

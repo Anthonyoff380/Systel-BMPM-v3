@@ -34,7 +34,8 @@ const COL = {
   INTERVENTIONS: "systel_interventions",
   FEUILLES:      "systel_feuilles_garde",
   BIPS:          "systel_bip_alertes",
-  PLANNING:      "systel_planning"
+  PLANNING:      "systel_planning",
+  BLIPS:         "systel_carte_blips"
 };
 window.COL = COL;
 
@@ -253,6 +254,25 @@ window.fbLoadPlanning = async function() {
   const data = [];
   snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
   return data;
+};
+
+// ============================================================
+// CARTE BLIPS — synchronisation temps réel multi-utilisateurs
+// ============================================================
+window.fbListenBlips = function(callback) {
+  return db.collection(COL.BLIPS).onSnapshot(snap => {
+    const blips = [];
+    snap.forEach(doc => blips.push({ id: doc.id, ...doc.data() }));
+    callback(blips);
+  });
+};
+
+window.fbSaveBlip = async function(blip) {
+  await db.collection(COL.BLIPS).doc(String(blip.id)).set({ ...blip, id: String(blip.id) }, { merge: true });
+};
+
+window.fbDeleteBlip = async function(blipId) {
+  await db.collection(COL.BLIPS).doc(String(blipId)).delete();
 };
 
 // ============================================================

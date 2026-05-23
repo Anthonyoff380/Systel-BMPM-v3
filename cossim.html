@@ -747,7 +747,7 @@
       const intervention = {
         id: interNum, numero: interNum, date: now,
         type: data.sinistre, categorie: data.categorie,
-        adresse: data.adresse, commune: data.commune, voie: data.voie, numero: data.numero,
+        adresse: data.adresse, commune: data.commune, voie: data.voie, numRue: data.numero,
         quartier: data.quartier, precision: data.precision,
         etablissement: data.etablissement, nca: data.nca, contact: data.contact,
         observations: data.observations, services: data.services,
@@ -800,7 +800,16 @@
             fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
           }
         });
-        // Ticket départ : ouvert automatiquement côté C/A à l'acquittement du BIP (via app.js acquitterBip)
+        // Ouvrir ticket départ côté COSSIM (opérateur) + déclencher webhook
+        const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
+        setTimeout(() => {
+          window.open('ticket_depart.html?' + tParams.toString(), '_blank');
+          // Déclencher le webhook ticket si disponible (depuis app.js)
+          if (typeof webhookTicketDepart === 'function') {
+            const interObj = INTERVENTIONS.find(i => i.id === interNum || i.numero === interNum);
+            if (interObj) webhookTicketDepart(interObj, enginId).catch(e => console.warn('Webhook ticket err:', e));
+          }
+        }, 800);
       });
       // Sauvegarder les engins modifiés dans Firestore
       if (enginsAMajEnFirestore.length > 0 && typeof fbSaveEngins === 'function') {
@@ -890,7 +899,7 @@
       setTimeout(() => {
         if(document.getElementById('c-commune')) document.getElementById('c-commune').value = inter.commune||'';
         if(document.getElementById('c-voie')) document.getElementById('c-voie').value = inter.voie||'';
-        if(document.getElementById('c-numero')) document.getElementById('c-numero').value = inter.numero||'';
+        if(document.getElementById('c-numero')) document.getElementById('c-numero').value = inter.numRue||'';
         if(document.getElementById('c-quartier')) document.getElementById('c-quartier').value = inter.quartier||'';
         if(document.getElementById('c-precision')) document.getElementById('c-precision').value = inter.precision||'';
         if(document.getElementById('c-etablissement')) { document.getElementById('c-etablissement').value = inter.etablissement||''; }

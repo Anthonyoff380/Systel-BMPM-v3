@@ -85,7 +85,7 @@
     <div class="s-body">
       <div class="info-grid">
         <div class="irow"><span class="ilbl">Commune:</span><span class="ival" id="t-commune"></span></div>
-        <div class="irow"><span class="ilbl">Numéro:</span><span class="ival" id="t-numero"></span></div>
+        <div class="irow"><span class="ilbl">N° de voie:</span><span class="ival" id="t-numero"></span></div>
         <div class="irow"><span class="ilbl">Voie:</span><span class="ival" id="t-voie"></span></div>
         <div class="irow"><span class="ilbl">ETARE:</span><span class="ival" id="t-erp"></span></div>
         <div class="irow"><span class="ilbl">Précisions:</span><span class="ival" id="t-precision"></span></div>
@@ -157,7 +157,7 @@ const interId=params.get('inter');
 const enginId=params.get('engin');
 const now=new Date();
 
-const inter=INTERVENTIONS.find(i=>i.id===interId)||{};
+const inter=INTERVENTIONS.find(i=>i.id===interId||i.numero===interId)||{};
 const engin=ENGINS.find(e=>e.id===enginId)||{};
 const interDate=inter.date?new Date(inter.date):now;
 
@@ -168,15 +168,15 @@ document.getElementById('h-datetime').textContent = fdt(interDate);
 const centreNom = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
 document.getElementById('h-centre').textContent = centreNom;
 document.getElementById('h-engin').textContent = engin.nom || enginId || '--';
-// N° = numéro d'intervention
+// N° = numéro d'intervention (pas le numéro de rue)
 document.getElementById('h-num').textContent = 'N° ' + (inter.numero || inter.id || '--');
 
 // Sinistre
 document.getElementById('t-sinistre').textContent = (inter.type||'INTERVENTION').toUpperCase();
 
-// Localisation
+// Localisation — inter.numero est le numéro d'intervention, inter.numRue est le numéro de rue
 document.getElementById('t-commune').textContent = inter.commune||'--';
-document.getElementById('t-numero').textContent = inter.numero||'';
+document.getElementById('t-numero').textContent = inter.numRue || inter.adresseNumero || '';
 document.getElementById('t-voie').textContent = inter.voie||'--';
 document.getElementById('t-erp').textContent = inter.etablissement||'-';
 document.getElementById('t-precision').textContent = inter.precision||'-';

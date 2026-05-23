@@ -173,18 +173,19 @@ function handleLogin(e) {
     return;
   }
 
-  // Recharger depuis localStorage
-  const storedUsers = localStorage.getItem('systel_users');
-  if (storedUsers) {
-    try {
-      const parsed = JSON.parse(storedUsers);
-      if (parsed && Array.isArray(parsed)) USERS = parsed;
-    } catch(ex) {}
+  // SÉCURITÉ : on n'utilise JAMAIS le localStorage pour authentifier.
+  // USERS est chargé depuis Firestore au démarrage (fbLoadUsers).
+  // Si Firestore n'a pas encore répondu, on refuse la connexion pour éviter
+  // qu'un compte supprimé de Firestore puisse se reconnecter via le cache local.
+  if (!USERS || USERS.length === 0) {
+    const err = document.getElementById('login-error');
+    if (err) err.textContent = "Chargement en cours, réessayez dans quelques secondes…";
+    return;
   }
 
-  // Recherche standard
+  // Recherche standard — uniquement dans USERS chargé depuis Firestore
   let user = USERS.find(u => (u.id || '').toLowerCase() === idLow && String(u.pwd||'').trim() === pwd);
-  
+
   if (!user) {
     user = USERS.find(u => {
       if (String(u.pwd||'').trim() !== pwd) return false;
@@ -773,9 +774,8 @@ function chargerDonnees() {
   if (d('config')) CONFIG = JSON.parse(d('config'));
   if (d('intranet')) INTRANET_CONFIG = JSON.parse(d('intranet'));
   if (d('casernes')) CASERNES = JSON.parse(d('casernes'));
-  if (d('carte_blips')) CARTE_BLIPS = JSON.parse(d('carte_blips'));
   if (d('cossim_config')) COSSIM_CONFIG = JSON.parse(d('cossim_config'));
-  // Users/Engins/Interventions/Feuilles/Planning : chargés depuis Firestore via les listeners
+  // Users/Engins/Interventions/Feuilles/Planning/Blips : chargés depuis Firestore via les listeners
 }
 function sauvegarderDonnees() {
   // Sauvegarder uniquement la config locale (UI, préférences)
@@ -785,8 +785,7 @@ function sauvegarderDonnees() {
   s('intranet', INTRANET_CONFIG);
   s('casernes', CASERNES);
   s('cossim_config', COSSIM_CONFIG);
-  s('carte_blips', CARTE_BLIPS);
-  // Les données critiques (users, engins, interventions, feuilles, planning)
+  // Les données critiques (users, engins, interventions, feuilles, planning, blips)
   // sont gérées directement via fbSave* et synchronisées par les listeners Firestore.
 }
 function startClock() { setInterval(() => { const c = document.getElementById('current-clock'); if (c) c.textContent = new Date().toLocaleTimeString('fr-FR'); }, 1000); }
@@ -1388,20 +1387,29 @@ ${engins||'Aucun engin'}`, inline:false };
   };
   try {
     if (_synopDiscordMsgId) {
-      // PATCH — modifier le message existant
-      const patchUrl = url.replace('/webhooks/', '/webhooks/').replace(/\/[^\/]+$/, m => m) + '/messages/' + _synopDiscordMsgId;
-      // Discord ne supporte pas PATCH via webhook directement, on utilise le ?wait=true trick
-      // On supprime et recrée (via ?wait=true pour avoir l'ID)
+      // PATCH — modifier le message existant sans envoyer un nouveau message
+      // Discord supporte PATCH /webhooks/{id}/{token}/messages/{message_id}
+      const patchUrl = url.replace(/\/+$/, '') + '/messages/' + _synopDiscordMsgId;
+      const patchResp = await fetch(patchUrl + '?wait=true', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [embed] })
+      });
+      if (patchResp.ok) return; // Succès — message édité, rien de plus
+      // Si PATCH échoue (message supprimé manuellement), on recrée
+      _synopDiscordMsgId = null;
     }
-    // POST avec ?wait=true pour récupérer l'ID du message
+    // POST initial (ou recréation si PATCH échoue) avec ?wait=true pour récupérer l'ID
     const resp = await fetch(url + '?wait=true', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ embeds:[embed] })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] })
     });
     if (resp.ok) {
       const data = await resp.json();
       _synopDiscordMsgId = data.id;
+      // Persister l'ID pour survivre aux rechargements de page
+      localStorage.setItem('systel_discord_synop_msgid', _synopDiscordMsgId);
     }
   } catch(e) { console.warn('Synoptique webhook err:', e); }
 }
@@ -1413,6 +1421,10 @@ async function webhookSynoptique() {
 
 function startSynopDiscordTimer() {
   if (_synopDiscordTimer) clearInterval(_synopDiscordTimer);
+  // Restaurer l'ID du message depuis le localStorage si disponible
+  if (!_synopDiscordMsgId) {
+    _synopDiscordMsgId = localStorage.getItem('systel_discord_synop_msgid') || null;
+  }
   if (CONFIG?.webhooks?.synoptique) {
     _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 5 * 60 * 1000);
     webhookSynoptiqueEdit();
@@ -1506,6 +1518,15 @@ function demarrerListenersFirebase() {
     // Stocker le docId pour marquer lu à l'acquittement
     window._bipEnCours = bip;
   });
+
+  // -- CARTE BLIPS — synchronisation Firestore temps réel --
+  if (typeof fbListenBlips === 'function') {
+    if (_fbUnsub.blips) _fbUnsub.blips();
+    _fbUnsub.blips = fbListenBlips(blips => {
+      CARTE_BLIPS = blips;
+      if (typeof refreshBlips === 'function') refreshBlips();
+    });
+  }
 }
 
 // Démarrer les listeners dans initApp (currentUser garanti)

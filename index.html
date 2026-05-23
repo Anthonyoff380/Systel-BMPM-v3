@@ -287,7 +287,7 @@
       <div id="center-title">CENTRE PTR - --/--/---- (WEB1)</div>
     </div>
     <div id="topbar-right">
-      <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Changer le thème">☀️</button>
+      
       <div id="user-info" onclick="openProfilMenu()" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-left:10px;">
         <div class="avatar-sm"><img id="top-avatar-img" src="https://www.w3schools.com/howto/img_avatar.png"></div>
         <div style="text-align:right;">
@@ -314,7 +314,7 @@
       <div class="nav-item" data-section="historique" onclick="showSection('historique')">📜 Historique</div>
       <div class="nav-group-label">Gestion</div>
       <div class="nav-item" data-section="feuille-garde" onclick="showSection('feuille-garde')">📋 Feuille de garde</div>
-      <div class="nav-item" data-section="planning" onclick="showSection('planning')">📅 Planning</div>
+
       <div class="nav-group-label">Outils</div>
       <div class="nav-item" data-section="annuaire" onclick="showSection('annuaire')">📖 Annuaire</div>
       <div class="nav-item" data-section="cartographie" onclick="showSection('cartographie')">📍 Cartographie</div>
@@ -330,7 +330,7 @@
       <div id="section-synoptique" class="section active-section">
         <div class="section-header">
           <div class="section-title">SYNOPTIQUE DES MOYENS</div>
-          <button class="theme-btn" onclick="toggleTheme()" title="Thème">☀️</button>
+          
         </div>
         <div id="synoptique-main-container"></div>
         <div class="card" style="margin-top:20px;">
@@ -344,7 +344,7 @@
         <div class="section-header">
           <div class="section-title">SYNOPTIQUE DES INTERVENTIONS</div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+            
             <a href="cossim.html" id="btn-ouvrir-cossim" class="btn btn-primary" style="text-decoration:none;display:none;">🚨 Ouvrir COSSIM</a>
           </div>
         </div>
@@ -369,34 +369,17 @@
       <div id="section-feuille-garde" class="section">
         <div class="section-header">
           <div class="section-title">FEUILLE DE GARDE</div>
-          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+          
         </div>
         <div id="feuille-garde-container"></div>
       </div>
 
       <!-- PLANNING -->
-      <div id="section-planning" class="section">
-        <div class="section-header">
-          <div class="section-title">PLANNING</div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button class="theme-btn" onclick="toggleTheme()">☀️</button>
-            <div class="planning-nav">
-              <button class="btn btn-secondary" onclick="semainePrecedente()">◀</button>
-              <span id="planning-semaine-label">---</span>
-              <button class="btn btn-secondary" onclick="semaineSuivante()">▶</button>
-            </div>
-          </div>
-        </div>
-        <div class="card"><div class="card-body">
-          <table class="data-table"><thead id="planning-thead"></thead><tbody id="planning-tbody"></tbody></table>
-        </div></div>
-      </div>
-
       <!-- ANNUAIRE -->
       <div id="section-annuaire" class="section">
         <div class="section-header">
           <div class="section-title">ANNUAIRE</div>
-          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+          
         </div>
         <div class="annuaire-grid" id="annuaire-grid"></div>
       </div>
@@ -405,7 +388,7 @@
       <div id="section-cartographie" class="section">
         <div class="section-header">
           <div class="section-title">CARTOGRAPHIE</div>
-          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+          
         </div>
         <div id="carto-admin-tools" class="carto-admin-panel" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -430,7 +413,7 @@
       <div id="section-admin" class="section">
         <div class="section-header">
           <div class="section-title">CONFIGURATION</div>
-          <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+          
         </div>
         <div class="admin-tabs">
           <button class="admin-tab-btn active" data-tab="centre"   onclick="showAdminTab('centre',event)">Config Systel</button>
@@ -745,7 +728,7 @@
 <script src="js/app.js"></script>
 <script src="js/synoptique.js"></script>
 <script src="js/interventions.js"></script>
-<script src="js/planning.js"></script>
+
 <script src="js/personnels.js"></script>
 <script src="js/annuaire.js"></script>
 <script src="js/feuille_garde.js"></script>
