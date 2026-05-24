@@ -1237,62 +1237,133 @@ async function webhookTicketDepart(inter, enginId) {
   const url = CONFIG?.webhooks?.ticket;
   if (!url) return;
   const engin = ENGINS.find(e=>e.id===enginId);
-  const eq = inter.equipes?.[enginId];
-  const gfo = inter.enginsGFO?.[enginId] || '--';
   const centre = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
   const interDate = inter.date ? new Date(inter.date) : new Date();
-  const dateStr = interDate.toLocaleDateString('fr-FR') + ' ' + interDate.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  function p2(n){return String(n).padStart(2,'0');}
+  const dateStr = p2(interDate.getDate())+'-'+p2(interDate.getMonth()+1)+'-'+interDate.getFullYear()+' '+p2(interDate.getHours())+':'+p2(interDate.getMinutes())+':'+p2(interDate.getSeconds());
 
-  // Armement — style ticket officiel
+  // Ouvrir le ticket dans une iframe cachée et capturer l'image via html2canvas
+  const tParams = new URLSearchParams({ inter: inter.id||inter.numero, engin: enginId });
+  const ticketUrl = 'ticket_depart.html?' + tParams.toString();
+
+  // Attendre 3s que Firestore propage l'intervention avant de capturer
+  await new Promise(r => setTimeout(r, 3000));
+  try {
+    const imgDataUrl = await _captureTicketAsImage(ticketUrl);
+    if (imgDataUrl) {
+      // Convertir dataURL → Blob pour envoyer en fichier Discord
+      const blob = await (await fetch(imgDataUrl)).blob();
+      const formData = new FormData();
+      formData.append('file', blob, 'ticket_depart.png');
+      formData.append('payload_json', JSON.stringify({
+        content: `📋 **TICKET DE DÉPART** — **${engin?.nom||enginId}** — ${inter.type||'INTERVENTION'} — \`${inter.numero||inter.id}\` — ${centre} — ${dateStr}`
+      }));
+      await fetch(url, { method: 'POST', body: formData });
+      return;
+    }
+  } catch(imgErr) {
+    console.warn('Capture image ticket échouée, fallback embed:', imgErr);
+  }
+
+  // Fallback : embed texte si la capture échoue
+  const eq = inter.equipes?.[enginId];
+  const gfo = inter.enginsGFO?.[enginId] || '--';
   const armRows = (eq?.membres||[]).map(m => {
     const u = USERS.find(x=>x.id===m.userId);
-    return u ? `\`${(m.abrev||'--').padEnd(8)}\` \`${(u.grade||'--').padEnd(12)}\` **${(u.lastname||'').toUpperCase()} ${u.firstname||''}**` : `\`${m.abrev||'--'}\``;
+    return u ? `\`${(m.abrev||'--').padEnd(8)}\` \`${(u.grade||'--').padEnd(10)}\` **${((u.lastname||'').toUpperCase()+' '+(u.firstname||'')).trim()}**` : `\`${m.abrev||'--'}\``;
   }).join('\n') || '*Équipage non renseigné*';
-
-  // Autres moyens alertés
-  const autresMoyens = (inter.autresMoyensAlertes||[]).map(m =>
-    `${getCentreNom(ENGINS.find(e=>e.id===m.enginId)?.section)} — ${m.gfo||'--'} — **${m.enginNom||m.enginId}**`
-  ).join('\n') || '*Aucun*';
-
-  // Moyens déjà engagés
-  const moyensEngages = (inter.engins||[]).filter(id=>id!==enginId).map(id => {
-    const e = ENGINS.find(x=>x.id===id);
-    return `${getCentreNom(e?.section)} — **${e?.nom||id}** — ${dateStr}`;
-  }).join('\n') || '*Aucun*';
-
   const consigne = COSSIM_CONFIG?.erp_consignes?.[inter.etablissement] || 'ERP fermé.';
-
+  const localisation = [
+    inter.commune ? `**Commune :** ${inter.commune}` : null,
+    inter.numRue  ? `**N° voie :** ${inter.numRue}` : null,
+    inter.voie    ? `**Voie :** ${inter.voie}` : null,
+    inter.etablissement ? `**ETARE :** ${inter.etablissement}` : null,
+    inter.precision ? `**Précisions :** ${inter.precision}` : null,
+    `**Consigne :** ${consigne}`,
+    inter.contact ? `**Contact :** ${inter.contact}` : null,
+    inter.nca     ? `**N° CA :** ${inter.nca}` : null,
+  ].filter(Boolean).join('\n');
   const embed = {
-    title: `🚒 TICKET DE DÉPART — ${engin?.nom||enginId}`,
+    title: `🚒 ${inter.renfortDe?'RENFORT':'DÉPART STANDARD'} — ${engin?.nom||enginId}`,
+    description: `**${(inter.type||'INTERVENTION').toUpperCase()}**`,
     color: 0x1a202c,
-    description: `**${inter.type||'INTERVENTION'}**`,
     fields: [
-      { name: '📋 DÉPART', value: `\`${inter.renfortDe ? 'RENFORT' : 'DÉPART STANDARD'}\``, inline: true },
-      { name: '🏛️ CENTRE', value: `\`${centre}\``, inline: true },
-      { name: '🔢 N° INTERVENTION', value: `\`${inter.numero||inter.id}\``, inline: true },
-      { name: '⏰ Date/Heure', value: dateStr, inline: true },
+      { name: '🏛️ Centre', value: `\`${centre}\``, inline: true },
       { name: '🚒 Engin', value: `**${engin?.nom||enginId}**`, inline: true },
       { name: '📡 GFO', value: `\`${gfo}\``, inline: true },
-      { name: '📍 LOCALISATION', value: [
-        inter.commune ? `**Commune:** ${inter.commune}` : null,
-        inter.voie ? `**Voie:** ${inter.voie}` : null,
-        inter.numero ? `**N°:** ${inter.numero}` : null,
-        inter.precision ? `**Précision:** ${inter.precision}` : null,
-        inter.etablissement ? `**ETARE:** ${inter.etablissement}` : null,
-        `**Consigne:** ${consigne}`,
-        inter.contact ? `**Contact:** ${inter.contact}` : null,
-        inter.nca ? `**Contre-appel:** ${inter.nca}` : null,
-      ].filter(Boolean).join('\n') || '--', inline: false },
-      { name: '📝 OBSERVATIONS', value: inter.observations || '-', inline: false },
-      { name: '👥 ARMEMENT DES VÉHICULES', value: armRows || '*Non renseigné*', inline: false },
-      { name: '🚨 AUTRES MOYENS ALERTÉS', value: autresMoyens, inline: true },
-      { name: '✅ MOYENS DÉJÀ ENGAGÉS', value: moyensEngages, inline: true },
+      { name: '🔢 N° Intervention', value: `\`${inter.numero||inter.id}\``, inline: true },
+      { name: '⏰ Date/Heure', value: dateStr, inline: true },
+      { name: '\u200b', value: '\u200b', inline: true },
+      { name: '📍 Localisation', value: localisation||'--', inline: false },
+      { name: '📝 Observations', value: inter.observations||'-', inline: false },
+      { name: '👥 Armement', value: armRows, inline: false },
     ],
     timestamp: new Date().toISOString(),
-    footer: { text: `SYSTEL — ${centre} — ${CONFIG?.typeGarde||''}` }
+    footer: { text: `SYSTEL — ${centre}` }
   };
   await sendDiscordWebhook(url, embed);
 }
+
+// Capture le ticket en image PNG via iframe + html2canvas
+async function _captureTicketAsImage(ticketUrl) {
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:800px;height:1200px;border:none;opacity:0;pointer-events:none;';
+    document.body.appendChild(iframe);
+
+    const timeout = setTimeout(() => {
+      document.body.removeChild(iframe);
+      reject(new Error('Timeout capture ticket'));
+    }, 15000);
+
+    iframe.onload = () => {
+      // Attendre que le ticket charge Firestore (il appelle chargerDepuisFirestore)
+      const checkReady = setInterval(() => {
+        try {
+          const iDoc = iframe.contentDocument;
+          const overlay = iDoc?.getElementById('loading-overlay');
+          // Quand l'overlay est caché, le ticket est prêt
+          if (overlay && overlay.style.display === 'none') {
+            clearInterval(checkReady);
+            clearTimeout(timeout);
+            const iWin = iframe.contentWindow;
+            if (!iWin.html2canvas) {
+              // Charger html2canvas dans l'iframe si pas déjà là
+              const s = iDoc.createElement('script');
+              s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+              s.onload = () => _doCapture(iframe, iWin, resolve, reject);
+              iDoc.head.appendChild(s);
+            } else {
+              _doCapture(iframe, iWin, resolve, reject);
+            }
+          }
+        } catch(e) { /* cross-origin, ignorer */ }
+      }, 500);
+    };
+    iframe.src = ticketUrl;
+  });
+}
+
+function _doCapture(iframe, iWin, resolve, reject) {
+  setTimeout(async () => {
+    try {
+      const page = iWin.document.getElementById('ticket-page');
+      const canvas = await iWin.html2canvas(page, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      document.body.removeChild(iframe);
+      resolve(dataUrl);
+    } catch(e) {
+      document.body.removeChild(iframe);
+      reject(e);
+    }
+  }, 800);
+}
+
 
 function getCentreNom(sectionId) {
   if (!sectionId) return CONFIG?.centre||'--';

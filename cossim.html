@@ -555,7 +555,8 @@
     // ===== ENGINS STYLE SYNOPTIQUE =====
     function getFeuilleGardeAujourdhui(enginId) {
       const today = new Date().toISOString().slice(0,10);
-      return FEUILLES_GARDE?.[enginId]?.[today] || null;
+      const fgToday = FEUILLES_GARDE?.[today];
+      return fgToday?.engins?.find(fe => fe.id === enginId) || null;
     }
 
     function renderEnginsEngagement() {
@@ -800,16 +801,11 @@
             fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
           }
         });
-        // Ouvrir ticket départ côté COSSIM (opérateur) + déclencher webhook
+        // Ouvrir ticket départ côté COSSIM (opérateur)
         const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
         setTimeout(() => {
           window.open('ticket_depart.html?' + tParams.toString(), '_blank');
-          // Déclencher le webhook ticket si disponible (depuis app.js)
-          if (typeof webhookTicketDepart === 'function') {
-            const interObj = INTERVENTIONS.find(i => i.id === interNum || i.numero === interNum);
-            if (interObj) webhookTicketDepart(interObj, enginId).catch(e => console.warn('Webhook ticket err:', e));
-          }
-        }, 800);
+        }, 500);
       });
       // Sauvegarder les engins modifiés dans Firestore
       if (enginsAMajEnFirestore.length > 0 && typeof fbSaveEngins === 'function') {
@@ -874,13 +870,12 @@
               body: JSON.stringify({ embeds: [buildInterventionEmbed(intervention, equipes, enginsGFO, cfg)] })
             });
           }
-          // Webhook ticket par engin
+          // Webhook ticket par engin — via app.js (génère une image du ticket)
           if (wh.ticket) {
             for (const eId of data.engins) {
-              await fetch(wh.ticket, {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ embeds: [buildTicketEmbed(intervention, eId, equipes, enginsGFO, cfg)] })
-              });
+              if (typeof webhookTicketDepart === 'function') {
+                webhookTicketDepart(intervention, eId).catch(e => console.warn('Webhook ticket err:', e));
+              }
             }
           }
         } catch(err) { console.warn('Webhook erreur:', err); }
