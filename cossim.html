@@ -785,6 +785,14 @@
           if (typeof fbSendBip === 'function') {
             fbSendBip(chefId, bipData).catch(e => console.warn('Erreur bip Firestore:', e));
           }
+          // BIP FiveM — si le chef a un matricule configuré
+          const chefUser = (typeof USERS !== 'undefined' ? USERS : []).find(u => u.id === chefId);
+          if (chefUser?.matricule_bip) {
+            envoyerBipFiveM(chefUser.matricule_bip, {
+              motif: data.sinistre, enginNom: enginObj?.nom || enginId,
+              place: "Chef d'agrès", interNum
+            });
+          }
         }
         // BIP tous les membres de l'équipe
         const membres = equipes[enginId]?.membres || [];
@@ -799,6 +807,14 @@
           };
           if (typeof fbSendBip === 'function') {
             fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
+          }
+          // BIP FiveM — si le membre a un matricule configuré
+          const membreUser = (typeof USERS !== 'undefined' ? USERS : []).find(u => u.id === m.userId);
+          if (membreUser?.matricule_bip) {
+            envoyerBipFiveM(membreUser.matricule_bip, {
+              motif: data.sinistre, enginNom: enginObj?.nom || enginId,
+              place: m.posteLabel || 'Équipier', interNum
+            });
           }
         });
         // Ouvrir ticket départ côté COSSIM (opérateur)
@@ -1009,6 +1025,35 @@
       t.textContent = msg;
       t.className = 'cossim-toast show' + (type ? ' ' + type : '');
       setTimeout(() => t.className = 'cossim-toast', 3500);
+    }
+
+    // ============================================================
+    //  BIP FIVEM — Envoi HTTP vers le script FiveM
+    //  Configure l'URL de ton serveur FiveM dans la variable ci-dessous
+    //  Exemple : 'http://127.0.0.1:30120' (port par défaut FiveM)
+    // ============================================================
+    const FIVEM_SERVER_URL = localStorage.getItem('systel_fivem_url') || '';
+
+    function envoyerBipFiveM(matricule, bipData) {
+      if (!FIVEM_SERVER_URL) {
+        console.warn('[SYSTEL BIP FiveM] URL serveur FiveM non configurée. Configurer via localStorage.systel_fivem_url.');
+        return;
+      }
+      const url = FIVEM_SERVER_URL.replace(/\/$/, '') + '/systel/bip';
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matricule: matricule,
+          motif:     bipData.motif     || 'INTERVENTION',
+          enginNom:  bipData.enginNom  || '',
+          place:     bipData.place     || '',
+          interNum:  bipData.interNum  || ''
+        })
+      })
+      .then(r => r.json())
+      .then(d => console.log('[SYSTEL BIP FiveM] BIP envoyé à ' + matricule, d))
+      .catch(e => console.warn('[SYSTEL BIP FiveM] Erreur envoi HTTP :', e));
     }
   </script>
 
