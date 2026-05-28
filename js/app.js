@@ -512,7 +512,6 @@ function renderAdminUsers() {
       <td>${u.id}</td>
       <td>${u.lastname || u.name}</td>
       <td>${(u.roles || [u.role]).join(', ')}</td>
-      <td>${u.matricule_bip ? `<span style="background:#2d3748;color:#fc8181;font-size:11px;font-weight:800;padding:2px 8px;border-radius:4px;letter-spacing:1px;font-family:monospace;">${u.matricule_bip}</span>` : '<span style="color:var(--text-muted);font-size:11px;">—</span>'}</td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="editUserAdmin(${idx})">Modifier</button>
         <button class="btn btn-danger btn-sm" onclick="deleteUserAdmin(${idx})">✕</button>
@@ -529,8 +528,8 @@ function ajouterUserAdmin() {
   if(g('mu-lastname')) g('mu-lastname').value = '';
   if(g('mu-firstname')) g('mu-firstname').value = '';
   if(g('mu-pwd')) g('mu-pwd').value = '';
+  if(g('mu-matricule')) g('mu-matricule').value = '';
   if(g('mu-photo-data')) g('mu-photo-data').value = '';
-  if(g('mu-matricule-bip')) { g('mu-matricule-bip').value = ''; var p=document.getElementById('mu-matricule-preview'); if(p) p.textContent='PTR001'; }
   refreshGradeSelect();
   if(g('mu-grade')) g('mu-grade').value = (CONFIG.grades_custom||['Sapeur'])[0] || 'Sapeur';
   // Photo par défaut
@@ -547,15 +546,10 @@ function editUserAdmin(idx) {
   if(g('mu-lastname')) g('mu-lastname').value = u.lastname || u.name || '';
   if(g('mu-firstname')) g('mu-firstname').value = u.firstname || '';
   if(g('mu-pwd')) g('mu-pwd').value = u.pwd;
+  if(g('mu-matricule')) g('mu-matricule').value = u.matricule || '';
   if(g('mu-photo-data')) g('mu-photo-data').value = u.photo || '';
   refreshGradeSelect();
   if(g('mu-grade')) g('mu-grade').value = u.grade || '';
-  // Matricule BIP FiveM
-  if(g('mu-matricule-bip')) {
-    g('mu-matricule-bip').value = u.matricule_bip || '';
-    const prev = document.getElementById('mu-matricule-preview');
-    if(prev) prev.textContent = u.matricule_bip || 'PTR001';
-  }
   // Afficher photo
   const prev = document.getElementById('mu-photo-display');
   if(prev) prev.src = u.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent((u.firstname||'?')+' '+(u.lastname||''))}&background=2d3748&color=fff&size=80`;
@@ -708,6 +702,7 @@ function sauvegarderUserAdmin() {
 
     const ln = (g('mu-lastname')?.value || '').trim();
     const fn = (g('mu-firstname')?.value || '').trim();
+    const matricule = (g('mu-matricule')?.value || '').trim();
     const existingUser = currentEditIdx !== null ? USERS[currentEditIdx] : null;
     const photoData = g('mu-photo-data')?.value || existingUser?.photo || null;
 
@@ -720,10 +715,10 @@ function sauvegarderUserAdmin() {
       roles: selectedRoles,
       role: selectedRoles[0],
       grade: g('mu-grade')?.value || existingUser?.grade || 'Sapeur',
+      matricule: matricule || existingUser?.matricule || '',
       tel: existingUser?.tel || '',
       email: existingUser?.email || '',
-      photo: photoData,
-      matricule_bip: (g('mu-matricule-bip')?.value || '').trim().toUpperCase() || null
+      photo: photoData
     };
 
     console.log("Sauvegarde de l'utilisateur :", u);
