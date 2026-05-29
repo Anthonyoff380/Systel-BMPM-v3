@@ -417,7 +417,7 @@
           <button class="admin-tab-btn active" data-tab="centre"   onclick="showAdminTab('centre',event)">Config Systel</button>
           <button class="admin-tab-btn"         data-tab="casernes" onclick="showAdminTab('casernes',event)">Casernes</button>
           <button class="admin-tab-btn"         data-tab="engins"   onclick="showAdminTab('engins',event)">Engins</button>
-          <button class="admin-tab-btn"         data-tab="postes"   onclick="showAdminTab('postes',event)">🏅 Postes de service</button>
+          <button class="admin-tab-btn"         data-tab="postes"   onclick="showAdminTab('postes',event)">Postes de service</button>
           <button class="admin-tab-btn"         data-tab="users"    onclick="showAdminTab('users',event)">Comptes</button>
           <button class="admin-tab-btn"         data-tab="cossim"   onclick="showAdminTab('cossim',event)">Config COSSIM</button>
           <button class="admin-tab-btn" data-tab="grades"   onclick="showAdminTab('grades',event)">Grades</button>
@@ -461,11 +461,18 @@
 
         <div id="admin-tab-postes" class="admin-tab-content" style="display:none;">
           <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 16px;font-size:12px;color:#3b82f6;margin-bottom:16px;">
-            📄 <strong>Postes de Service</strong> — Configurez les postes disponibles pour la feuille de garde (ex: Chef d'agrès, Sapeur, Conducteur, etc.)
+            <strong>Postes de Service</strong> — Configurez les postes disponibles pour la feuille de garde (Chef de Garde, Sous Officier de Garde, Sapeur, Conducteur, etc.)
           </div>
           <div class="card"><div class="card-body">
-            <button class="btn btn-success btn-sm mb-10" onclick="ajouterPosteAdmin()">+ Ajouter Poste</button>
-            <table class="data-table"><thead><tr><th>Nom</th><th>Abreviation</th><th>Actions</th></tr></thead><tbody id="adm-postes-list"></tbody></table>
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-weight:600;margin-bottom:8px;font-size:13px;">Ajouter un nouveau poste</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;">
+                <input type="text" id="poste-nom" placeholder="Nom du poste (ex: Chef de Garde)" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:13px;">
+                <input type="text" id="poste-abrev" placeholder="Abréviation (ex: CDG)" style="padding:8px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:13px;">
+                <button class="btn btn-success" onclick="ajouterPosteAdmin()">Ajouter</button>
+              </div>
+            </div>
+            <table class="data-table"><thead><tr><th>Nom</th><th>Abréviation</th><th>Actions</th></tr></thead><tbody id="adm-postes-list"></tbody></table>
           </div></div>
         </div>
 

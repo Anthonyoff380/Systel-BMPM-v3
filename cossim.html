@@ -757,68 +757,27 @@
       INTERVENTIONS.push(intervention);
       
       // ============================================================
-      // DÉCLENCHER LES BIPS FIVEM
+      // DÉCLENCHER LES BIPS POUR TOUS LES UTILISATEURS
       // ============================================================
-      // Récupérer les matricules des membres engagés
-      const matricules = new Set();
-      data.engins.forEach(enginId => {
-        const eq = equipes[enginId];
-        // Chef d'agrès
-        if (eq?.chefAgres) {
-          const user = USERS.find(u => u.id === eq.chefAgres);
-          if (user?.matricule) {
-            matricules.add(user.matricule);
-          }
-        }
-        // Autres membres
-        (eq?.membres || []).forEach(m => {
-          if (m.userId) {
-            const user = USERS.find(u => u.id === m.userId);
-            if (user?.matricule) {
-              matricules.add(user.matricule);
-            }
-          }
-        });
-      });
+      // Envoyer le BIP à TOUS les utilisateurs (broadcast Firestore)
+      const bipBroadcast = {
+        interventionId: interNum,
+        motif: data.sinistre,
+        adresse: data.adresse,
+        engins: data.engins.map(eId => {
+          const e = ENGINS.find(x => x.id === eId);
+          return { id: eId, nom: e?.nom || eId };
+        }),
+        timestamp: new Date().toISOString(),
+        broadcast: true
+      };
       
-      // Envoyer le webhook FiveM si des matricules sont trouvés
-      if (matricules.size > 0) {
-        const bipFivemPayload = {
-          matricules: Array.from(matricules),
-          interventionId: interNum,
-          motif: data.sinistre,
-          adresse: data.adresse,
-          engins: data.engins.map(eId => {
-            const e = ENGINS.find(x => x.id === eId);
-            return {
-              id: eId,
-              nom: e?.nom || eId
-            };
-          })
-        };
-        
-        // Appeler l'API backend pour déclencher les bips FiveM
-        fetch('http://localhost:3000/api/trpc/fivemBip.trigger', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(bipFivemPayload)
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success || (data.result && data.result.data && data.result.data.success)) {
-              const result = data.result ? data.result.data : data;
-              console.log('✓ Bips FiveM déclenchés:', result.message);
-              showCossimToast('Bips FiveM envoyés à ' + result.count + ' joueur(s)', 'success');
-            } else {
-              console.warn('✗ Erreur lors de l\'envoi des bips FiveM:', data);
-            }
-          })
-          .catch(error => {
-            console.warn('✗ Erreur webhook FiveM:', error);
-          });
-      }
+      // Envoyer à TOUS les utilisateurs connectés
+      USERS.forEach(user => {
+        if (typeof fbSendBip === 'function') {
+          fbSendBip(user.id, bipBroadcast).catch(e => console.warn('Erreur bip broadcast:', e));
+        }
+      });
       
       // Sauvegarder l'intervention dans Firestore
       if (typeof fbSaveIntervention === 'function') {
@@ -837,57 +796,6 @@
           engin.chefAgres = equipes[enginId]?.chefAgres || null;
           enginsAMajEnFirestore.push(engin);
         }
-        // BIP chef d'agrès — envoi Firestore (multi-utilisateur temps réel)
-        const chefId = equipes[enginId]?.chefAgres;
-        if (chefId) {
-          const enginObj = ENGINS.find(e => e.id === enginId);
-          const bipData = {
-            userId: chefId, enginId, enginNom: enginObj?.nom || enginId,
-            interventionId: interNum, interNum, motif: data.sinistre,
-            adresse: data.adresse, place: "Chef d'agrès", isChefAgres: true,
-            timestamp: new Date().toISOString()
-          };
-          if (typeof fbSendBip === 'function') {
-            fbSendBip(chefId, bipData).catch(e => console.warn('Erreur bip Firestore:', e));
-          }
-          // Ouvrir la page BIP dans une popup
-          const bipParams = new URLSearchParams({
-            motif: data.sinistre,
-            engin: enginObj?.nom || enginId,
-            place: "Chef d'agrès",
-            num: interNum,
-            adresse: data.adresse
-          });
-          setTimeout(() => {
-            window.open('bip.html?' + bipParams.toString(), 'bip_popup', 'width=400,height=600,resizable=no,scrollbars=no');
-          }, 100);
-        }
-        // BIP tous les membres de l'\u00e9quipe
-        const membres = equipes[enginId]?.membres || [];
-        membres.forEach(m => {
-          if (!m.userId || m.userId === equipes[enginId]?.chefAgres) return;
-          const enginObj = ENGINS.find(e => e.id === enginId);
-          const bipMembre = {
-            userId: m.userId, enginId, enginNom: enginObj?.nom || enginId,
-            interventionId: interNum, interNum, motif: data.sinistre,
-            adresse: data.adresse, place: m.posteLabel || '\u00c9quipier',
-            timestamp: new Date().toISOString()
-          };
-          if (typeof fbSendBip === 'function') {
-            fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
-          }
-          // Ouvrir la page BIP dans une popup pour chaque membre
-          const bipParams = new URLSearchParams({
-            motif: data.sinistre,
-            engin: enginObj?.nom || enginId,
-            place: m.posteLabel || '\u00c9quipier',
-            num: interNum,
-            adresse: data.adresse
-          });
-          setTimeout(() => {
-            window.open('bip.html?' + bipParams.toString(), 'bip_popup_' + m.userId, 'width=400,height=600,resizable=no,scrollbars=no');
-          }, 100);
-        });
         // Ouvrir ticket départ côté COSSIM (opérateur)
         const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
         setTimeout(() => {
@@ -900,6 +808,19 @@
           console.error('Erreur lors de la sauvegarde des engins:', e);
         });
       }
+      
+      // Ouvrir la page BIP popup pour l'opérateur COSSIM
+      const bipParams = new URLSearchParams({
+        motif: data.sinistre,
+        engin: data.engins.map(eId => ENGINS.find(x => x.id === eId)?.nom || eId).join(', '),
+        place: 'Opérateur',
+        num: interNum,
+        adresse: data.adresse
+      });
+      setTimeout(() => {
+        window.open('bip.html?' + bipParams.toString(), 'bip_popup_cossim', 'width=400,height=600,resizable=no,scrollbars=no');
+      }, 100);
+      
       // Feuille de garde auto — structure correcte : indexée par DATE, pas par engin
       const today = now.slice(0,10);
       if (!FEUILLES_GARDE[today]) {

@@ -953,19 +953,29 @@ function ajouterSection(cIdx) {
 
 // ===== POSTES DE SERVICE =====
 function ajouterPosteAdmin() {
-  const nom = prompt("Nom du poste (ex: Chef d'agres, Sapeur, Conducteur)");
-  if (!nom) return;
-  const abrev = prompt("Abreviation (ex: C/A, SAP, COND)");
-  if (!abrev) return;
+  const nomInput = document.getElementById('poste-nom');
+  const abrevInput = document.getElementById('poste-abrev');
+  
+  const nom = nomInput?.value.trim();
+  const abrev = abrevInput?.value.trim();
+  
+  if (!nom) return showToast('Entrez le nom du poste', 'error');
+  if (!abrev) return showToast('Entrez l\'abreviation', 'error');
+  
   if (!CONFIG.postes) CONFIG.postes = [];
   CONFIG.postes.push({id: 'P'+Date.now(), nom, abrev});
+  
+  nomInput.value = '';
+  abrevInput.value = '';
+  
   sauvegarderDonnees();
   renderAdminPostes();
-  showToast('Poste cree !');
+  showToast('Poste ajoute !');
 }
 
 function supprimerPosteAdmin(id) {
   if (!CONFIG.postes) return;
+  if (!confirm('Supprimer ce poste ?')) return;
   CONFIG.postes = CONFIG.postes.filter(p => p.id !== id);
   sauvegarderDonnees();
   renderAdminPostes();
@@ -978,8 +988,8 @@ function renderAdminPostes() {
   const postes = CONFIG.postes || [];
   list.innerHTML = postes.map(p => `
     <tr>
-      <td>${p.nom}</td>
-      <td>${p.abrev}</td>
+      <td><strong>${p.nom}</strong></td>
+      <td><code style="background:rgba(0,0,0,0.1);padding:2px 6px;border-radius:4px;">${p.abrev}</code></td>
       <td><button class="btn btn-danger btn-xs" onclick="supprimerPosteAdmin('${p.id}')">Supprimer</button></td>
     </tr>
   `).join('');
