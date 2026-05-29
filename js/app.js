@@ -969,18 +969,21 @@ function checkBipAlertes() {
 }
 
 function afficherBipAlerte(bip) {
-  const overlay = document.getElementById('bip-overlay');
-  if (!overlay) return;
-  const el = (id) => document.getElementById(id);
-  // Cadre vert uniquement
-  const motif = (bip.motif || 'INTERVENTION').toUpperCase();
-  if(el('bip-screen-motif')) el('bip-screen-motif').textContent = motif;
-  if(el('bip-screen-engin')) el('bip-screen-engin').textContent = bip.enginNom || '';
-  // Poste sans le préfixe "Place:"
-  if(el('bip-screen-place')) el('bip-screen-place').textContent = (bip.place||'').replace(/^Place:\s*/i,'');
-  if(el('bip-screen-num')) el('bip-screen-num').textContent = bip.interNum || '';
-  overlay.style.display = 'flex';
-  if (typeof playBip === 'function') { playBip(true); }
+  // Le BIP s'affiche UNIQUEMENT dans la popup, pas sur Systel
+  // Cette fonction est conservée pour compatibilité mais ne fait rien
+  console.log('[BIP] Notification envoyée dans la popup');
+}
+
+// Fonction appelée depuis la popup pour acquitter
+function acquitterBipDepuisPopup() {
+  bipAlerteVisible = false;
+  console.log('[BIP] Acquitté depuis la popup');
+  // Marquer comme acquitté dans Firestore si nécessaire
+  if (window._bipEnCours) {
+    const bip = window._bipEnCours;
+    // Code d'acquittement Firestore ici si nécessaire
+    window._bipEnCours = null;
+  }
 }
 
 function acquitterBip() {

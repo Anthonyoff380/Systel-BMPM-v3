@@ -152,6 +152,11 @@
   function acquitterBip() {
     playAckSound();
     
+    // Envoyer le signal d'acquittement à Systel
+    if (window.opener && typeof window.opener.acquitterBipDepuisPopup === 'function') {
+      window.opener.acquitterBipDepuisPopup();
+    }
+    
     // Fermer la fenêtre après 500ms
     setTimeout(() => {
       window.close();
@@ -165,10 +170,17 @@
     }, 100);
   });
   
-  // Permettre de fermer avec Échap
+  // Permettre de fermer avec Échap OU en fermant la fenêtre
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      window.close();
+      acquitterBip();
+    }
+  });
+  
+  // Détecter la fermeture de la fenêtre
+  window.addEventListener('beforeunload', () => {
+    if (window.opener && typeof window.opener.acquitterBipDepuisPopup === 'function') {
+      window.opener.acquitterBipDepuisPopup();
     }
   });
 </script>
