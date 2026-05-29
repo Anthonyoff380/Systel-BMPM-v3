@@ -47,7 +47,6 @@ function updateSynoptique() {
                       <div class="engin-box ${ber ? 'ber-active-box' : e.statut}" style="${style}" 
                            title="${tooltip}" onclick="onEnginClick('${e.id}')">
                         ${e.nom}
-                        ${e.berStatut ? `<div class="ber-code-badge">${e.berStatut}</div>` : ''}
                       </div>
                     `;
                   }).join('')}

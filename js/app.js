@@ -1670,13 +1670,9 @@ logBERAction = function(enginId, code, label) {
 let fbDiagnostics = { lastBip: null, lastSync: null, errors: [] };
 
 function updateDiagnosticBar() {
-  const bar = document.getElementById('fb-diagnostic-bar');
-  if (!bar) return;
-  const status = _fbReady ? '🟢 CONNECTÉ' : '🔴 DÉCONNECTÉ';
-  const lastBip = fbDiagnostics.lastBip ? new Date(fbDiagnostics.lastBip).toLocaleTimeString() : 'Aucun';
-  bar.innerHTML = `Firebase: ${status} | Dernier Bip: ${lastBip} | <a href="#" onclick="testBipNow(event)" style="color:#48bb78;">🔊 TEST BIP</a>`;
+  // Footer Firebase désactivé
 }
-setInterval(updateDiagnosticBar, 2000);
+// setInterval(updateDiagnosticBar, 2000);
 
 function testBipNow(e) {
   e.preventDefault();

@@ -234,7 +234,6 @@
       <div class="form-group"><label>Identifiant</label><input type="text" id="login-id" required placeholder="Ex: k.ianis"/></div>
       <div class="form-group"><label>Mot de passe</label><input type="password" id="login-pwd" required placeholder="••••••••"/></div>
       <button type="submit" class="btn btn-primary btn-block">SE CONNECTER</button>
-      <button type="button" class="btn btn-secondary" onclick="enableAudio()" style="margin-top:10px; background:#48bb78; color:white; width:100%;">🔊 ACTIVER LE SON</button>
     </form>
     <div id="login-error" style="color:#e53e3e;margin-top:10px;font-weight:700;text-align:center;font-size:12px;"></div>
     <div id="fb-permission-error" style="color:#f56565;margin-top:10px;font-weight:700;text-align:center;font-size:12px; display:none;"></div>
@@ -245,7 +244,7 @@
       <br>
       <span id="user-count-display" style="opacity:0.7;">Chargement des utilisateurs...</span>
       <br>
-      <a href="#" onclick="ouvrirConfigFirebase()" style="color:var(--accent); text-decoration:none; margin-top:5px; display:inline-block;">⚙️ Configurer le Cloud</a>
+
     </div>
   </div>
 </div>
@@ -276,8 +275,7 @@
 
 <!-- ===== APPLICATION PRINCIPALE ===== -->
 <div id="app-container" style="display:none;">
-  <!-- Barre de diagnostic Firebase -->
-  <div id="fb-diagnostic-bar" style="position:fixed; bottom:0; left:0; right:0; background:#1a202c; color:#e2e8f0; padding:8px 12px; font-size:11px; font-family:monospace; border-top:1px solid #4a5568; z-index:9999; text-align:center;"></div>
+  <!-- Barre de diagnostic Firebase (désactivée) -->
   <div id="topbar">
     <div id="topbar-left">
       <div id="systel-logo">SYS<span>TEL</span></div>
@@ -419,6 +417,7 @@
           <button class="admin-tab-btn active" data-tab="centre"   onclick="showAdminTab('centre',event)">Config Systel</button>
           <button class="admin-tab-btn"         data-tab="casernes" onclick="showAdminTab('casernes',event)">Casernes</button>
           <button class="admin-tab-btn"         data-tab="engins"   onclick="showAdminTab('engins',event)">Engins</button>
+          <button class="admin-tab-btn"         data-tab="postes"   onclick="showAdminTab('postes',event)">🏅 Postes de service</button>
           <button class="admin-tab-btn"         data-tab="users"    onclick="showAdminTab('users',event)">Comptes</button>
           <button class="admin-tab-btn"         data-tab="cossim"   onclick="showAdminTab('cossim',event)">Config COSSIM</button>
           <button class="admin-tab-btn" data-tab="grades"   onclick="showAdminTab('grades',event)">Grades</button>
@@ -450,6 +449,13 @@
           <div class="card"><div class="card-body">
             <button class="btn btn-success btn-sm mb-10" onclick="ajouterEnginAdmin()">+ Ajouter Engin</button>
             <table class="data-table"><thead><tr><th>Nom</th><th>Section</th><th>Actions</th></tr></thead><tbody id="adm-engins-list"></tbody></table>
+          </div></div>
+        </div>
+
+        <div id="admin-tab-postes" class="admin-tab-content" style="display:none;">
+          <div class="card"><div class="card-body">
+            <button class="btn btn-success btn-sm mb-10" onclick="ajouterPosteAdmin()">+ Ajouter Poste</button>
+            <table class="data-table"><thead><tr><th>Nom</th><th>Abreviation</th><th>Actions</th></tr></thead><tbody id="adm-postes-list"></tbody></table>
           </div></div>
         </div>
 
