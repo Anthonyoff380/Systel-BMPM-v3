@@ -1020,36 +1020,29 @@ function ajouterCaserneAdmin(catId) {
 }
 
 function renderAdminCasernes() {
-  const container = document.getElementById('adm-casernes-categories');
-  if (!container) return;
-  
-  // Synchroniser les categories avec les casernes existantes
-  if (!CONFIG.casernes_categories || CONFIG.casernes_categories.length === 0) {
-    CONFIG.casernes_categories = CASERNES.map(cas => ({
-      id: 'CAT'+Date.now(),
-      nom: cas.nom,
-      casernes: cas.sections.map(s => ({id: s.id, nom: s.nom}))
-    }));
-    sauvegarderDonnees();
+  const tbody = document.getElementById("adm-casernes-list");
+  if (tbody) {
+    tbody.innerHTML = CASERNES.map((c,cIdx) => `
+      <tr style="background:#edf2f7;font-weight:800;"><td colspan="2">${c.nom}</td></tr>
+      ${c.sections.map((s,sIdx) => `
+        <tr><td style="padding-left:30px;">${s.nom}</td><td>
+          <button class="btn btn-danger btn-sm" onclick="CASERNES[${cIdx}].sections.splice(${sIdx},1);sauvegarderDonnees();renderAdminCasernes();">✕</button>
+        </td></tr>`).join("")}
+      <tr><td colspan="2"><button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cIdx})">+ Ajouter Section</button></td></tr>
+    `).join("");
   }
-  
-  const categories = CONFIG.casernes_categories || [];
-  container.innerHTML = categories.map(cat => `
-    <div style="border:1px solid var(--border-color);border-radius:8px;padding:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h4 style="margin:0;font-size:14px;font-weight:800;">${cat.nom}</h4>
+  const container = document.getElementById("adm-casernes-categories");
+  if (container) {
+    const categories = CASERNES.map(cas => ({nom: cas.nom, sections: cas.sections}));
+    container.innerHTML = categories.map(cat => `
+      <div style="border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:12px;">
+        <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:800;">${cat.nom}</h4>
+        <table class="data-table" style="margin-bottom:12px;"><thead><tr><th>Sections</th></tr></thead><tbody>
+          ${(cat.sections || []).map(sec => `<tr><td>${sec.nom}</td></tr>`).join("")}
+        </tbody></table>
       </div>
-      <table class="data-table" style="margin-bottom:12px;">
-        <thead><tr><th>Sections</th></tr></thead>
-        <tbody>
-          ${(cat.casernes || []).map(cas => `
-            <tr><td>${cas.nom}</td></tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <button class="btn btn-secondary btn-sm" onclick="ajouterSection(CASERNES.findIndex(c => c.nom === '${cat.nom}'))">+ Ajouter Section</button>
-    </div>
-  `).join('');
+    `).join("");
+  }
 }
 
 // ===== BIP ALERTES =====
