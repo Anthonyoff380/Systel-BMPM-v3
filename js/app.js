@@ -1033,25 +1033,66 @@ function renderAdminCasernes() {
   const tbody = document.getElementById("adm-casernes-list");
   if (tbody) {
     tbody.innerHTML = CASERNES.map((c,cIdx) => `
-      <tr style="background:#edf2f7;font-weight:800;"><td colspan="2">${c.nom}</td></tr>
+      <tr style="background:#edf2f7;font-weight:800;"><td colspan="3">${c.nom}</td></tr>
       ${c.sections.map((s,sIdx) => `
         <tr><td style="padding-left:30px;">${s.nom}</td><td>
-          <button class="btn btn-danger btn-sm" onclick="CASERNES[${cIdx}].sections.splice(${sIdx},1);sauvegarderDonnees();renderAdminCasernes();">✕</button>
+          <button class="btn btn-warning btn-xs" onclick="modifierSection(${cIdx},${sIdx})">Modifier</button>
+          <button class="btn btn-danger btn-xs" onclick="supprimerSection(${cIdx},${sIdx})">Supprimer</button>
         </td></tr>`).join("")}
-      <tr><td colspan="2"><button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cIdx})">+ Ajouter Section</button></td></tr>
+      <tr><td colspan="3"><button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cIdx})">+ Ajouter Section</button></td></tr>
     `).join("");
   }
   const container = document.getElementById("adm-casernes-categories");
   if (container) {
-    const categories = CASERNES.map(cas => ({nom: cas.nom, sections: cas.sections}));
+    const categories = CASERNES.map((cas, idx) => ({nom: cas.nom, sections: cas.sections, idx}));
     container.innerHTML = categories.map(cat => `
       <div style="border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:12px;">
-        <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:800;">${cat.nom}</h4>
-        <table class="data-table" style="margin-bottom:12px;"><thead><tr><th>Sections</th></tr></thead><tbody>
-          ${(cat.sections || []).map(sec => `<tr><td>${sec.nom}</td></tr>`).join("")}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h4 style="margin:0;font-size:14px;font-weight:800;">${cat.nom}</h4>
+          <button class="btn btn-danger btn-xs" onclick="supprimerCaserne(${cat.idx})">Supprimer</button>
+        </div>
+        <table class="data-table" style="margin-bottom:12px;"><thead><tr><th>Sections</th><th>Actions</th></tr></thead><tbody>
+          ${(cat.sections || []).map((sec, sIdx) => `
+            <tr>
+              <td>${sec.nom}</td>
+              <td>
+                <button class="btn btn-warning btn-xs" onclick="modifierSection(${cat.idx},${sIdx})">Modifier</button>
+                <button class="btn btn-danger btn-xs" onclick="supprimerSection(${cat.idx},${sIdx})">Supprimer</button>
+              </td>
+            </tr>
+          `).join("")}
         </tbody></table>
+        <button class="btn btn-secondary btn-sm" onclick="ajouterSection(${cat.idx})">+ Ajouter Section</button>
       </div>
     `).join("");
+  }
+}
+
+function modifierSection(cIdx, sIdx) {
+  const nom = prompt("Nouveau nom de section:", CASERNES[cIdx].sections[sIdx].nom);
+  if (nom) {
+    CASERNES[cIdx].sections[sIdx].nom = nom;
+    sauvegarderDonnees();
+    renderAdminCasernes();
+    showToast('Section modifiee !');
+  }
+}
+
+function supprimerSection(cIdx, sIdx) {
+  if (confirm('Supprimer cette section ?')) {
+    CASERNES[cIdx].sections.splice(sIdx, 1);
+    sauvegarderDonnees();
+    renderAdminCasernes();
+    showToast('Section supprimee !');
+  }
+}
+
+function supprimerCaserne(cIdx) {
+  if (confirm('Supprimer cette caserne et toutes ses sections ?')) {
+    CASERNES.splice(cIdx, 1);
+    sauvegarderDonnees();
+    renderAdminCasernes();
+    showToast('Caserne supprimee !');
   }
 }
 

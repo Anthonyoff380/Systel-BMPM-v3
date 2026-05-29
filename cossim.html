@@ -773,11 +773,24 @@
       };
       
       // Envoyer à TOUS les utilisateurs connectés
-      USERS.forEach(user => {
-        if (typeof fbSendBip === 'function') {
-          fbSendBip(user.id, bipBroadcast).catch(e => console.warn('Erreur bip broadcast:', e));
-        }
-      });
+      if (USERS && USERS.length > 0) {
+        USERS.forEach(user => {
+          if (user && user.id && typeof fbSendBip === 'function') {
+            const bipData = {
+              ...bipBroadcast,
+              targetUserId: user.id,
+              userId: currentUser?.id,
+              userName: currentUser?.nom + ' ' + currentUser?.prenom
+            };
+            fbSendBip(user.id, bipData)
+              .then(() => console.log('✓ BIP envoyé à', user.nom))
+              .catch(e => console.warn('✗ Erreur bip pour', user.nom, ':', e));
+          }
+        });
+        console.log('✓ BIPs envoyés à', USERS.length, 'utilisateur(s)');
+      } else {
+        console.warn('✗ Aucun utilisateur trouvé');
+      }
       
       // Sauvegarder l'intervention dans Firestore
       if (typeof fbSaveIntervention === 'function') {
