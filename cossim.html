@@ -774,6 +774,7 @@
       
       // Envoyer à TOUS les utilisateurs connectés
       if (USERS && USERS.length > 0) {
+        const bipsSent = [];
         USERS.forEach(user => {
           if (user && user.id && typeof fbSendBip === 'function') {
             const bipData = {
@@ -783,13 +784,16 @@
               userName: currentUser?.nom + ' ' + currentUser?.prenom
             };
             fbSendBip(user.id, bipData)
-              .then(() => console.log('✓ BIP envoyé à', user.nom))
+              .then(() => {
+                console.log('✓ BIP envoyé à', user.nom, '(' + user.id + ')');
+                bipsSent.push(user.nom);
+              })
               .catch(e => console.warn('✗ Erreur bip pour', user.nom, ':', e));
           }
         });
-        console.log('✓ BIPs envoyés à', USERS.length, 'utilisateur(s)');
+        console.log('✓ BIPs envoyés à', USERS.length, 'utilisateur(s):', bipsSent.join(', '));
       } else {
-        console.warn('✗ Aucun utilisateur trouvé');
+        console.warn('✗ Aucun utilisateur trouvé dans USERS');
       }
       
       // Sauvegarder l'intervention dans Firestore

@@ -963,6 +963,12 @@ function ajouterPosteAdmin() {
   if (!abrev) return showToast('Entrez l\'abreviation', 'error');
   
   if (!CONFIG.postes) CONFIG.postes = [];
+  
+  // Vérifier les doublons
+  if (CONFIG.postes.some(p => p.nom.toLowerCase() === nom.toLowerCase())) {
+    return showToast('Ce poste existe déjà !', 'error');
+  }
+  
   CONFIG.postes.push({id: 'P'+Date.now(), nom, abrev});
   
   nomInput.value = '';

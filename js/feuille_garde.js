@@ -5,7 +5,15 @@
 
 // Les postes de service sont configures dans l'admin
 function getPostesGarde() {
-  return CONFIG.postes || [
+  if (CONFIG.postes && CONFIG.postes.length > 0) {
+    return CONFIG.postes.map(p => ({
+      id: p.id,
+      label: p.nom,  // Utiliser 'nom' comme 'label'
+      abrev: p.abrev
+    }));
+  }
+  // Postes par défaut si aucun n'est configuré
+  return [
     { id:'ms',   label:'Maitre de Service',        abrev:'MS'   },
     { id:'sms',  label:'Second Maitre de Service', abrev:'SMS'  },
     { id:'gg',   label:'Garde Garage',             abrev:'GG'   },
