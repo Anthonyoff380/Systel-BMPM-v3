@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BIP - Intervention</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    
+    .bip-container {
+      position: relative;
+      width: 353px;
+      height: 541px;
+      background: url('images/BIP.png') no-repeat center;
+      background-size: contain;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Écran vert du BIP: top:9.5% left:13.5% w:73% h:27% */
+    .bip-screen {
+      position: absolute;
+      top: 9.5%;
+      left: 13.5%;
+      width: 73%;
+      height: 27%;
+      background: #6dc940;
+      border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 6px 10px;
+      overflow: hidden;
+      gap: 3px;
+    }
+    
+    .bip-motif {
+      font-size: clamp(11px, 3.5vw, 17px);
+      font-weight: 900;
+      color: #0a1800;
+      line-height: 1.2;
+      word-break: break-word;
+      width: 100%;
+    }
+    
+    .bip-engin {
+      font-size: clamp(10px, 2.8vw, 14px);
+      font-weight: 800;
+      color: #0d2200;
+    }
+    
+    .bip-place {
+      font-size: clamp(9px, 2.4vw, 12px);
+      color: #1a3600;
+      font-weight: 700;
+    }
+    
+    .bip-num {
+      font-size: clamp(8px, 2vw, 11px);
+      color: #2a5000;
+    }
+    
+    /* Bouton jaune d'acquittement */
+    .bip-btn-jaune {
+      position: absolute;
+      bottom: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 45px;
+      height: 45px;
+      background: #ffd700;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.15s;
+      z-index: 10;
+    }
+    
+    .bip-btn-jaune:hover {
+      background: #ffed4e;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+      transform: translateX(-50%) scale(1.05);
+    }
+    
+    .bip-btn-jaune:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bip-container">
+  <div class="bip-screen">
+    <div class="bip-motif" id="bip-motif">---</div>
+    <div class="bip-engin" id="bip-engin"></div>
+    <div class="bip-place" id="bip-place"></div>
+    <div class="bip-num" id="bip-num"></div>
+  </div>
+  <button class="bip-btn-jaune" onclick="acquitterBip()" title="Acquitter"></button>
+</div>
+
+<script>
+  // Récupérer les données du BIP depuis les paramètres URL
+  const params = new URLSearchParams(window.location.search);
+  const motif = params.get('motif') || '---';
+  const engin = params.get('engin') || '';
+  const place = params.get('place') || '';
+  const num = params.get('num') || '';
+  const adresse = params.get('adresse') || '';
+  
+  // Remplir l'écran
+  document.getElementById('bip-motif').textContent = motif.toUpperCase();
+  document.getElementById('bip-engin').textContent = engin;
+  document.getElementById('bip-place').textContent = place.replace(/^Place:\s*/i, '');
+  document.getElementById('bip-num').textContent = num;
+  
+  // Jouer le son du BIP automatiquement
+  function playBipSound() {
+    try {
+      const audio = new Audio('sounds/bip.mp3');
+      audio.volume = 0.8;
+      audio.play().catch(e => console.warn('Erreur lecture son bip:', e));
+    } catch (e) {
+      console.warn('Erreur création audio:', e);
+    }
+  }
+  
+  // Jouer le son d'acquittement
+  function playAckSound() {
+    try {
+      const audio = new Audio('sounds/acquittement.mp3');
+      audio.volume = 0.8;
+      audio.play().catch(e => console.warn('Erreur lecture son acquittement:', e));
+    } catch (e) {
+      console.warn('Erreur création audio:', e);
+    }
+  }
+  
+  // Acquitter le BIP
+  function acquitterBip() {
+    playAckSound();
+    
+    // Fermer la fenêtre après 500ms
+    setTimeout(() => {
+      window.close();
+    }, 500);
+  }
+  
+  // Jouer le son au chargement
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      playBipSound();
+    }, 100);
+  });
+  
+  // Permettre de fermer avec Échap
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      window.close();
+    }
+  });
+</script>
+
+</body>
+</html>

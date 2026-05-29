@@ -798,7 +798,7 @@
         };
         
         // Appeler l'API backend pour déclencher les bips FiveM
-        fetch('http://https://systel-bmpm-v3.vercel.app/api/trpc/fivemBip.trigger', {
+        fetch('http://localhost:3000/api/trpc/fivemBip.trigger', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -850,8 +850,19 @@
           if (typeof fbSendBip === 'function') {
             fbSendBip(chefId, bipData).catch(e => console.warn('Erreur bip Firestore:', e));
           }
+          // Ouvrir la page BIP dans une popup
+          const bipParams = new URLSearchParams({
+            motif: data.sinistre,
+            engin: enginObj?.nom || enginId,
+            place: "Chef d'agrès",
+            num: interNum,
+            adresse: data.adresse
+          });
+          setTimeout(() => {
+            window.open('bip.html?' + bipParams.toString(), 'bip_popup', 'width=400,height=600,resizable=no,scrollbars=no');
+          }, 100);
         }
-        // BIP tous les membres de l'équipe
+        // BIP tous les membres de l'\u00e9quipe
         const membres = equipes[enginId]?.membres || [];
         membres.forEach(m => {
           if (!m.userId || m.userId === equipes[enginId]?.chefAgres) return;
@@ -859,12 +870,23 @@
           const bipMembre = {
             userId: m.userId, enginId, enginNom: enginObj?.nom || enginId,
             interventionId: interNum, interNum, motif: data.sinistre,
-            adresse: data.adresse, place: m.posteLabel || 'Équipier',
+            adresse: data.adresse, place: m.posteLabel || '\u00c9quipier',
             timestamp: new Date().toISOString()
           };
           if (typeof fbSendBip === 'function') {
             fbSendBip(m.userId, bipMembre).catch(e => console.warn('Erreur bip membre:', e));
           }
+          // Ouvrir la page BIP dans une popup pour chaque membre
+          const bipParams = new URLSearchParams({
+            motif: data.sinistre,
+            engin: enginObj?.nom || enginId,
+            place: m.posteLabel || '\u00c9quipier',
+            num: interNum,
+            adresse: data.adresse
+          });
+          setTimeout(() => {
+            window.open('bip.html?' + bipParams.toString(), 'bip_popup_' + m.userId, 'width=400,height=600,resizable=no,scrollbars=no');
+          }, 100);
         });
         // Ouvrir ticket départ côté COSSIM (opérateur)
         const tParams = new URLSearchParams({ inter: interNum, engin: enginId });
