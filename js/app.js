@@ -951,6 +951,100 @@ function ajouterSection(cIdx) {
   if (nom) { CASERNES[cIdx].sections.push({id:nom.toUpperCase().replace(/\s+/g,'-'),nom}); sauvegarderDonnees(); renderAdminCasernes(); }
 }
 
+// ===== POSTES DE SERVICE =====
+function ajouterPosteAdmin() {
+  const nom = prompt("Nom du poste (ex: Chef d'agres, Sapeur, Conducteur)");
+  if (!nom) return;
+  const abrev = prompt("Abreviation (ex: C/A, SAP, COND)");
+  if (!abrev) return;
+  if (!CONFIG.postes) CONFIG.postes = [];
+  CONFIG.postes.push({id: 'P'+Date.now(), nom, abrev});
+  sauvegarderDonnees();
+  renderAdminPostes();
+  showToast('Poste cree !');
+}
+
+function supprimerPosteAdmin(id) {
+  if (!CONFIG.postes) return;
+  CONFIG.postes = CONFIG.postes.filter(p => p.id !== id);
+  sauvegarderDonnees();
+  renderAdminPostes();
+  showToast('Poste supprime !');
+}
+
+function renderAdminPostes() {
+  const list = document.getElementById('adm-postes-list');
+  if (!list) return;
+  const postes = CONFIG.postes || [];
+  list.innerHTML = postes.map(p => `
+    <tr>
+      <td>${p.nom}</td>
+      <td>${p.abrev}</td>
+      <td><button class="btn btn-danger btn-xs" onclick="supprimerPosteAdmin('${p.id}')">Supprimer</button></td>
+    </tr>
+  `).join('');
+}
+
+// ===== CATEGORIES DE CASERNES =====
+function ajouterCategorieAdmin() {
+  const cat = document.getElementById('adm-caserne-cat').value.trim();
+  if (!cat) return showToast('Entrez un nom de categorie', 'error');
+  if (!CONFIG.casernes_categories) CONFIG.casernes_categories = [];
+  CONFIG.casernes_categories.push({id: 'CAT'+Date.now(), nom: cat, casernes: []});
+  document.getElementById('adm-caserne-cat').value = '';
+  sauvegarderDonnees();
+  renderAdminCasernes();
+  showToast('Categorie creee !');
+}
+
+function supprimerCaserne(catId, casId) {
+  if (!CONFIG.casernes_categories) return;
+  const cat = CONFIG.casernes_categories.find(c => c.id === catId);
+  if (cat) cat.casernes = cat.casernes.filter(c => c.id !== casId);
+  sauvegarderDonnees();
+  renderAdminCasernes();
+  showToast('Caserne supprimee !');
+}
+
+function ajouterCaserneAdmin(catId) {
+  const nom = prompt('Nom de la caserne (ex: Centre PTR, Caserne 1)');
+  if (!nom) return;
+  if (!CONFIG.casernes_categories) CONFIG.casernes_categories = [];
+  const cat = CONFIG.casernes_categories.find(c => c.id === catId);
+  if (cat) {
+    cat.casernes.push({id: 'CAS'+Date.now(), nom, sections: []});
+    sauvegarderDonnees();
+    renderAdminCasernes();
+    showToast('Caserne ajoutee !');
+  }
+}
+
+function renderAdminCasernes() {
+  const container = document.getElementById('adm-casernes-categories');
+  if (!container) return;
+  const categories = CONFIG.casernes_categories || [];
+  container.innerHTML = categories.map(cat => `
+    <div style="border:1px solid var(--border-color);border-radius:8px;padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;font-size:14px;font-weight:800;">${cat.nom}</h4>
+        <button class="btn btn-danger btn-xs" onclick="if(confirm('Supprimer cette categorie ?')) { CONFIG.casernes_categories = CONFIG.casernes_categories.filter(c => c.id !== '${cat.id}'); sauvegarderDonnees(); renderAdminCasernes(); showToast('Categorie supprimee !'); }">Supprimer</button>
+      </div>
+      <table class="data-table" style="margin-bottom:12px;">
+        <thead><tr><th>Caserne</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${(cat.casernes || []).map(cas => `
+            <tr>
+              <td>${cas.nom}</td>
+              <td><button class="btn btn-danger btn-xs" onclick="supprimerCaserne('${cat.id}', '${cas.id}')">Supprimer</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <button class="btn btn-success btn-sm" onclick="ajouterCaserneAdmin('${cat.id}')">+ Ajouter Caserne</button>
+    </div>
+  `).join('');
+}
+
 // ===== BIP ALERTES =====
 let bipAlerteVisible = false;
 let bipAudio = null;

@@ -441,7 +441,14 @@
 
         <div id="admin-tab-casernes" class="admin-tab-content" style="display:none;">
           <div class="card"><div class="card-body">
-            <table class="data-table"><thead><tr><th>Nom</th><th>Actions</th></tr></thead><tbody id="adm-casernes-list"></tbody></table>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:8px;text-transform:uppercase;">Catégorie</label>
+              <div style="display:flex;gap:8px;">
+                <input type="text" id="adm-caserne-cat" placeholder="ex: BMPM, SDIS 13, SDIS 75" style="flex:1;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+                <button class="btn btn-success btn-sm" onclick="ajouterCategorieAdmin()">+ Catégorie</button>
+              </div>
+            </div>
+            <div id="adm-casernes-categories" style="display:flex;flex-direction:column;gap:16px;"></div>
           </div></div>
         </div>
 
@@ -453,6 +460,9 @@
         </div>
 
         <div id="admin-tab-postes" class="admin-tab-content" style="display:none;">
+          <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 16px;font-size:12px;color:#3b82f6;margin-bottom:16px;">
+            📄 <strong>Postes de Service</strong> — Configurez les postes disponibles pour la feuille de garde (ex: Chef d'agrès, Sapeur, Conducteur, etc.)
+          </div>
           <div class="card"><div class="card-body">
             <button class="btn btn-success btn-sm mb-10" onclick="ajouterPosteAdmin()">+ Ajouter Poste</button>
             <table class="data-table"><thead><tr><th>Nom</th><th>Abreviation</th><th>Actions</th></tr></thead><tbody id="adm-postes-list"></tbody></table>
@@ -556,10 +566,6 @@
     <div class="form-group" style="margin:0;">
       <label>Grade</label>
       <select id="mu-grade" style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;"></select>
-    </div>
-    <div class="form-group" style="margin:0;">
-      <label>Matricule (FiveM)</label>
-      <input type="text" id="mu-matricule" placeholder="ex: MAT-001, P-123" style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
     </div>
     <div class="form-group" style="margin:0;">
       <label>Rôles</label>
