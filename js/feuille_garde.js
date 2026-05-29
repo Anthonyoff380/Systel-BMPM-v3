@@ -3,14 +3,19 @@
    SOG/CDG et ADMIN peuvent créer/modifier/supprimer
    ============================================================ */
 
-const POSTES_SPECIAUX = [
-  { id:'ms',   label:'Maître de Service',        abrev:'MS'   },
-  { id:'sms',  label:'Second Maître de Service', abrev:'SMS'  },
-  { id:'gg',   label:'Garde Garage',             abrev:'GG'   },
-  { id:'gc',   label:'Garde Cuisine',            abrev:'GC'   },
-  { id:'stas', label:'STAS',                     abrev:'STAS' },
-  { id:'gs',   label:'Garde Sport',              abrev:'GS'   },
-];
+// Les postes de service sont configures dans l'admin
+function getPostesGarde() {
+  return CONFIG.postes || [
+    { id:'ms',   label:'Maitre de Service',        abrev:'MS'   },
+    { id:'sms',  label:'Second Maitre de Service', abrev:'SMS'  },
+    { id:'gg',   label:'Garde Garage',             abrev:'GG'   },
+    { id:'gc',   label:'Garde Cuisine',            abrev:'GC'   },
+    { id:'stas', label:'STAS',                     abrev:'STAS' },
+    { id:'gs',   label:'Garde Sport',              abrev:'GS'   },
+  ];
+}
+
+const POSTES_SPECIAUX = getPostesGarde();
 
 function renderFeuilleGarde() {
   const container = document.getElementById('feuille-garde-container');
@@ -64,8 +69,8 @@ function reloadFeuilleGarde() {
 
   const pOpts = PERSONNELS.map(p => `<option value="${p.id}">${p.nom} ${p.prenom} (${p.grade})</option>`).join('');
 
-  // Postes spéciaux
-  const postesHTML = POSTES_SPECIAUX.map(poste => {
+  // Postes speciaux
+  const postesHTML = getPostesGarde().map(poste => {
     const uid = garde.postesSpeciaux?.[poste.id];
     const person = uid ? PERSONNELS.find(p => p.id === uid) : null;
     return `<div class="fg-poste-item">
@@ -320,7 +325,7 @@ function imprimerGarde(date) {
   const garde = FEUILLES_GARDE[date];
   if (!garde) return;
   const win = window.open('','_blank');
-  const postesRows = POSTES_SPECIAUX.map(p => {
+  const postesRows = getPostesGarde().map(p => {
     const uid = garde.postesSpeciaux?.[p.id];
     const person = uid ? PERSONNELS.find(x => x.id === uid) : null;
     return `<tr><td><strong>${p.abrev}</strong></td><td>${p.label}</td><td>${person ? person.nom+' '+person.prenom : '—'}</td></tr>`;

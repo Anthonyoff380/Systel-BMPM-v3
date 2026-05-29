@@ -1022,25 +1022,32 @@ function ajouterCaserneAdmin(catId) {
 function renderAdminCasernes() {
   const container = document.getElementById('adm-casernes-categories');
   if (!container) return;
+  
+  // Synchroniser les categories avec les casernes existantes
+  if (!CONFIG.casernes_categories || CONFIG.casernes_categories.length === 0) {
+    CONFIG.casernes_categories = CASERNES.map(cas => ({
+      id: 'CAT'+Date.now(),
+      nom: cas.nom,
+      casernes: cas.sections.map(s => ({id: s.id, nom: s.nom}))
+    }));
+    sauvegarderDonnees();
+  }
+  
   const categories = CONFIG.casernes_categories || [];
   container.innerHTML = categories.map(cat => `
     <div style="border:1px solid var(--border-color);border-radius:8px;padding:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h4 style="margin:0;font-size:14px;font-weight:800;">${cat.nom}</h4>
-        <button class="btn btn-danger btn-xs" onclick="if(confirm('Supprimer cette categorie ?')) { CONFIG.casernes_categories = CONFIG.casernes_categories.filter(c => c.id !== '${cat.id}'); sauvegarderDonnees(); renderAdminCasernes(); showToast('Categorie supprimee !'); }">Supprimer</button>
       </div>
       <table class="data-table" style="margin-bottom:12px;">
-        <thead><tr><th>Caserne</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Sections</th></tr></thead>
         <tbody>
           ${(cat.casernes || []).map(cas => `
-            <tr>
-              <td>${cas.nom}</td>
-              <td><button class="btn btn-danger btn-xs" onclick="supprimerCaserne('${cat.id}', '${cas.id}')">Supprimer</button></td>
-            </tr>
+            <tr><td>${cas.nom}</td></tr>
           `).join('')}
         </tbody>
       </table>
-      <button class="btn btn-success btn-sm" onclick="ajouterCaserneAdmin('${cat.id}')">+ Ajouter Caserne</button>
+      <button class="btn btn-secondary btn-sm" onclick="ajouterSection(CASERNES.findIndex(c => c.nom === '${cat.nom}'))">+ Ajouter Section</button>
     </div>
   `).join('');
 }
