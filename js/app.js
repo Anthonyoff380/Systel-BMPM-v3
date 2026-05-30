@@ -308,21 +308,21 @@ function showAdminTab(tab, evt) {
   }
   document.querySelectorAll('.admin-tab-content').forEach(tab => tab.style.display = 'none');
   document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
-  const target = document.getElementById(`admin-tab-${tabName}`);
+  const target = document.getElementById(`admin-tab-${tab}`);
   if (target) target.style.display = 'block';
   if (evt) evt.target.classList.add('active');
-  else { const b = document.querySelector(`.admin-tab-btn[data-tab="${tabName}"]`); if (b) b.classList.add('active'); }
-  if (tabName === 'users') renderAdminUsers();
-  if (tabName === 'engins') renderAdminEngins();
-  if (tabName === 'casernes') renderAdminCasernes();
-  if (tabName === 'intranet') renderAdminIntranet();
-  if (tabName === 'cossim') renderAdminCossim();
-  if (tabName === 'centre') {
+  else { const b = document.querySelector(`.admin-tab-btn[data-tab="${tab}"]`); if (b) b.classList.add('active'); }
+  if (tab === 'users') renderAdminUsers();
+  if (tab === 'engins') renderAdminEngins();
+  if (tab === 'casernes') renderAdminCasernes();
+  if (tab === 'intranet') renderAdminIntranet();
+  if (tab === 'cossim') renderAdminCossim();
+  if (tab === 'centre') {
     document.getElementById('adm-centre-nom').value = CONFIG.nom;
     document.getElementById('adm-centre-code').value = CONFIG.centre;
   }
-  if (tabName === 'grades') setTimeout(renderAdminGrades, 50);
-  if (tabName === 'webhooks') setTimeout(() => {
+  if (tab === 'grades') setTimeout(renderAdminGrades, 50);
+  if (tab === 'webhooks') setTimeout(() => {
     const wh = CONFIG?.webhooks || {};
     const g = id => document.getElementById(id);
     if(g('wh-ticket')) g('wh-ticket').value = wh.ticket||'';
