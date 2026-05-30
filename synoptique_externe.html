@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synoptique des Moyens - PTR</title>
+    <title>Synoptique Externe - PTR</title>
     <style>
         * {
             margin: 0;
@@ -246,8 +246,7 @@
 
     <script>
         // Configuration
-        const SYSTEL_URL = 'https://systel-bmpm-v3.vercel.app';
-        const UPDATE_INTERVAL = 5000; // 5 secondes
+        const UPDATE_INTERVAL = 3000; // 3 secondes pour une bonne synchronisation
 
         // Données locales
         let CASERNES = [];
@@ -260,64 +259,31 @@
             { code: 'fin', label: 'FIN', couleur: '#ffedd5' }
         ];
 
-        // Charger les données depuis Systel
-        async function loadData() {
-            try {
-                // Créer une iframe cachée pour accéder aux données de Systel
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = SYSTEL_URL;
-                
-                iframe.onload = () => {
-                    try {
-                        // Accéder aux variables globales de Systel via l'iframe
-                        const iframeWindow = iframe.contentWindow;
-                        
-                        if (iframeWindow.CASERNES && iframeWindow.ENGINS) {
-                            CASERNES = JSON.parse(JSON.stringify(iframeWindow.CASERNES));
-                            ENGINS = JSON.parse(JSON.stringify(iframeWindow.ENGINS));
-                            
-                            if (iframeWindow.BER_STATUTS) {
-                                BER_STATUTS = iframeWindow.BER_STATUTS;
-                            }
-                            
-                            render();
-                        }
-                    } catch (e) {
-                        console.warn('Erreur accès iframe:', e);
-                        // Essayer avec localStorage
-                        loadFromLocalStorage();
-                    }
-                };
-                
-                document.body.appendChild(iframe);
-                
-                // Timeout pour éviter les blocages
-                setTimeout(() => {
-                    if (document.getElementById('synoptique-container').innerHTML.includes('Chargement')) {
-                        loadFromLocalStorage();
-                    }
-                }, 3000);
-                
-            } catch (error) {
-                console.error('Erreur lors du chargement:', error);
-                loadFromLocalStorage();
-            }
-        }
-
-        // Fallback: charger depuis localStorage
-        function loadFromLocalStorage() {
+        // Charger les données depuis localStorage (partagé avec Systel)
+        function loadData() {
             try {
                 const casernesData = localStorage.getItem('systel_casernes');
                 const enginsData = localStorage.getItem('systel_engins');
                 
-                if (casernesData) CASERNES = JSON.parse(casernesData);
-                if (enginsData) ENGINS = JSON.parse(enginsData);
+                if (casernesData) {
+                    const newCasernes = JSON.parse(casernesData);
+                    if (JSON.stringify(newCasernes) !== JSON.stringify(CASERNES)) {
+                        CASERNES = newCasernes;
+                        render();
+                    }
+                }
                 
-                render();
+                if (enginsData) {
+                    const newEngins = JSON.parse(enginsData);
+                    if (JSON.stringify(newEngins) !== JSON.stringify(ENGINS)) {
+                        ENGINS = newEngins;
+                        render();
+                    }
+                }
+                
+                updateTimestamp();
             } catch (e) {
-                console.warn('Erreur localStorage:', e);
-                showError('Impossible de charger les données');
+                console.warn('Erreur chargement données:', e);
             }
         }
 
@@ -358,8 +324,6 @@
                     </div>
                 `;
             }).join('');
-
-            updateTimestamp();
         }
 
         function renderEngin(engin) {
@@ -385,18 +349,14 @@
                 now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
         }
 
-        function showError(message) {
-            const errorContainer = document.getElementById('error-container');
-            errorContainer.innerHTML = `<div class="error">${message}</div>`;
-        }
-
         // Initialiser
         loadData();
         setInterval(loadData, UPDATE_INTERVAL);
 
-        // Écouter les changements dans le localStorage
+        // Écouter les changements dans le localStorage (depuis Systel)
         window.addEventListener('storage', (e) => {
             if (e.key === 'systel_casernes' || e.key === 'systel_engins') {
+                console.log('📡 Mise à jour détectée:', e.key);
                 loadData();
             }
         });
