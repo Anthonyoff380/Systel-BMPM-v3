@@ -1601,44 +1601,36 @@ async function webhookSynoptiqueEdit() {
   const url = CONFIG?.webhooks?.synoptique;
   if (!url) return;
   chargerDonnees();
-  const enCours = INTERVENTIONS.filter(i=>i.statut==='En cours');
   const centre = CONFIG?.centreAbrev || CONFIG?.centre || 'PTR';
   const now = new Date();
   const heureStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  const fields = enCours.length === 0
-    ? [{ name:'✅ Aucune intervention', value:'Tout est calme.', inline:false }]
-    : enCours.map(i => {
-        const engins = (i.engins||[]).map(eId=>{
-          const e=ENGINS.find(x=>x.id===eId);
-          const ber=e?.berStatut?BER_STATUTS?.find(b=>b.code===e.berStatut):null;
-          return `🚒 **${e?.nom||eId}**${ber?` → ${ber.label}`:''}`;
-        }).join(', ');
-        return { name:`🚨 #${i.numero||i.id} — ${i.type||'?'}`, value:`📍 ${i.adresse||'--'}
-${engins||'Aucun engin'}`, inline:false };
-      });
+  
+  // Generer une capture d'ecran de la synoptique via screenshot.rocks
+  // On utilise le lien vers la page synoptique de Systel
+  const synopUrl = window.location.origin + '?section=synoptique';
+  const screenshotUrl = `https://screenshot.rocks/api/screenshot?url=${encodeURIComponent(synopUrl)}&width=1200&height=800&format=png`;
+  
   const embed = {
-    title:`📊 SYNOPTIQUE — ${centre}`,
-    description:`**${enCours.length} intervention(s) en cours** — ${heureStr}`,
-    color: enCours.length===0 ? 0x38a169 : 0xf97316,
-    fields,
+    title:`📊 SYNOPTIQUE DES MOYENS — ${centre}`,
+    description:`**Etat des moyens** — ${heureStr}`,
+    color: 0x3b82f6,
+    image: { url: screenshotUrl + '&t=' + Date.now() }, // Cache buster pour forcer la mise a jour
     timestamp: now.toISOString(),
     footer:{ text:`SYSTEL — ${centre}` }
   };
   try {
     if (_synopDiscordMsgId) {
-      // PATCH — modifier le message existant sans envoyer un nouveau message
-      // Discord supporte PATCH /webhooks/{id}/{token}/messages/{message_id}
+      // PATCH - modifier le message existant
       const patchUrl = url.replace(/\/+$/, '') + '/messages/' + _synopDiscordMsgId;
       const patchResp = await fetch(patchUrl + '?wait=true', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ embeds: [embed] })
       });
-      if (patchResp.ok) return; // Succès — message édité, rien de plus
-      // Si PATCH échoue (message supprimé manuellement), on recrée
+      if (patchResp.ok) return;
       _synopDiscordMsgId = null;
     }
-    // POST initial (ou recréation si PATCH échoue) avec ?wait=true pour récupérer l'ID
+    // POST initial (ou recreation si PATCH echoue)
     const resp = await fetch(url + '?wait=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1647,7 +1639,6 @@ ${engins||'Aucun engin'}`, inline:false };
     if (resp.ok) {
       const data = await resp.json();
       _synopDiscordMsgId = data.id;
-      // Persister l'ID pour survivre aux rechargements de page
       localStorage.setItem('systel_discord_synop_msgid', _synopDiscordMsgId);
     }
   } catch(e) { console.warn('Synoptique webhook err:', e); }
