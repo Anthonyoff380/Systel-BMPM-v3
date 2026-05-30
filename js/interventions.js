@@ -11,7 +11,6 @@ function renderInterventionsSynoptique() {
   const nbEngins = enCours.reduce((acc,i) => acc + (i.engins||[]).length, 0);
   let html = `<div class="synop-inter-header">
     <span>${enCours.length} Intervention${enCours.length>1?'s':''} en cours &bull; ${nbEngins} Engins engagés</span>
-    ${(typeof currentUser !== "undefined" && userHasCOSSIM(currentUser)) ? '<a href="cossim.html" class="btn btn-primary btn-sm" style="text-decoration:none;">🚨 OUVRIR COSSIM</a>' : ""}
   </div>`;
   if (enCours.length === 0) {
     html += `<div class="synop-inter-empty">✅ Aucune intervention en cours</div>`;

@@ -218,7 +218,10 @@ function confirmerCreerGarde(date) {
   const sel = document.getElementById('fg-engins-sel');
   const enginsSelIds = sel ? Array.from(sel.selectedOptions).map(o => o.value) : ENGINS.map(e => e.id);
 
-  const engins = enginsSelIds.map(enginId => {
+  // Déduplication : éviter les doublons
+  const uniqueEnginIds = [...new Set(enginsSelIds)];
+
+  const engins = uniqueEnginIds.map(enginId => {
     const engin = ENGINS.find(e => e.id === enginId);
     const postes = (engin?.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'},{id:'eq1',label:'Équipier',abrev:'EQ'}]);
     return {
@@ -272,11 +275,18 @@ function ajouterEnginGarde(date) {
   document.body.removeChild(sel);
   const engin = ENGINS.find(e => e.nom === enginId || e.id === enginId);
   if (!engin) return showToast('Engin non trouvé', 'error');
+  
+  // Verifier que l'engin n'existe pas deja
+  if (garde.engins?.find(g => g.id === engin.id)) {
+    return showToast('Cet engin est deja dans la feuille de garde', 'error');
+  }
+  
   const postes = (engin.postes || [{id:'ca',label:"Chef d'agrès",abrev:'C/A'}]).map(p => ({...p, userId: null}));
   if (!garde.engins) garde.engins = [];
   garde.engins.push({ id: engin.id, nom: engin.nom, postes });
   if (typeof fbSaveFeuille === 'function') fbSaveFeuille(date, garde).catch(() => {});
   reloadFeuilleGarde();
+  showToast('Engin ajoute a la feuille de garde');
 }
 
 function supprimerEnginGarde(date, enginId) {
@@ -296,6 +306,7 @@ function majPosteEnginGarde(date, enginId, posteIdx, userId) {
   if (typeof fbSaveFeuille === 'function') {
     fbSaveFeuille(date, garde).catch(e => console.warn('Erreur save feuille:', e));
   }
+  // Pas de reloadFeuilleGarde() ici pour éviter les blocages et fermetures
 }
 
 function assignerPosteSpecial(date, posteId, userId) {
