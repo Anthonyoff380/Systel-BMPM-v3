@@ -295,7 +295,17 @@ function openProfilMenu() {
 }
 
 // ===== ADMIN TABS =====
-function showAdminTab(tabName, evt) {
+function showAdminTab(tab, evt) {
+  // Charger les webhooks depuis CONFIG au moment de l'ouverture de l'onglet
+  if (tab === 'webhooks') {
+    setTimeout(() => {
+      if (CONFIG.webhooks) {
+        document.getElementById('wh-intervention').value = CONFIG.webhooks.intervention || '';
+        document.getElementById('wh-ticket').value = CONFIG.webhooks.ticket || '';
+        document.getElementById('wh-synoptique').value = CONFIG.webhooks.synoptique || '';
+      }
+    }, 100);
+  }
   document.querySelectorAll('.admin-tab-content').forEach(tab => tab.style.display = 'none');
   document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
   const target = document.getElementById(`admin-tab-${tabName}`);
@@ -1655,7 +1665,8 @@ function startSynopDiscordTimer() {
     _synopDiscordMsgId = localStorage.getItem('systel_discord_synop_msgid') || null;
   }
   if (CONFIG?.webhooks?.synoptique) {
-    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 5 * 60 * 1000);
+    // Mettre à jour toutes les minutes (60 secondes) pour une synoptique plus en direct
+    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 60 * 1000);
     webhookSynoptiqueEdit();
   }
 }
