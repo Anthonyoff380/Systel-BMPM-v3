@@ -303,6 +303,7 @@ function showAdminTab(tab, evt) {
         document.getElementById('wh-intervention').value = CONFIG.webhooks.intervention || '';
         document.getElementById('wh-ticket').value = CONFIG.webhooks.ticket || '';
         document.getElementById('wh-synoptique').value = CONFIG.webhooks.synoptique || '';
+        document.getElementById('wh-synoptique-url').value = CONFIG.webhooks.synoptique_url || '';
       }
     }, 100);
   }
@@ -328,6 +329,7 @@ function showAdminTab(tab, evt) {
     if(g('wh-ticket')) g('wh-ticket').value = wh.ticket||'';
     if(g('wh-intervention')) g('wh-intervention').value = wh.intervention||'';
     if(g('wh-synoptique')) g('wh-synoptique').value = wh.synoptique||'';
+    if(g('wh-synoptique-url')) g('wh-synoptique-url').value = wh.synoptique_url||'';
   }, 50);
 }
 
@@ -1341,6 +1343,7 @@ function saveWebhookConfig() {
   CONFIG.webhooks.ticket = document.getElementById('wh-ticket')?.value || '';
   CONFIG.webhooks.intervention = document.getElementById('wh-intervention')?.value || '';
   CONFIG.webhooks.synoptique = document.getElementById('wh-synoptique')?.value || '';
+  CONFIG.webhooks.synoptique_url = document.getElementById('wh-synoptique-url')?.value || '';
   sauvegarderDonnees();
   showToast('Webhooks sauvegardés !');
 }
@@ -1606,15 +1609,15 @@ async function webhookSynoptiqueEdit() {
   const heureStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   
   // Generer une capture d'ecran de la synoptique via screenshot.rocks
-  // On utilise le lien vers la page synoptique de Systel
-  const synopUrl = window.location.origin + '?section=synoptique';
+  // Utiliser l'URL configurable dans les webhooks
+  const synopUrl = CONFIG?.webhooks?.synoptique_url || window.location.origin + '?section=synoptique';
   const screenshotUrl = `https://screenshot.rocks/api/screenshot?url=${encodeURIComponent(synopUrl)}&width=1200&height=800&format=png`;
   
   const embed = {
     title:`📊 SYNOPTIQUE DES MOYENS — ${centre}`,
     description:`**Etat des moyens** — ${heureStr}`,
     color: 0x3b82f6,
-    image: { url: screenshotUrl + '&t=' + Date.now() }, // Cache buster pour forcer la mise a jour
+    image: { url: screenshotUrl + '&t=' + Date.now() }, // Cache buster pour forcer la mise a jour (screenshot.rocks)
     timestamp: now.toISOString(),
     footer:{ text:`SYSTEL — ${centre}` }
   };

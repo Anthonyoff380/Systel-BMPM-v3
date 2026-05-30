@@ -507,8 +507,10 @@
 
             <div class="card"><div class="card-header">📊 Webhook — Synoptique en direct</div><div class="card-body">
               <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL Webhook Discord</label>
-              <input type="url" id="wh-synoptique" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
-              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Mise à jour toutes les 5 minutes avec les interventions en cours</div>
+              <input type="url" id="wh-synoptique" placeholder="https://discord.com/api/webhooks/..." style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px;text-transform:uppercase;">URL de la Synoptique (pour screenshot)</label>
+              <input type="url" id="wh-synoptique-url" placeholder="https://systel-bmpm-v3.vercel.app?section=synoptique" style="width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-main);color:var(--text-color);font-size:13px;">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Mise à jour toutes les 60 secondes avec capture d'écran de la synoptique</div>
             </div></div>
 
             <div style="display:flex;gap:10px;align-items:center;">
