@@ -1625,13 +1625,25 @@ async function webhookSynoptiqueEdit() {
     if (_synopDiscordMsgId) {
       // PATCH - modifier le message existant
       const patchUrl = url.replace(/\/+$/, '') + '/messages/' + _synopDiscordMsgId;
-      const patchResp = await fetch(patchUrl + '?wait=true', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ embeds: [embed] })
-      });
-      if (patchResp.ok) return;
-      _synopDiscordMsgId = null;
+      try {
+        const patchResp = await fetch(patchUrl + '?wait=true', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [embed] })
+        });
+        if (patchResp.ok) {
+          console.log('✅ Synoptique mise à jour');
+          return;
+        }
+        if (patchResp.status === 429) {
+          console.warn('⚠️ Rate limit Discord - attente avant prochain essai');
+          return;
+        }
+        _synopDiscordMsgId = null;
+      } catch (patchErr) {
+        console.warn('Erreur PATCH synoptique:', patchErr);
+        _synopDiscordMsgId = null;
+      }
     }
     // POST initial (ou recreation si PATCH echoue)
     const resp = await fetch(url + '?wait=true', {
@@ -1643,6 +1655,9 @@ async function webhookSynoptiqueEdit() {
       const data = await resp.json();
       _synopDiscordMsgId = data.id;
       localStorage.setItem('systel_discord_synop_msgid', _synopDiscordMsgId);
+      console.log('✅ Synoptique envoyée à Discord');
+    } else if (resp.status === 429) {
+      console.warn('⚠️ Rate limit Discord - attente avant prochain essai');
     }
   } catch(e) { console.warn('Synoptique webhook err:', e); }
 }
@@ -1659,8 +1674,8 @@ function startSynopDiscordTimer() {
     _synopDiscordMsgId = localStorage.getItem('systel_discord_synop_msgid') || null;
   }
   if (CONFIG?.webhooks?.synoptique) {
-    // Mettre à jour toutes les minutes (60 secondes) pour une synoptique plus en direct
-    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 60 * 1000);
+    // Mettre à jour toutes les 90 secondes pour respecter les limites Discord
+    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 90 * 1000);
     webhookSynoptiqueEdit();
   }
 }
