@@ -76,7 +76,23 @@ function onEnginClick(id) {
     showToast(engin.nom + ' est en intervention — utilisez le panel Interventions', 'info');
     return;
   }
-  toggleEnginStatut(id);
+  
+  // Ouvrir le BIP avec les paramètres de l'engin
+  const inter = INTERVENTIONS.find(i => i.engins && i.engins[id]);
+  const motif = inter ? (inter.type || 'INTERVENTION') : 'ARMEMENT';
+  const place = inter ? (inter.commune || '') : '';
+  const num = inter ? (inter.numero || '') : '';
+  const adresse = inter ? (inter.adresse || '') : '';
+  
+  const params = new URLSearchParams({
+    motif: motif,
+    engin: engin.nom,
+    place: place,
+    num: num,
+    adresse: adresse
+  });
+  
+  window.open('bip.html?' + params.toString(), 'bip', 'width=400,height=600,resizable=no,scrollbars=no');
 }
 
 function toggleEnginStatut(id) {

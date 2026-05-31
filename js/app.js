@@ -800,6 +800,8 @@ function sauvegarderDonnees() {
   s('config', CONFIG);
   s('intranet', INTRANET_CONFIG);
   s('casernes', CASERNES);
+  s('engins', ENGINS);
+  s('interventions', INTERVENTIONS);
   s('cossim_config', COSSIM_CONFIG);
   // Les données critiques (users, engins, interventions, feuilles, planning, blips)
   // sont gérées directement via fbSave* et synchronisées par les listeners Firestore.
@@ -1634,18 +1636,55 @@ async function webhookSynoptiqueEdit() {
 
     // Convertir en blob et envoyer
     canvas.toBlob(async (blob) => {
-      const formData = new FormData();
-      formData.append('file', blob, 'synoptique.png');
-      formData.append('content', `📊 **SYNOPTIQUE DES MOYENS — ${centre}**\nMise à jour : ${heureStr}`);
+      if (!blob) {
+        console.warn('Erreur création blob');
+        return;
+      }
 
       try {
+        if (!_synopDiscordMsgId) {
+          _synopDiscordMsgId = localStorage.getItem('systel_discord_synop_msgid') || null;
+        }
+
+        if (_synopDiscordMsgId) {
+          const patchUrl = url.replace(/\/+$/, '') + '/messages/' + _synopDiscordMsgId;
+          const formData = new FormData();
+          formData.append('file', blob, 'synoptique.png');
+          formData.append('content', `📊 **SYNOPTIQUE DES MOYENS — ${centre}**\nMise à jour : ${heureStr}`);
+
+          try {
+            const patchResp = await fetch(patchUrl, {
+              method: 'PATCH',
+              body: formData
+            });
+            if (patchResp.ok) {
+              console.log('✅ Synoptique mise à jour');
+              return;
+            }
+            if (patchResp.status === 404) {
+              _synopDiscordMsgId = null;
+              localStorage.removeItem('systel_discord_synop_msgid');
+            }
+          } catch (patchErr) {
+            console.warn('Erreur PATCH:', patchErr);
+            _synopDiscordMsgId = null;
+          }
+        }
+
+        const formData = new FormData();
+        formData.append('file', blob, 'synoptique.png');
+        formData.append('content', `📊 **SYNOPTIQUE DES MOYENS — ${centre}**\nMise à jour : ${heureStr}`);
+
         const resp = await fetch(url, {
           method: 'POST',
           body: formData
         });
 
         if (resp.ok) {
-          console.log('✅ Synoptique envoyée à Discord avec capture');
+          const data = await resp.json();
+          _synopDiscordMsgId = data.id;
+          localStorage.setItem('systel_discord_synop_msgid', _synopDiscordMsgId);
+          console.log('✅ Synoptique envoyée à Discord');
         } else if (resp.status === 429) {
           console.warn('⚠️ Rate limit Discord');
         } else {
@@ -1668,8 +1707,8 @@ function startSynopDiscordTimer() {
     _synopDiscordMsgId = localStorage.getItem('systel_discord_synop_msgid') || null;
   }
   if (CONFIG?.webhooks?.synoptique) {
-    // Mettre à jour toutes les 90 secondes pour respecter les limites Discord
-    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 90 * 1000);
+    // Mettre à jour toutes les 30 secondes pour une meilleure réactivité
+    _synopDiscordTimer = setInterval(webhookSynoptiqueEdit, 30 * 1000);
     webhookSynoptiqueEdit();
   }
 }
