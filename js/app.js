@@ -1608,57 +1608,51 @@ async function webhookSynoptiqueEdit() {
   const now = new Date();
   const heureStr = now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   
-  // Generer une capture d'ecran de la synoptique via screenshot.rocks
-  // Utiliser l'URL configurable dans les webhooks
-  const synopUrl = CONFIG?.webhooks?.synoptique_url || window.location.origin + '?section=synoptique';
-  const screenshotUrl = `https://screenshot.rocks/api/screenshot?url=${encodeURIComponent(synopUrl)}&width=1200&height=800&format=png`;
-  
-  const embed = {
-    title:`📊 SYNOPTIQUE DES MOYENS — ${centre}`,
-    description:`**Etat des moyens** — ${heureStr}`,
-    color: 0x3b82f6,
-    image: { url: screenshotUrl + '&t=' + Date.now() }, // Cache buster pour forcer la mise a jour (screenshot.rocks)
-    timestamp: now.toISOString(),
-    footer:{ text:`SYSTEL — ${centre}` }
-  };
   try {
-    if (_synopDiscordMsgId) {
-      // PATCH - modifier le message existant
-      const patchUrl = url.replace(/\/+$/, '') + '/messages/' + _synopDiscordMsgId;
-      try {
-        const patchResp = await fetch(patchUrl + '?wait=true', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ embeds: [embed] })
-        });
-        if (patchResp.ok) {
-          console.log('✅ Synoptique mise à jour');
-          return;
-        }
-        if (patchResp.status === 429) {
-          console.warn('⚠️ Rate limit Discord - attente avant prochain essai');
-          return;
-        }
-        _synopDiscordMsgId = null;
-      } catch (patchErr) {
-        console.warn('Erreur PATCH synoptique:', patchErr);
-        _synopDiscordMsgId = null;
-      }
+    // Récupérer le conteneur synoptique
+    const synopContainer = document.getElementById('synoptique-main-container');
+    if (!synopContainer) {
+      console.warn('Conteneur synoptique non trouvé');
+      return;
     }
-    // POST initial (ou recreation si PATCH echoue)
-    const resp = await fetch(url + '?wait=true', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeds: [embed] })
+    
+    // Charger html2canvas si nécessaire
+    if (typeof html2canvas === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      document.head.appendChild(script);
+      await new Promise(resolve => script.onload = resolve);
+    }
+
+    // Générer la capture d'écran
+    const canvas = await html2canvas(synopContainer, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true
     });
-    if (resp.ok) {
-      const data = await resp.json();
-      _synopDiscordMsgId = data.id;
-      localStorage.setItem('systel_discord_synop_msgid', _synopDiscordMsgId);
-      console.log('✅ Synoptique envoyée à Discord');
-    } else if (resp.status === 429) {
-      console.warn('⚠️ Rate limit Discord - attente avant prochain essai');
-    }
+
+    // Convertir en blob et envoyer
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('file', blob, 'synoptique.png');
+      formData.append('content', `📊 **SYNOPTIQUE DES MOYENS — ${centre}**\nMise à jour : ${heureStr}`);
+
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (resp.ok) {
+          console.log('✅ Synoptique envoyée à Discord avec capture');
+        } else if (resp.status === 429) {
+          console.warn('⚠️ Rate limit Discord');
+        } else {
+          console.warn('Erreur envoi:', resp.status);
+        }
+      } catch(e) { console.warn('Erreur envoi webhook:', e); }
+    }, 'image/png', 0.9);
   } catch(e) { console.warn('Synoptique webhook err:', e); }
 }
 
