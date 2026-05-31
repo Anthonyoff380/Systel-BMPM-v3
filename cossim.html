@@ -826,17 +826,24 @@
         });
       }
       
-      // Ouvrir la page BIP popup pour l'opérateur COSSIM
-      const bipParams = new URLSearchParams({
-        motif: data.sinistre,
-        engin: data.engins.map(eId => ENGINS.find(x => x.id === eId)?.nom || eId).join(', '),
-        place: 'Opérateur',
-        num: interNum,
-        adresse: data.adresse
+      // Ouvrir la page BIP popup pour chaque engin avec infos du personnel
+      data.engins.forEach((enginId, idx) => {
+        const engin = ENGINS.find(x => x.id === enginId);
+        const eq = equipes[enginId];
+        const chefAgres = eq?.chefAgres ? PERSONNELS.find(p => p.id === eq.chefAgres) : null;
+        const personnelInfo = chefAgres ? `${chefAgres.prenom} ${chefAgres.nom} (${chefAgres.grade})` : 'Non armé';
+        
+        const bipParams = new URLSearchParams({
+          motif: data.sinistre,
+          engin: engin?.nom || enginId,
+          place: personnelInfo,
+          num: interNum,
+          adresse: data.adresse
+        });
+        setTimeout(() => {
+          window.open('bip.html?' + bipParams.toString(), 'bip_' + enginId, 'width=400,height=600,resizable=no,scrollbars=no');
+        }, 100 + (idx * 200));
       });
-      setTimeout(() => {
-        window.open('bip.html?' + bipParams.toString(), 'bip_popup_cossim', 'width=400,height=600,resizable=no,scrollbars=no');
-      }, 100);
       
       // Feuille de garde auto — structure correcte : indexée par DATE, pas par engin
       const today = now.slice(0,10);
